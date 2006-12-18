@@ -58,6 +58,10 @@ Or you can copy it to \c /usr/include. Whatever you prefer.
 
 Recently we decided that some optional functionality should be split out into
 different headers so this doctrine is not fully valid anymore.
+
+NEW:
+Some features are not part of the main header \c <testsoon.hpp> anymore. You can
+find them in \c <testsoon/*>.
 </p></li>
 
 <li><b>Why don't you use a plain singleton instead of #TEST_REGISTRY?</b>

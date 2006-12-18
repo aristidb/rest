@@ -49,7 +49,6 @@
 
 #ifndef NO_STDLIB
 #include <string>
-#include <iostream>//FIXME?!
 #include <sstream>
 #include <vector>
 #include <typeinfo>
@@ -63,7 +62,6 @@ using std::string;
 
 typedef std::vector<string> string_vector;
 typedef std::ostream stream_class;
-#define DEFAULT_STREAM std::cout
 
 template<class T>
 inline string object_to_string(T const &object) {
@@ -276,7 +274,7 @@ struct failure_info {
 class simple_reporter : public test_reporter {
 public:
   typedef stream_class stream;
-  simple_reporter(stream &out = DEFAULT_STREAM) : out(out) {}
+  simple_reporter(stream &out) : out(out) {}
   void before_tests(test_group const &group) {
     out << group << " : ";
     out.flush();
@@ -306,7 +304,7 @@ protected:
 
 class concise_reporter : public simple_reporter {
 public:  
-  concise_reporter(stream &out = DEFAULT_STREAM) 
+  concise_reporter(stream &out) 
   : simple_reporter(out) {}
 
 private:
@@ -367,143 +365,7 @@ private:
   }
 };
 
-/*
- * XML reporter first (not that beautiful) try
- * <?xml version=1.0?>
- * <testsoon>
-     <group name="file.cpp">
-       <group name="bla">
-         <success line="LINE"> <generator>7</generator> </success>
-         <failure line="LINE" name="TESTNAME">
-         <problem>PROBLEM</problem>
-         <rawdata>
-            <item>BLA</item>
-         </rawdata>
-           <generator>7</generator>
- *       </failure>
- *     </group>
-     </group>
- * </testsoon>
- */
- 
-
-class xml_reporter : public test_reporter {
-  public:
-    typedef stream_class stream;
-    xml_reporter(stream &out = DEFAULT_STREAM) : out(out), indent(1) {}
-
-    void start() {
-      out << "<?xml version=\"1.0\"?>\n";
-      out << "<testsoon>\n";
-    }
-    void stop() {
-      out << "</testsoon>\n";
-    }
-
-    void begin_group(test_group const &group) {
-      if (group.parent) {
-        print_ind();
-        ++indent;
-        if (group.parent->parent)
-          out << "<group";
-        else
-          out << "<file";
-        out << " name=\"" << group.name << "\">\n";
-      }
-    }
-
-    void end_group(test_group const &group) {
-      if (group.parent) {
-        --indent;
-        print_ind();
-        if (group.parent->parent)
-          out << "</group>\n";
-        else
-          out << "</file>\n";
-      }
-    }
-
-    void success(test_info const &i, string const &k) {
-      print_ind() << "<success line=\"" << i.line << "\"";      
-      if (*i.name)
-        out << " name=\"" << i.name << "\"";
-      if (k.empty())
-        out << " />\n";
-      else {
-        out << ">\n";
-        ++indent;
-        print_ind() << "<generator>" << k << "</generator>\n";
-        --indent;
-        print_ind() << "</success>\n";
-      }
-    }
-    
-    void failure(test_info const &i, test_failure const &x, string const &k) {
-      print_ind() << "<failure line=\"" << i.line << "\"";
-      if (*i.name)
-        out << " name=\"" << i.name << "\"";
-      out << ">\n";
-      ++indent;
-
-      print_ind() << "<problem>" << x.message << "</problem>\n";
-      if (!x.data.empty()) {
-        print_ind() << "<rawdata>\n";
-        ++indent;
-        for (string_vector::const_iterator it = x.data.begin(); 
-            it != x.data.end();
-            ++it) {
-          print_ind() << "<item>" << *it << "</item>\n";
-        } 
-        --indent;
-        print_ind() << "</rawdata>\n";
-      }
-
-      if (!k.empty()) {
-        print_ind() << "<generator>" << k << "</generator>\n";
-      }
-
-      --indent;
-      print_ind() << "</failure>\n";
-    } 
-
-  private:
-    stream_class &print_ind() {
-      for (unsigned i = 0; i < indent; ++i)
-        out << "  ";
-      return out;
-    }
-    /*
-    string create_attribute(string const &name, string const &value) {
-      return string(" ") + name + "=\"" + value + "\"";
-    }
-    template<class T>
-    string create_attribute(string const &name, T const &value) {
-      return create_attribute(name, object_to_string(value));
-    }
-    
-    void open_tag(string const &tagname, string const &attributes, bool indent = true, bool newline = true) {
-      if (indent)
-        print_ind();
-      out << '<' << tagname << attributes << '>';
-      if (newline)
-      	out << '\n';
-    }
-    
-    void close_tag(string const &tagname, bool indent = true, bool newline = true) {
-      if (indent)
-        print_ind();
-      out << "</" << tagname << '>';
-      if (newline)
-      	out << '\n';
-    }
-    */
-    stream &out;
-    unsigned indent;
-};
-
 typedef concise_reporter default_reporter;
-//typedef xml_reporter default_reporter;
-
 
 #ifndef IN_DOXYGEN
 
