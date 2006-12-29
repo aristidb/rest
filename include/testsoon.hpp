@@ -511,15 +511,15 @@ private:
  */
 #define TEST_GROUP(name) \
     namespace BOOST_PP_CAT(name, _helper) { \
-      static ::testsoon::test_group *upper_test_group() { \
-        return test_group(__FILE__); \
+      static ::testsoon::test_group *get_upper_test_group() { \
+        return get_test_group(__FILE__); \
       } \
     } \
     namespace BOOST_PP_CAT(name, _testgroup) { \
       static ::testsoon::test_group * \
-      test_group(char const *) { \
+      get_test_group(char const *) { \
         static ::testsoon::test_group current( \
-          BOOST_PP_CAT(name, _helper)::upper_test_group(), #name); \
+          BOOST_PP_CAT(name, _helper)::get_upper_test_group(), #name); \
         return &current; \
       } \
     } \
@@ -647,7 +647,7 @@ private:
     struct test_class \
     : public ::testsoon::test_info { \
       test_class () : ::testsoon::test_info( \
-            test_group(__FILE__), name, __FILE__, __LINE__) {} \
+            get_test_group(__FILE__), name, __FILE__, __LINE__) {} \
       void run( \
           ::testsoon::test_reporter &reporter, \
           ::testsoon::statistics &stats \
@@ -889,7 +889,7 @@ private:
 #ifndef IN_DOXYGEN
 
 inline static ::testsoon::test_group *
-test_group(char const *filename) {
+get_test_group(char const *filename) {
   static ::testsoon::test_file file(&::testsoon::tests(), filename);
   return &file;
 }
