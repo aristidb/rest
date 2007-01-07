@@ -13,6 +13,9 @@ its weaknesses.
 @li @ref testsoon.hpp "Reference"
 @li @subpage requirements
 
+@li <b><a href="http://snip-a-lot.de:8000/branch/changes/nu.mine.r0nnyger.testsoon">
+ViewMTN</a></b> - version control (<a href="http://venge.net/monotone">monotone 0.32</a>: snip-a-lot.de nu.mine.r0nnyger.testsoon)
+
 @li <a href="http://sourceforge.net/projects/testsoon">SF.NET Project Page</a>
 
 @htmlonly
