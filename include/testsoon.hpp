@@ -100,6 +100,14 @@ extern test_holder &tests();
 #endif
 #endif
 
+#ifndef TESTSOON_CATCHALL
+#ifdef DEBUG
+#define TESTSOON_CATCHALL 0
+#else
+#define TESTSOON_CATCHALL 1
+#endif
+#endif
+
 class test_reporter;
 class test_info;
 class test_group;
@@ -149,13 +157,19 @@ public:
   virtual void before_tests(test_group const &group) { (void)group; }
   /// Indicates that the next event will not be success() or failure().
   virtual void after_tests(test_group const &group) { (void)group; }
+  /// Indicates that the last test succeeded.
   virtual void success(test_info const &info, string const &sequence_key) {
     (void)info;
     (void)sequence_key;
   }
+  /// Indicates that the last test failed.
   virtual void failure(test_info const &info, test_failure const &failure, 
-                       string const &sequence_key) = 0;
+                       string const &value) = 0;
+  /// Indicates that the last test threw an unexpected exception.
+  virtual void unexpected_exception(test_info const &info, string const &value);
+  /// Indicates the overall statistics.
   virtual void stats(statistics const &stat) { (void)stat; }
+  /// Destructor.
   virtual ~test_reporter() {}
 };
 
@@ -260,6 +274,12 @@ public:
 
   bool is_failure() { return line; }
 };
+
+inline void
+test_reporter::unexpected_exception(test_info const &info, string const &val) {
+  failure(info, test_failure("unexpected exception", info.line), val);
+}
+
 
 struct failure_info {
   failure_info(test_info const &test, test_failure const &failure, 
@@ -628,7 +648,12 @@ private:
   } catch (::testsoon::test_failure const &state) { \
     reporter.failure(*this, state, key); \
     ++stats.bad; \
-  }
+  } \
+  BOOST_PP_EXPR_IIF(TESTSOON_CATCHALL, \
+  catch (...) { \
+    reporter.unexpected_exception(*this, key); \
+  } \
+  )
 
 #else
 

@@ -16,6 +16,9 @@ TEST() {
 TEST_GROUP(nested) {
 
 TEST() {
+#ifdef __EXCEPTIONS
+  throw 0;
+#endif
   Check1(_1 > 4, 5);
 }
 
