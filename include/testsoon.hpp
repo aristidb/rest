@@ -406,6 +406,18 @@ inline void check_equals(T const &a, U const &b,
   }
 }
 
+template<class T, class U>
+inline void check_not_equals(T const &a, U const &b,
+                         char const *msg, unsigned line,
+                         test_failure &fail) {
+  if (a == b) {
+    string_vector data;
+    data.push_back(object_to_string(a));
+    data.push_back(object_to_string(b));
+    fail = test_failure(msg, line, data);
+  }
+}
+
 template<class F, class T>
 inline void do_check1(F fun, T const &val,
                       char const *msg, unsigned line,
@@ -800,7 +812,7 @@ private:
   TESTSOON_PARAM_INVOKE(named_parameter_sequence)
 
 /**
- * Check whether two values are equal.
+ * Check that two values are equal.
  * If both values are not equal, the test will fail.
  * @param a Some value.
  * @param b Another value.
@@ -811,7 +823,33 @@ private:
     "not equal: " #a " and " #b, __LINE__, testsoon_failure); \
   )
 
+/**
+ * Check that two values are equal.
+ * If both values are not equal, the test will fail.
+ * @param a Some value.
+ * @param b Another value.
+ */
 #define Equals(a, b) TESTSOON_Equals(a, b)
+
+/**
+ * Check that two values are not equal.
+ * If both values are equal, the test will fail.
+ * @param a Some value.
+ * @param b Another value.
+ */
+#define TESTSOON_Not_equals(a, b) \
+  TESTSOON_ENCLOSURE( \
+    ::testsoon::check_not_equals(a, b, \
+    "equal: " #a " and " #b, __LINE__, testsoon_failure); \
+  )
+
+/**
+ * Check that two values are not equal.
+ * If both values are equal, the test will fail.
+ * @param a Some value.
+ * @param b Another value.
+ */
+#define Not_equals(a, b) TESTSOON_Not_equals(a, b)
 
 /**
  * Check that an expression throws.
@@ -839,15 +877,22 @@ private:
   TESTSOON_Check(!"Throws check without exception support")
 #endif
 
+/**
+ * Check that an expression throws.
+ * If no exception is thrown, the test will fail.
+ * @param x The expression to test.
+ * @param t The exception type to check for.
+ * @param w The expected value of caught_exception.what().
+ */
 #define Throws(x, t, w) TESTSOON_Throws(x, t, w)
 
+#if TESTSOON_EXCEPTIONS
 /**
  * Check that an expression does not throw.
  * If a specified exception is thrown, the test will fail.
  * @param x The expression to test.
  * @param t The exception type to check for or "..." (without quotes).
  */
-#if TESTSOON_EXCEPTIONS
 #define TESTSOON_Nothrows(x, t) \
 	do { \
 		try { \
@@ -860,14 +905,31 @@ private:
 #define TESTSOON_Nothrows(x, t) \
   TESTSOON_Check(!"Nothrows check without exception support")
 #endif
+
+/**
+ * Check that an expression does not throw.
+ * If a specified exception is thrown, the test will fail.
+ * @param x The expression to test.
+ * @param t The exception type to check for or "..." (without quotes).
+ */
 #define Nothrows(x, t) TESTSOON_Nothrows(x, t)
 
+/**
+ * Check that an expression is true.
+ * If the expression is false, the test will fail.
+ * @param x The expression to test.
+ */
 #define TESTSOON_Check(x) \
   do { \
     if (!(x)) \
       TESTSOON_FAIL("check " #x, ::testsoon::string_vector()); \
   } while (0)
 
+/**
+ * Check that an expression is true.
+ * If the expression is false, the test will fail.
+ * @param x The expression to test.
+ */
 #define Check(x) TESTSOON_Check(x)
 
 #define TESTSOON_Check1(x, a) \

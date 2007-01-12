@@ -8,6 +8,7 @@ struct exception_type {};
 TEST(name) {
   int a = get_no();
   Equals(a, 7);
+  Not_equals(1, 2);
   Throws(foo(), std::exception, "value of .what()");
 }
 
