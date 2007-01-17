@@ -77,10 +77,15 @@ XTEST((gen, (testsoon::array_generator<char const *>)(array))) {
   Equals(value, "");
 }
 
+XTEST((array, (char const *, array))) {
+  Not_equals(value, "");
+}
+
 XTEST(
     (name, "VALUES!!!")
     (values, (int)(4)(7)(2))
 ) {
   Check(value && 0);
 }
+
 

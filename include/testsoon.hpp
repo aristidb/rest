@@ -783,7 +783,10 @@ private:
 #define TESTSOON_PARAM__range(x) \
   TESTSOON_PARAM_SHORT_GENERATOR(::testsoon::range_generator, x)
 #define TESTSOON_PARAM__array(x) \
-  TESTSOON_PARAM_SHORT_GENERATOR(::testsoon::array_generator, x)
+  TESTSOON_PARAM__generator( \
+    (::testsoon::array_generator<BOOST_PP_TUPLE_ELEM(2, 0, x)>) \
+    (BOOST_PP_TUPLE_ELEM(2, 1, x)) \
+  )
 #define TESTSOON_PARAM__values(x) \
   TESTSOON_PARAM__generator( \
     (std::vector<BOOST_PP_SEQ_HEAD(x)>) \
