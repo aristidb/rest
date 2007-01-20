@@ -652,6 +652,7 @@ private:
   BOOST_PP_EXPR_IIF(TESTSOON_CATCHALL, \
   catch (...) { \
     reporter.unexpected_exception(*this, key); \
+    ++stats.bad; \
   } \
   )
 
