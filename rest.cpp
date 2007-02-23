@@ -1,0 +1,21 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest.hpp"
+
+using namespace rest;
+
+void context::listen(short) {
+}
+
+void context::declare_keyword(std::string const &, keyword_type) {
+}
+
+void context::bind(std::string const &, context &) {
+}
+
+void context::do_bind(std::string const &, detail::responder_base &) {
+}
+
+void context::do_bind(
+  std::string const &, detail::responder_base &, detail::any_path const &)
+{
+}
