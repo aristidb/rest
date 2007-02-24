@@ -1,1 +1,1 @@
-add_executable(test1 test1.cpp rest.cpp)
+add_executable(test1 test1.cpp context.cpp)

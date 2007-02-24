@@ -3,9 +3,6 @@
 
 using namespace rest;
 
-void context::listen(short) {
-}
-
 void context::declare_keyword(std::string const &, keyword_type) {
 }
 

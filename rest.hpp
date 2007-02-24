@@ -157,7 +157,6 @@ enum keyword_type {
 
 class context {
 public:
-  void listen(short port);
   void declare_keyword(std::string const &name, keyword_type type);
   template<class T>
   void bind(std::string const &a, T &r) {

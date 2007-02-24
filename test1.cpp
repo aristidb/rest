@@ -54,5 +54,4 @@ int main() {
   search.bind("/cookie", search_obj, COOKIE);
   search.bind("/keyword/{keyword}", search_obj, KEYWORD);
   context.bind("/search/...", search);
-  context.listen(80); // or something like this
 }
