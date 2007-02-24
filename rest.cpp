@@ -9,13 +9,13 @@ void context::listen(short) {
 void context::declare_keyword(std::string const &, keyword_type) {
 }
 
-void context::bind(std::string const &, context &) {
-}
-
 void context::do_bind(std::string const &, detail::responder_base &) {
 }
 
 void context::do_bind(
   std::string const &, detail::responder_base &, detail::any_path const &)
 {
+}
+
+responder<> &context::get_responder() {
 }

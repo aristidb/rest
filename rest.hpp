@@ -167,7 +167,7 @@ public:
   void bind(std::string const &a, T &r, U const &x) {
     do_bind(a, r.get_responder(), r.pack(x));
   }
-  void bind(std::string const &, context &);
+  rest::responder<> &get_responder();
 private:
   void do_bind(
     std::string const &, detail::responder_base &);
