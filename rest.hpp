@@ -152,7 +152,8 @@ private:
 };
 
 enum keyword_type {
-  COOKIE
+  COOKIE,
+  FORM_PARAMETER
 };
 
 class context {
