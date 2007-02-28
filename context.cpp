@@ -3,7 +3,29 @@
 
 using namespace rest;
 
+namespace {
+  class global_responder : public responder<> {
+    response get(std::string const &, keywords const &) {
+      return 404;
+    }
+
+    response put(std::string const &, keywords const &) {
+      return 404;
+    }
+
+    response post(std::string const &, keywords const &) {
+      return 404;
+    }
+
+    response delete_(std::string const &, keywords const &) {
+      return 404;
+    }
+  };
+}
+
 class context::impl {
+public:
+  global_responder self_responder;
 };
 
 context::context() : p(new impl) {
@@ -24,4 +46,5 @@ void context::do_bind(
 }
 
 responder<> &context::get_responder() {
+  return p->self_responder;
 }
