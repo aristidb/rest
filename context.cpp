@@ -3,6 +3,15 @@
 
 using namespace rest;
 
+class context::impl {
+};
+
+context::context() : p(new impl) {
+}
+
+context::~context() {
+}
+
 void context::declare_keyword(std::string const &, keyword_type) {
 }
 

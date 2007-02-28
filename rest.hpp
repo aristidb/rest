@@ -7,6 +7,8 @@
 #include <boost/mpl/if.hpp>
 #include <boost/type_traits/is_scalar.hpp>
 #include <boost/any.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace rest {
 
@@ -156,8 +158,11 @@ enum keyword_type {
   FORM_PARAMETER
 };
 
-class context {
+class context : boost::noncopyable {
 public:
+  context();
+  ~context();
+
   void declare_keyword(std::string const &name, keyword_type type);
   template<class T>
   void bind(std::string const &a, T &r) {
@@ -168,11 +173,15 @@ public:
     do_bind(a, r.get_responder(), r.pack(x));
   }
   rest::responder<> &get_responder();
+
 private:
   void do_bind(
     std::string const &, detail::responder_base &);
   void do_bind(
     std::string const &, detail::responder_base &, detail::any_path const &);
+
+  class impl;
+  boost::scoped_ptr<impl> p;
 };
 
 }
