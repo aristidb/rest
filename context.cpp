@@ -63,9 +63,6 @@ void context::declare_keyword(std::string const &keyword, keyword_type type) {
     throw std::logic_error("keyword already declared");
 }
 
-void context::do_bind(std::string const &, detail::responder_base &) {
-}
-
 void context::do_bind(
   std::string const &, detail::responder_base &, detail::any_path const &)
 {

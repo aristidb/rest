@@ -166,7 +166,7 @@ public:
   void declare_keyword(std::string const &name, keyword_type type);
   template<class T>
   void bind(std::string const &a, T &r) {
-    do_bind(a, r.get_responder());
+    do_bind(a, r.get_responder(), detail::any_path());
   }
   template<class T, class U>
   void bind(std::string const &a, T &r, U const &x) {
@@ -175,8 +175,6 @@ public:
   rest::responder<> &get_responder();
 
 private:
-  void do_bind(
-    std::string const &, detail::responder_base &);
   void do_bind(
     std::string const &, detail::responder_base &, detail::any_path const &);
 
