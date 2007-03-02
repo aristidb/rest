@@ -30,7 +30,15 @@ enum response_type {
 
 class keywords {
 public:
-  std::string operator[](std::string const &) const { return std::string(); }
+  keywords();
+  ~keywords();
+
+  std::string operator[](std::string const &) const;
+  void set(std::string const &, std::string const &);
+
+private:
+  class impl;
+  boost::scoped_ptr<impl> p;
 };
 
 namespace detail {
