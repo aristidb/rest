@@ -51,11 +51,7 @@ namespace {
     type_t type;
     std::string data;
 
-    det::getter_base *getter;
-    det::putter_base *putter;
-    det::poster_base *poster;
-    det::deleter_base *deleter;
-
+    det::responder_base *responder_;
     det::any_path associated_path_id;
   };
 }
