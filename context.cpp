@@ -53,6 +53,25 @@ namespace {
 
     det::responder_base *responder_;
     det::any_path associated_path_id;
+
+    boost::scoped_ptr<path_resolver_node> unconditional_child;
+    typedef
+      boost::multi_index_container<
+        path_resolver_node *,
+        indexed_by<
+          hashed_unique<
+            member<path_resolver_node, std::string, &path_resolver_node::data>
+          >
+        >
+      > conditional_children_t;
+    conditional_children_t conditional_children;
+
+    ~path_resolver_node() {
+      for (conditional_children_t::iterator it = conditional_children.begin();
+          it != conditional_children.end();
+          ++it)
+        delete *it;
+    }
   };
 }
 
