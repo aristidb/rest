@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 using namespace rest;
+namespace det = rest::detail;
 using namespace boost::multi_index;
 
 namespace {
@@ -43,12 +44,27 @@ namespace {
       >
     >
   > keyword_info_set;
+
+  struct path_resolver_node {
+    enum type_t { literal, keyword };
+
+    type_t type;
+    std::string data;
+
+    det::getter_base *getter;
+    det::putter_base *putter;
+    det::poster_base *poster;
+    det::deleter_base *deleter;
+
+    det::any_path associated_path_id;
+  };
 }
 
 class context::impl {
 public:
   global_responder self_responder;
   keyword_info_set predeclared_keywords;
+  path_resolver_node root;
 };
 
 context::context() : p(new impl) {
