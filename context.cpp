@@ -3,7 +3,9 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
+#include <boost/tokenizer.hpp>
 #include <stdexcept>
+#include <iostream>//FIXME
 
 using namespace rest;
 namespace det = rest::detail;
@@ -95,8 +97,19 @@ void context::declare_keyword(std::string const &keyword, keyword_type type) {
 }
 
 void context::do_bind(
-  std::string const &, detail::responder_base &, detail::any_path const &)
+  std::string const &path,
+  detail::responder_base &responder_,
+  detail::any_path const &associated)
 {
+  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+  boost::char_separator<char> sep("/=");
+  std::cout << ':';
+  tokenizer tokens(path, sep);
+  for (tokenizer::iterator it = tokens.begin();
+      it != tokens.end();
+      ++it)
+    std::cout << '<' << *it << "> ";
+  std::cout << std::endl;
 }
 
 responder<> &context::get_responder() {
