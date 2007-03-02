@@ -151,12 +151,12 @@ public:
   }
 
 protected:
+  virtual
   bool exists(path_parameter, keywords const &) const {
     return true;
   }
 
 private:
-  virtual 
   bool x_exists(detail::any_path const &path, keywords const &kw) const {
     return exists(detail::unpack<path_type>(path), kw);
   }
