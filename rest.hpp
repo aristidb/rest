@@ -81,6 +81,7 @@ namespace detail {
     virtual putter_base *x_putter() = 0;
     virtual poster_base *x_poster() = 0;
     virtual deleter_base *x_deleter() = 0;
+    virtual bool x_exists(any_path const &, keywords const &) const = 0;
   };
   template<typename, bool> struct getter {};
   template<typename, bool> struct putter {};
@@ -135,17 +136,30 @@ template<
 class responder 
 : public
   detail::responder_base,
-  detail::path_helper<Path>,
   detail::getter<Path, ResponseType & GET>,
   detail::putter<Path, ResponseType & PUT>,
   detail::poster<Path, ResponseType & POST>,
   detail::deleter<Path, ResponseType & DELETE>
 {
 public:
+  typedef typename detail::path_helper<Path>::path_type path_type;
+  typedef typename detail::path_helper<Path>::path_parameter path_parameter;
+
   responder &get_responder() { return *this; }
   static detail::any_path pack(Path const &p) {
     return p;
   }
+
+protected:
+  bool exists(path_parameter, keywords const &) const {
+    return true;
+  }
+
+private:
+  bool x_exists(detail::any_path const &path, keywords const &kw) const {
+    return exists(detail::unpack<path_type>(path), kw);
+  }
+
 private:
   detail::getter_base *x_getter() {
     return (ResponseType & GET) ? (detail::getter_base *) this : 0;
