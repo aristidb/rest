@@ -15,6 +15,7 @@ public:
     std::string keyword;
     mutable std::string data;
   };
+
   typedef
   boost::multi_index_container<
     entry,
@@ -24,6 +25,7 @@ public:
       >
     >
   > data_t;
+
   data_t data;
 };
 

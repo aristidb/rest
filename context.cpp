@@ -135,9 +135,8 @@ void context::do_bind(
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
   boost::char_separator<char> sep("/=");
   tokenizer tokens(path, sep);
-  for (tokenizer::iterator it = tokens.begin();
-      it != tokens.end();
-      ++it) {
+
+  for (tokenizer::iterator it = tokens.begin(); it != tokens.end(); ++it) {
     if (*it == "...") { // ellipsis
       if (++it != tokens.end())
         throw std::logic_error("ellipsis (...) not at the end");
@@ -167,6 +166,8 @@ void context::do_bind(
       current = *i_next;
     }
   }
+
+  // ...
 }
 
 responder<> &context::get_responder() {

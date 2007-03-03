@@ -43,27 +43,31 @@ private:
 
 namespace detail {
   typedef boost::any any_path;
+
   template<class T>
   T const &unpack(any_path const &p) {
     return *boost::unsafe_any_cast<T>(&p);
   }
 
-  template<typename Path> struct path_helper {
+  template<typename Path>
+  struct path_helper {
     typedef typename
-    boost::mpl::if_<
-      boost::mpl::is_void_<Path>,
-      std::string,
-      Path
-    >::type
-    path_type;
+      boost::mpl::if_<
+        boost::mpl::is_void_<Path>,
+        std::string,
+        Path
+      >::type
+      path_type;
+
     typedef typename
-    boost::mpl::if_<
-      boost::is_scalar<path_type>,
-      path_type,
-      path_type const &
-    >::type
-    path_parameter;
+      boost::mpl::if_<
+        boost::is_scalar<path_type>,
+        path_type,
+        path_type const &
+      >::type
+      path_parameter;
   };
+
   struct getter_base {
     virtual response x_get(any_path const &, keywords const &) = 0;
   };
@@ -76,6 +80,7 @@ namespace detail {
   struct deleter_base {
     virtual response x_delete(any_path const &, keywords const &) = 0;
   };
+
   struct responder_base {
     virtual getter_base *x_getter() = 0;
     virtual putter_base *x_putter() = 0;
@@ -83,10 +88,12 @@ namespace detail {
     virtual deleter_base *x_deleter() = 0;
     virtual bool x_exists(any_path const &, keywords const &) const = 0;
   };
+
   template<typename, bool> struct getter {};
   template<typename, bool> struct putter {};
   template<typename, bool> struct poster {};
   template<typename, bool> struct deleter {};
+
   template<typename Path>
   struct getter<Path, true> : getter_base {
     typedef typename path_helper<Path>::path_parameter path_parameter;
@@ -187,6 +194,7 @@ public:
   ~context();
 
   void declare_keyword(std::string const &name, keyword_type type);
+
   template<class T>
   void bind(std::string const &a, T &r) {
     do_bind(a, r.get_responder(), detail::any_path());
@@ -195,6 +203,7 @@ public:
   void bind(std::string const &a, T &r, U const &x) {
     do_bind(a, r.get_responder(), r.pack(x));
   }
+
   rest::responder<> &get_responder();
 
 private:
