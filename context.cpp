@@ -52,6 +52,7 @@ namespace {
 
     type_t type;
     std::string data;
+    bool ellipsis;
 
     det::responder_base *responder_;
     det::any_path associated_path_id;
@@ -107,8 +108,28 @@ void context::do_bind(
   tokenizer tokens(path, sep);
   for (tokenizer::iterator it = tokens.begin();
       it != tokens.end();
-      ++it)
+      ++it) {
     std::cout << '<' << *it << "> ";
+    if (*it == "...") {
+      if (++it != tokens.end())
+        throw std::logic_error("ellipsis (...) not at the end");
+      std::cout << "E ";
+      // ellipsis at the end
+      break;
+    } else if ((*it)[0] == '{') {
+      if (it->find('}') != it->length() - 1)
+        throw std::logic_error("invalid closure");
+      if (it->find('{', 1) != tokenizer::value_type::npos)
+        throw std::logic_error("invalid closure");
+      std::cout << "C ";
+      // closure
+    } else {
+      if (it->find_first_of("{}") != tokenizer::value_type::npos)
+        throw std::logic_error("only full closures are allowed");
+      std::cout << "K ";
+      // keyword
+    }
+  }
   std::cout << std::endl;
 }
 
