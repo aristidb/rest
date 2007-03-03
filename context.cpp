@@ -48,7 +48,7 @@ namespace {
   > keyword_info_set;
 
   struct path_resolver_node {
-    enum type_t { literal, keyword };
+    enum type_t { root, closure, literal };
 
     type_t type;
     std::string data;
@@ -69,11 +69,40 @@ namespace {
       > conditional_children_t;
     conditional_children_t conditional_children;
 
+    path_resolver_node()
+    : type(root), ellipsis(false), responder_(0) {}
+
     ~path_resolver_node() {
       for (conditional_children_t::iterator it = conditional_children.begin();
           it != conditional_children.end();
           ++it)
         delete *it;
+    }
+
+    void print(int level) {
+      for (int i = 0; i < level; ++i)
+        std::cout << "  ";
+      switch (type) {
+      case root: std::cout << "</> "; break;
+      case closure: std::cout << "<C> "; break;
+      case literal: std::cout << "<L> "; break;
+      };
+      std::cout << data << (ellipsis ? "...\n" : "\n");
+      if (unconditional_child) {
+        for (int i = 0; i < level; ++i)
+          std::cout << "  ";
+        std::cout << " unconditional child:\n";
+        unconditional_child->print(level + 1);
+      }
+      if (!conditional_children.empty()) {
+        for (int i = 0; i < level; ++i)
+          std::cout << "  ";
+        std::cout << " conditional children:\n";
+        for (conditional_children_t::iterator it = conditional_children.begin();
+            it != conditional_children.end();
+            ++it)
+          (*it)->print(level + 1);
+      }
     }
   };
 }
@@ -89,6 +118,8 @@ context::context() : p(new impl) {
 }
 
 context::~context() {
+  std::cout << this << ":\n";
+  p->root.print(1);
 }
 
 void context::declare_keyword(std::string const &keyword, keyword_type type) {
@@ -102,35 +133,43 @@ void context::do_bind(
   detail::responder_base &responder_,
   detail::any_path const &associated)
 {
+  path_resolver_node *current = &p->root;
+
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
   boost::char_separator<char> sep("/=");
-  std::cout << ':';
   tokenizer tokens(path, sep);
   for (tokenizer::iterator it = tokens.begin();
       it != tokens.end();
       ++it) {
-    std::cout << '<' << *it << "> ";
-    if (*it == "...") {
+    if (*it == "...") { // ellipsis
       if (++it != tokens.end())
         throw std::logic_error("ellipsis (...) not at the end");
-      std::cout << "E ";
-      // ellipsis at the end
+      current->ellipsis = true;
       break;
-    } else if ((*it)[0] == '{') {
+    } else if ((*it)[0] == '{') { // closure
       if (it->find('}') != it->length() - 1)
         throw std::logic_error("invalid closure");
       if (it->find('{', 1) != tokenizer::value_type::npos)
         throw std::logic_error("invalid closure");
-      std::cout << "C ";
-      // closure
-    } else {
+      if (!current->unconditional_child)
+        current->unconditional_child.reset(new path_resolver_node);
+      current = current->unconditional_child.get();
+      current->type = path_resolver_node::closure;
+      current->data.assign(it->begin() + 1, it->end() - 1);
+    } else { // literal
       if (it->find_first_of("{}") != tokenizer::value_type::npos)
         throw std::logic_error("only full closures are allowed");
-      std::cout << "K ";
-      // keyword
+      path_resolver_node::conditional_children_t::iterator i_next =
+        current->conditional_children.find(*it);
+      if (i_next == current->conditional_children.end()) {
+        path_resolver_node *next = new path_resolver_node;
+        next->type = path_resolver_node::literal;
+        next->data = *it;
+        i_next = current->conditional_children.insert(next).first;
+      }
+      current = *i_next;
     }
   }
-  std::cout << std::endl;
 }
 
 responder<> &context::get_responder() {
