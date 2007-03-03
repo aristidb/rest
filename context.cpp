@@ -12,24 +12,6 @@ namespace det = rest::detail;
 using namespace boost::multi_index;
 
 namespace {
-  struct global_responder : public responder<> {
-    response get(std::string const &, keywords const &) {
-      return 404;
-    }
-
-    response put(std::string const &, keywords const &) {
-      return 404;
-    }
-
-    response post(std::string const &, keywords const &) {
-      return 404;
-    }
-
-    response delete_(std::string const &, keywords const &) {
-      return 404;
-    }
-  };
-
   struct keyword_info {
     keyword_info(std::string const &keyword, keyword_type type)
     : keyword(keyword), type(type) {}
@@ -107,11 +89,26 @@ namespace {
   };
 }
 
-class context::impl {
+class context::impl : public responder<> {
 public:
-  global_responder self_responder;
   keyword_info_set predeclared_keywords;
   path_resolver_node root;
+
+  response get(std::string const &, keywords const &) {
+    return 404;
+  }
+
+  response put(std::string const &, keywords const &) {
+    return 404;
+  }
+
+  response post(std::string const &, keywords const &) {
+    return 404;
+  }
+
+  response delete_(std::string const &, keywords const &) {
+    return 404;
+  }
 };
 
 context::context() : p(new impl) {
@@ -173,5 +170,5 @@ void context::do_bind(
 }
 
 responder<> &context::get_responder() {
-  return p->self_responder;
+  return *p;
 }
