@@ -1,5 +1,8 @@
 #include "rest.hpp"
 
+#include <cstdio>
+#include <cctype>
+
 #include <iostream>
 #ifdef USE_BOOST_ASIO
 #include <boost/asio.hpp>
@@ -16,15 +19,40 @@ namespace http {
 
   namespace {
     bool expect(iostream &in, char c) {
-      
+      in.get() == c;
     }
 
-    bool expect(iostream &in, char const *s);
+    bool expect(iostream &in, char const *s) {
+      std::size_t n = std::strlen(s);
+      for(std::size_t i = 0; i < n; ++i)
+	if(in.get() != s[i])
+	  return false;
+      return true;
+    }
 
     //soft_expect reads any trailing spaces and tries to match the first
     // non-space sequence read
-    bool soft_expect(iostream &in, char c);
-    bool soft_expect(iostream &in, char const *s);
+    bool soft_expect(iostream &in, char c) {
+      char t;
+      do {
+	t = in.get();
+      } while(std::isdigit(t));
+
+      return t == c;
+    }
+
+    bool soft_expect(iostream &in, char const *s) {
+      char t;
+      do {
+	t = in.get();
+      } while(std::isdigit(t));
+
+      std::size_t n = std::strlen(s);
+      for(std::size_t i = 0; i < n; ++i)
+	if(in.get() != s[i])
+	  return false;
+      return true;
+    }
   }
 
   void handle_http_connection(responder &r,
