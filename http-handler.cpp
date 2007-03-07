@@ -19,7 +19,7 @@ namespace http {
 
   namespace {
     bool expect(iostream &in, char c) {
-      in.get() == c;
+      return in.get() == c;
     }
 
     bool expect(iostream &in, char const *s) {
@@ -36,7 +36,7 @@ namespace http {
       char t;
       do {
 	t = in.get();
-      } while(std::isdigit(t));
+      } while(std::isspace(t));
 
       return t == c;
     }
@@ -45,20 +45,30 @@ namespace http {
       char t;
       do {
 	t = in.get();
-      } while(std::isdigit(t));
+      } while(std::isspace(t));
 
       std::size_t n = std::strlen(s);
-      for(std::size_t i = 0; i < n; ++i)
-	if(in.get() != s[i])
+      for(std::size_t i = 0; i < n; ++i, t = in.get())
+	if(t != s[i])
 	  return false;
       return true;
     }
   }
 
-  void handle_http_connection(responder &r,
-			      &conn)
+  template<
+    unsigned ResponseType,
+    typename Path
+    >
+  void handle_http_connection(responder<ResponseType, Path> &r,
+			      iostream &conn)
   {
     
   }
-
 }}
+// for Testing purpose
+using namespace rest::http;
+
+int main() {
+  std::cout << expect(std::cin, "hallo") << ' '
+	    << soft_expect(std::cin, "welt") << '\n';
+}
