@@ -25,7 +25,7 @@ enum response_type {
   PUT = 2U,
   POST = 4U,
   DELETE = 8U,
-  ALL = ~0U
+  ALL = GET | PUT | POST | DELETE
 };
 
 class keywords {
@@ -33,8 +33,12 @@ public:
   keywords();
   ~keywords();
 
-  std::string operator[](std::string const &) const;
+  std::string &operator[](std::string const &);
+  std::istream &read(std::string const &);
+  std::string name(std::string const &);
+
   void set(std::string const &, std::string const &);
+  void set_stream(std::string const &, std::string const &, std::istream &);
 
 private:
   class impl;
@@ -69,16 +73,16 @@ namespace detail {
   };
 
   struct getter_base {
-    virtual response x_get(any_path const &, keywords const &) = 0;
+    virtual response x_get(any_path const &, keywords &) = 0;
   };
   struct putter_base {
-    virtual response x_put(any_path const &, keywords const &) = 0;
+    virtual response x_put(any_path const &, keywords &) = 0;
   };
   struct poster_base {
-    virtual response x_post(any_path const &, keywords const &) = 0;
+    virtual response x_post(any_path const &, keywords &) = 0;
   };
   struct deleter_base {
-    virtual response x_delete(any_path const &, keywords const &) = 0;
+    virtual response x_delete(any_path const &, keywords &) = 0;
   };
 
   struct responder_base {
@@ -86,7 +90,7 @@ namespace detail {
     virtual putter_base *x_putter() = 0;
     virtual poster_base *x_poster() = 0;
     virtual deleter_base *x_deleter() = 0;
-    virtual bool x_exists(any_path const &, keywords const &) const = 0;
+    virtual bool x_exists(any_path const &, keywords &) const = 0;
   };
 
   template<typename, bool> struct getter {};
@@ -98,9 +102,9 @@ namespace detail {
   struct getter<Path, true> : getter_base {
     typedef typename path_helper<Path>::path_parameter path_parameter;
     typedef typename path_helper<Path>::path_type path_type;
-    virtual response get(path_parameter, keywords const &) = 0;
+    virtual response get(path_parameter, keywords &) = 0;
   private:
-    response x_get(any_path const &path, keywords const &kw) {
+    response x_get(any_path const &path, keywords &kw) {
       return get(unpack<path_type>(path), kw);
     }
   };
@@ -108,9 +112,9 @@ namespace detail {
   struct putter<Path, true> : putter_base {
     typedef typename path_helper<Path>::path_parameter path_parameter;
     typedef typename path_helper<Path>::path_type path_type;
-    virtual response put(path_parameter, keywords const &) = 0;
+    virtual response put(path_parameter, keywords &) = 0;
   private:
-    response x_put(any_path const &path, keywords const &kw) {
+    response x_put(any_path const &path, keywords &kw) {
       return put(unpack<path_type>(path), kw);
     }
   };
@@ -118,9 +122,9 @@ namespace detail {
   struct poster<Path, true> : poster_base{
     typedef typename path_helper<Path>::path_parameter path_parameter;
     typedef typename path_helper<Path>::path_type path_type;
-    virtual response post(path_parameter, keywords const &) = 0;
+    virtual response post(path_parameter, keywords &) = 0;
   private:
-    response x_post(any_path const &path, keywords const &kw) {
+    response x_post(any_path const &path, keywords &kw) {
       return post(unpack<path_type>(path), kw);
     }
   };
@@ -128,9 +132,9 @@ namespace detail {
   struct deleter<Path, true> : deleter_base {
     typedef typename path_helper<Path>::path_parameter path_parameter;
     typedef typename path_helper<Path>::path_type path_type;
-    virtual response delete_(path_parameter, keywords const &) = 0;
+    virtual response delete_(path_parameter, keywords &) = 0;
   private:
-    response x_delete(any_path const &path, keywords const &kw) {
+    response x_delete(any_path const &path, keywords &kw) {
       return delete_(unpack<path_type>(path), kw);
     }
   };
@@ -149,6 +153,8 @@ class responder
   detail::deleter<Path, ResponseType & DELETE>
 {
 public:
+  static unsigned const flags = ResponseType;
+
   typedef typename detail::path_helper<Path>::path_type path_type;
   typedef typename detail::path_helper<Path>::path_parameter path_parameter;
 
@@ -158,13 +164,12 @@ public:
   }
 
 protected:
-  virtual
-  bool exists(path_parameter, keywords const &) const {
+  virtual bool exists(path_parameter, keywords &) const {
     return true;
   }
 
 private:
-  bool x_exists(detail::any_path const &path, keywords const &kw) const {
+  bool x_exists(detail::any_path const &path, keywords &kw) const {
     return exists(detail::unpack<path_type>(path), kw);
   }
 

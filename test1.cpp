@@ -3,7 +3,7 @@
 #include <string>
 
 struct welcomer : rest::responder<rest::GET> {
-  rest::response get(std::string const &path, rest::keywords const &data) {
+  rest::response get(std::string const &path, rest::keywords &data) {
     rest::response response("text/plain");
     response.set_data(std::string("Welcome, ") + data["user"]);
     return response;
@@ -11,7 +11,7 @@ struct welcomer : rest::responder<rest::GET> {
 };
 
 struct displayer : rest::responder<rest::GET | rest::PUT> {
-  rest::response get(std::string const &path, rest::keywords const &data) {
+  rest::response get(std::string const &path, rest::keywords &data) {
     if (path == "/list") {
       // return a list of objects
     } else {
@@ -19,7 +19,7 @@ struct displayer : rest::responder<rest::GET | rest::PUT> {
       // display the object
     }
   }
-  rest::response put(std::string const &path, rest::keywords const &data) {
+  rest::response put(std::string const &path, rest::keywords &data) {
     if (path == "/list")
       return 404; // some error code
     else {
@@ -31,7 +31,7 @@ struct displayer : rest::responder<rest::GET | rest::PUT> {
 enum mode { COOKIE, KEYWORD };
 
 struct searcher : rest::responder<rest::GET, mode> {
-  rest::response get(mode path, rest::keywords const &data) {
+  rest::response get(mode path, rest::keywords &data) {
     rest::response response("text/plain");
     if (path == COOKIE)
       response.set_data("Sorry, got no cookie thing!");
