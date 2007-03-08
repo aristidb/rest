@@ -159,6 +159,12 @@ public:
   typedef typename detail::path_helper<Path>::path_parameter path_parameter;
 
   responder &get_responder() { return *this; }
+
+#if 0
+  class context *get_context();
+  void set_context(class context *);
+#endif
+
   static detail::any_path pack(Path const &p) {
     return p;
   }
