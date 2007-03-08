@@ -123,9 +123,9 @@ namespace http {
       while( (t = in.get()) != ' ')
 	ret.get<REQUEST_URI>() += t;
       while( (t = in.get()) != '\r')
-	ret.get<REQUEST_METHOD>() += t;
+	ret.get<REQUEST_HTTP_VERSION>() += t;
       if(!expect(in, '\n'))
-	throw bad_format();
+	throw 1; //bad_format();
       return ret;
     }
   }
@@ -138,7 +138,7 @@ namespace http {
 			   iostream &conn)
   {
     std::string method, uri, version;
-    ::boost::tuple::tie(method, uri, version) = get_request_line(conn);
+    boost::tie(method, uri, version) = get_request_line(conn);
     for(;;) {
       
     } 
