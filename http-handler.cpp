@@ -82,8 +82,11 @@ namespace http {
       while(!in.eof() &&
 	     in.good()) {
 	t = in.get();
-	if(t == '\n') { // Newlines in header fields are allowed when followed
-                        // by an SP (space or horizontal tab)
+	if(t == '\n' || t == '\r') {
+	  // Newlines in header fields are allowed when followed
+	  // by an SP (space or horizontal tab)
+	  if(t == '\r')
+	    expect(in, '\n');
 	  t = in.get();
 	  if(isspht(t)) {
 	    remove_spaces(in);
@@ -106,16 +109,39 @@ namespace http {
       }
       return ret;
     }
+
+    typedef ::boost::tuple<std::string, std::string, std::string>
+              request_line_t;
+
+    enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
+
+    request_line_t get_request_line(iostream &in) {
+      request_line_t ret;
+      int t;
+      while( (t = in.get()) != ' ')
+	ret.get<REQUEST_METHOD>() += t;
+      while( (t = in.get()) != ' ')
+	ret.get<REQUEST_URI>() += t;
+      while( (t = in.get()) != '\r')
+	ret.get<REQUEST_METHOD>() += t;
+      if(!expect(in, '\n'))
+	throw bad_format();
+      return ret;
+    }
   }
 
   template<
     unsigned ResponseType,
     typename Path
     >
-  void handle_http_connection(responder<ResponseType, Path> &r,
-			      iostream &conn)
+  void handle_http_request(responder<ResponseType, Path> &r,
+			   iostream &conn)
   {
-    
+    std::string method, uri, version;
+    ::boost::tuple::tie(method, uri, version) = get_request_line(conn);
+    for(;;) {
+      
+    } 
   }
 }}
 // for Testing purpose
