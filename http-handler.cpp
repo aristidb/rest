@@ -20,6 +20,9 @@ namespace http {
 #endif
 
   namespace {
+    struct bad_format { };
+    struct not_supported { };
+
     bool expect(iostream &in, char c) {
       return in.get() == c;
     }
@@ -125,7 +128,7 @@ namespace http {
       while( (t = in.get()) != '\r')
 	ret.get<REQUEST_HTTP_VERSION>() += t;
       if(!expect(in, '\n'))
-	throw 1; //bad_format();
+	throw bad_format();
       return ret;
     }
   }
@@ -137,17 +140,46 @@ namespace http {
   void handle_http_request(responder<ResponseType, Path> &r,
 			   iostream &conn)
   {
-    std::string method, uri, version;
-    boost::tie(method, uri, version) = get_request_line(conn);
-    for(;;) {
-      
-    } 
+    try {
+      std::string method, uri, version;
+      boost::tie(method, uri, version) = get_request_line(conn);
+      for(;;) {
+	
+      }
+
+      if(method == "GET") {
+	if(r.x_getter())
+	  r.x_getter().x_get(uri, keywords());
+	else
+	  throw not_supported();
+      }
+      else if(method == "POST") {
+      }
+      else if(method == "PUT") {
+      }
+      else if(method == "DELETE") {
+      }
+      else if(method == "TRACE") {
+      }
+      else if(method == "HEAD" || method == "CONNECT" || method == "OPTIONS")
+	throw not_supported();
+      else
+	throw bad_format();
+    }
+    catch(not_supported &e) {
+    }
+    catch(bad_format &e) {
+    }
   }
 }}
 // for Testing purpose
 using namespace rest::http;
 
 int main() {
+  std::string method, uri, version;
+  boost::tie(method, uri, version) = get_request_line(std::cin);
+  std::cout << "Method: " << method << "\nURI: " << uri << "\nVersion: "
+	    << version << "\n";
   header_field_t h = get_header_field(std::cin);
   std::cout << "Header Name: " << h.get<FIELD_NAME>()
 	    << "\nHeader Value: " << h.get<FIELD_VALUE>() << '\n';
