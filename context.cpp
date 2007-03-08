@@ -94,19 +94,19 @@ public:
   keyword_info_set predeclared_keywords;
   path_resolver_node root;
 
-  response get(std::string const &, keywords const &) {
+  response get(std::string const &, keywords &) {
     return 404;
   }
 
-  response put(std::string const &, keywords const &) {
+  response put(std::string const &, keywords &) {
     return 404;
   }
 
-  response post(std::string const &, keywords const &) {
+  response post(std::string const &, keywords &) {
     return 404;
   }
 
-  response delete_(std::string const &, keywords const &) {
+  response delete_(std::string const &, keywords &) {
     return 404;
   }
 };
