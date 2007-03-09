@@ -36,7 +36,9 @@ namespace {
     std::string data;
     bool ellipsis;
 
+    context *context_;
     det::responder_base *responder_;
+
     det::any_path associated_path_id;
 
     boost::scoped_ptr<path_resolver_node> unconditional_child;
@@ -52,7 +54,7 @@ namespace {
     conditional_children_t conditional_children;
 
     path_resolver_node()
-    : type(root), ellipsis(false), responder_(0) {}
+    : type(root), ellipsis(false), context_(0), responder_(0) {}
 
     ~path_resolver_node() {
       for (conditional_children_t::iterator it = conditional_children.begin();
@@ -89,26 +91,10 @@ namespace {
   };
 }
 
-class context::impl : public responder<> {
+class context::impl {
 public:
   keyword_info_set predeclared_keywords;
   path_resolver_node root;
-
-  response get(std::string const &, keywords &) {
-    return 404;
-  }
-
-  response put(std::string const &, keywords &) {
-    return 404;
-  }
-
-  response post(std::string const &, keywords &) {
-    return 404;
-  }
-
-  response delete_(std::string const &, keywords &) {
-    return 404;
-  }
 
   path_resolver_node *make_bindable(std::string const &spec);
 };
@@ -129,20 +115,32 @@ void context::declare_keyword(std::string const &keyword, keyword_type type) {
 
 void context::do_bind(
   std::string const &path,
-  detail::responder_base &responder_,
-  detail::any_path const &associated)
+  det::responder_base &responder_,
+  det::any_path const &associated)
 {
   path_resolver_node *current = p->make_bindable(path);
-  // ...
+  current->responder_ = &responder_;
+  current->associated_path_id = associated;
 }
 
 void context::do_bind(
   std::string const &path,
   context &context_,
-  detail::any_path const &)
+  det::any_path const &associated)
 {
   path_resolver_node *current = p->make_bindable(path);
-  // ...
+  current->context_ = &context_;
+  current->associated_path_id = associated;
+}
+
+void context::find_resolver(
+  std::string &path,
+  det::responder_base *&out_responder,
+  context *&out_context)
+{
+  // search... this is DUMMY
+  out_responder = 0;
+  out_context = this;
 }
 
 path_resolver_node *context::impl::make_bindable(std::string const &path) {
