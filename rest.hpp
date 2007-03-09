@@ -16,10 +16,12 @@ namespace rest {
 class response {
   int code;
 public:
-  response(int code) : code(code) { }
-  response(std::string const &type) {}
-  void set_data(std::string const &data) {}
-  void set_cookie(std::string const &name, std::string const &value) {}
+  response(int code) : code(code) {}
+  response(std::string const &type) {(void)type;}
+  void set_data(std::string const &data) {(void)data;}
+  void set_cookie(std::string const &name, std::string const &value) {
+    (void)name; (void)value;
+  }
 
   int getcode() const { return code; } //TEST only
 };
@@ -78,15 +80,19 @@ namespace detail {
 
   struct getter_base {
     virtual response x_get(any_path const &, keywords &) = 0;
+    virtual ~getter_base() {}
   };
   struct putter_base {
     virtual response x_put(any_path const &, keywords &) = 0;
+    virtual ~putter_base() {}
   };
   struct poster_base {
     virtual response x_post(any_path const &, keywords &) = 0;
+    virtual ~poster_base() {}
   };
   struct deleter_base {
     virtual response x_delete(any_path const &, keywords &) = 0;
+    virtual ~deleter_base() {}
   };
 
   struct responder_base {
@@ -95,6 +101,7 @@ namespace detail {
     virtual poster_base *x_poster() = 0;
     virtual deleter_base *x_deleter() = 0;
     virtual bool x_exists(any_path const &, keywords &) const = 0;
+    virtual ~responder_base() {}
   };
 
   template<typename, bool> struct getter {};
