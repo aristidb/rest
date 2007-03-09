@@ -17,7 +17,7 @@ class response {
   std::string data;
 public:
   response(int code, std::string const &data="") : code(code), data(data) { }
-  response(std::string const &type) { }
+  response(std::string const &type) { (void)type; }
   void set_data(std::string const &d) { data=d; }
   std::string const &get_data() const { return data; }
   void set_code(int c) { code = c; }
