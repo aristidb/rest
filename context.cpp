@@ -63,6 +63,13 @@ namespace {
         delete *it;
     }
 
+    path_resolver_node *child(std::string const &x) const {
+      conditional_children_t::iterator it = conditional_children.find(x);
+      if (it != conditional_children.end())
+        return *it;
+      return unconditional_child.get();
+    }
+
     void print(int level) {
       for (int i = 0; i < level; ++i)
         std::cout << "  ";
@@ -72,6 +79,9 @@ namespace {
       case literal: std::cout << "<L> "; break;
       };
       std::cout << data << (ellipsis ? "...\n" : "\n");
+      for (int i = 0; i < level; ++i)
+        std::cout << "  ";
+      std::cout << ' ' << responder_ << '/' << context_ << '\n';
       if (unconditional_child) {
         for (int i = 0; i < level; ++i)
           std::cout << "  ";
@@ -147,9 +157,43 @@ void context::find_responder(
   context *&out_context,
   keywords &out_keywords)
 {
-  // search... this is DUMMY
   out_responder = 0;
+
+  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+  boost::char_separator<char> sep("/=");
+  tokenizer tokens(path, sep);
+
+  do_find_responder(
+    tokens.begin(), tokens.end(),
+    path_id, out_responder, out_context, out_keywords);
+}
+
+template<class Iterator>
+void context::do_find_responder(
+  Iterator it, Iterator end,
+  detail::any_path &path_id,
+  detail::responder_base *&out_responder,
+  context *&out_context,
+  keywords &out_keywords)
+{
   out_context = this;
+
+  path_resolver_node *current = &p->root;
+
+  for (; !current->ellipsis && it != end; ++it) {
+    if (current->type == path_resolver_node::closure)
+      out_keywords[current->data] = *it;
+    current = current->child(*it);
+    if (!current)
+      return;
+  }
+
+  if (current->responder_)
+    out_responder = current->responder_;
+  else if (current->context_)
+    current->context_->do_find_responder(
+        it, end,
+        path_id, out_responder, out_context, out_keywords);
 }
 
 path_resolver_node *context::impl::make_bindable(std::string const &path) {

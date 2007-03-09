@@ -236,6 +236,14 @@ private:
   void do_bind(
     std::string const &, context &, detail::any_path const &);
 
+  template<class Iterator>
+  void do_find_responder(
+    Iterator, Iterator,
+    detail::any_path &,
+    detail::responder_base *&,
+    context *&,
+    keywords &);
+
   class impl;
   boost::scoped_ptr<impl> p;
 };
