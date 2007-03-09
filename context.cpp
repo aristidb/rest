@@ -171,8 +171,8 @@ void context::find_responder(
 template<class Iterator>
 void context::do_find_responder(
   Iterator it, Iterator end,
-  detail::any_path &path_id,
-  detail::responder_base *&out_responder,
+  det::any_path &path_id,
+  det::responder_base *&out_responder,
   context *&out_context,
   keywords &out_keywords)
 {
@@ -180,13 +180,22 @@ void context::do_find_responder(
 
   path_resolver_node *current = &p->root;
 
+  std::string last;
+
   for (; !current->ellipsis && it != end; ++it) {
     current = current->child(*it);
     if (!current)
       return;
     if (current->type == path_resolver_node::closure)
       out_keywords.set(current->data, *it);
+    else
+      last = *it;
   }
+
+  if (!current->associated_path_id.empty())
+    path_id = current->associated_path_id;
+  else
+    path_id = det::any_path(last);
 
   if (current->responder_)
     out_responder = current->responder_;

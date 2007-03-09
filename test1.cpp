@@ -60,8 +60,10 @@ int main() {
   rest::detail::any_path path_id;
   rest::detail::responder_base *responder;
   rest::context *local;
-  context.find_responder("/search/keyword/foo", path_id, responder, local, kw);
+  context.find_responder("/object/17", path_id, responder, local, kw);
 
   std::cout << responder << '/' << local << std::endl;
-  std::cout << ':' << kw["keyword"] << std::endl;
+  std::cout << ':' << kw["id"] << std::endl;
+  std::cout << path_id.type().name() << std::endl;
+  std::cout << boost::any_cast<std::string>(path_id) << std::endl << std::endl;
 }
