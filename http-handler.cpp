@@ -144,7 +144,16 @@ namespace http {
       std::string method, uri, version;
       boost::tie(method, uri, version) = get_request_line(conn);
       for(;;) {
-	
+	header_field_t field = get_header_field(conn);
+	// TODO do sth with the field
+	if(expect(conn, '\r')) {
+	  if(expect(conn, '\n'))
+	    break;
+	  else
+	    conn.unget();
+	}
+	else
+	  conn.unget();
       }
 
       if(method == "GET") {
@@ -174,13 +183,29 @@ namespace http {
 }}
 // for Testing purpose
 using namespace rest::http;
+using namespace rest;
+
+struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
+				rest::POST> {
+  rest::response get(std::string const &path, rest::keywords &) {
+    std::cout << "GET: " << path << '\n';
+    return 200;
+  }
+  rest::response put(std::string const &path, rest::keywords &) {
+    std::cout << "PUT: " << path << '\n';
+    return 200;
+  }
+  rest::response delete_(std::string const &path, rest::keywords &) {
+    std::cout << "PUT: " << path << '\n';
+    return 200;
+  }
+  rest::response post(std::string const &path, rest::keywords &) {
+    std::cout << "POST: " << path << '\n';
+    return 200;
+  }
+};
 
 int main() {
-  std::string method, uri, version;
-  boost::tie(method, uri, version) = get_request_line(std::cin);
-  std::cout << "Method: " << method << "\nURI: " << uri << "\nVersion: "
-	    << version << "\n";
-  header_field_t h = get_header_field(std::cin);
-  std::cout << "Header Name: " << h.get<FIELD_NAME>()
-	    << "\nHeader Value: " << h.get<FIELD_VALUE>() << '\n';
+  tester t;
+  handle_http_request(t.get_responder(), std::cin);
 }
