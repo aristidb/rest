@@ -113,6 +113,13 @@ void context::declare_keyword(std::string const &keyword, keyword_type type) {
     throw std::logic_error("keyword already declared");
 }
 
+keyword_type context::get_keyword_type(std::string const &keyword) const {
+  keyword_info_set::iterator it = p->predeclared_keywords.find(keyword);
+  if (it == p->predeclared_keywords.end())
+    return NONE;
+  return it->type;
+}
+
 void context::do_bind(
   std::string const &path,
   det::responder_base &responder_,

@@ -196,7 +196,8 @@ private:
 
 enum keyword_type {
   COOKIE,
-  FORM_PARAMETER
+  FORM_PARAMETER,
+  NONE = -1
 };
 
 class context : boost::noncopyable {
@@ -205,6 +206,7 @@ public:
   ~context();
 
   void declare_keyword(std::string const &name, keyword_type type);
+  keyword_type get_keyword_type(std::string const &name) const;
 
   template<class T>
   void bind(std::string const &a, T &r) {
