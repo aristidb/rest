@@ -9,6 +9,7 @@
 #include <boost/any.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/function.hpp>
 
 namespace rest {
 
@@ -200,7 +201,7 @@ private:
 enum keyword_type {
   COOKIE,
   FORM_PARAMETER,
-  NONE = -1
+  NONE = -1,
 };
 
 class context : boost::noncopyable {
@@ -210,6 +211,9 @@ public:
 
   void declare_keyword(std::string const &name, keyword_type type);
   keyword_type get_keyword_type(std::string const &name) const;
+  void enum_keywords(
+    keyword_type,
+    boost::function<void (std::string const &)> const &);
 
   template<class T>
   void bind(std::string const &a, T &r) {

@@ -130,6 +130,17 @@ keyword_type context::get_keyword_type(std::string const &keyword) const {
   return it->type;
 }
 
+void context::enum_keywords(
+  keyword_type type,
+  boost::function<void (std::string const &)> const &callback)
+{
+  for (keyword_info_set::iterator it = p->predeclared_keywords.begin();
+      it != p->predeclared_keywords.end();
+      ++it)
+    if (type == NONE || it->type == type)
+      callback(it->keyword);
+}
+
 void context::do_bind(
   std::string const &path,
   det::responder_base &responder_,
