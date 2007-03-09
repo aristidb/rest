@@ -137,7 +137,8 @@ void context::find_responder(
   std::string const &path,
   det::any_path &path_id,
   det::responder_base *&out_responder,
-  context *&out_context)
+  context *&out_context,
+  keywords &out_keywords)
 {
   // search... this is DUMMY
   out_responder = 0;

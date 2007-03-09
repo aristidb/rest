@@ -162,7 +162,7 @@ namespace http {
       detail::any_path path_id;
       detail::responder_base *responder;
       context *local;
-      global.find_responder(uri, path_id, responder, local);
+      global.find_responder(uri, path_id, responder, local, kw);
 
       if (!responder)
         return 404;

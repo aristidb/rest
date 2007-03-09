@@ -221,7 +221,8 @@ public:
     std::string const &,
     detail::any_path &,
     detail::responder_base *&,
-    context *&);
+    context *&,
+    keywords &);
 
 private:
   void do_bind(
