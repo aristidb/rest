@@ -135,17 +135,23 @@ namespace http {
     }
   }
 
-  response handle_http_request(
-    context &global, iostream &conn)
+  response handle_http_request(context &global, iostream &conn)
   {
     try {
       std::string method, uri, version;
       boost::tie(method, uri, version) = get_request_line(conn);
+
+      std::cout << method << " " << uri << " " << version << "\n";
+
       if(version != "HTTP/1.1")
         throw not_supported();
 
       for(;;) {
         header_field_t field = get_header_field(conn);
+
+        std::cout << field.get<FIELD_NAME>() << " "
+                  << field.get<FIELD_VALUE>() << "\n";
+
         // TODO do sth with the field
         if(expect(conn, '\r')) {
           if(expect(conn, '\n'))
@@ -170,7 +176,7 @@ namespace http {
       if (method == "GET") {
         detail::getter_base *getter = responder->x_getter();
         if (!getter)
-          return 403; //oder so
+          throw not_supported();
         return getter->x_get(path_id, kw);
       }
       else if(method == "POST") {
@@ -187,9 +193,12 @@ namespace http {
         throw bad_format();
     }
     catch(not_supported &e) {
+      return 404;
     }
     catch(bad_format &e) {
+      return 400;
     }
+    return 200;
   }
 }}
 // for Testing purpose
@@ -220,5 +229,6 @@ int main() {
   tester t;
   context c;
   c.bind("/", t);
-  handle_http_request(c, std::cin);
+  response r = handle_http_request(c, std::cin);
+  std::cout << r.getcode() << "\n";
 }
