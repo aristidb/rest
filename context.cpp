@@ -109,6 +109,8 @@ public:
   response delete_(std::string const &, keywords &) {
     return 404;
   }
+
+  path_resolver_node *make_bindable(std::string const &spec);
 };
 
 context::context() : p(new impl) {
@@ -130,7 +132,21 @@ void context::do_bind(
   detail::responder_base &responder_,
   detail::any_path const &associated)
 {
-  path_resolver_node *current = &p->root;
+  path_resolver_node *current = p->make_bindable(path);
+  // ...
+}
+
+void context::do_bind(
+  std::string const &path,
+  context &context_,
+  detail::any_path const &)
+{
+  path_resolver_node *current = p->make_bindable(path);
+  // ...
+}
+
+path_resolver_node *context::impl::make_bindable(std::string const &path) {
+  path_resolver_node *current = &root;
 
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
   boost::char_separator<char> sep("/=");
@@ -166,10 +182,5 @@ void context::do_bind(
       current = *i_next;
     }
   }
-
-  // ...
-}
-
-responder<> &context::get_responder() {
-  return *p;
+  return current;
 }

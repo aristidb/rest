@@ -158,7 +158,7 @@ public:
   typedef typename detail::path_helper<Path>::path_type path_type;
   typedef typename detail::path_helper<Path>::path_parameter path_parameter;
 
-  responder &get_responder() { return *this; }
+  responder &get_interface() { return *this; }
 
 #if 0
   class context *get_context();
@@ -208,18 +208,21 @@ public:
 
   template<class T>
   void bind(std::string const &a, T &r) {
-    do_bind(a, r.get_responder(), detail::any_path());
+    do_bind(a, r.get_interface(), detail::any_path());
   }
   template<class T, class U>
   void bind(std::string const &a, T &r, U const &x) {
-    do_bind(a, r.get_responder(), r.pack(x));
+    do_bind(a, r.get_interface(), r.pack(x));
   }
 
-  rest::responder<> &get_responder();
+  context &get_interface() { return *this; }
 
 private:
   void do_bind(
     std::string const &, detail::responder_base &, detail::any_path const &);
+
+  void do_bind(
+    std::string const &, context &, detail::any_path const &);
 
   class impl;
   boost::scoped_ptr<impl> p;
