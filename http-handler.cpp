@@ -1,11 +1,20 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 
+/*
+Internal Todo
+
+* change get_header_field to integrate the fields into a map
+* clean up!!
+
+ */
+
 #include "rest.hpp"
 
 #include <cstdio>
 #include <cctype>
 #include <string>
 #include <boost/tuple/tuple.hpp>
+#include <map>
 
 #include <iostream>
 #ifdef USE_BOOST_ASIO
@@ -75,13 +84,13 @@ namespace http {
       return c;
     }
 
-    typedef ::boost::tuple<std::string, std::string> header_field_t;
+    typedef ::boost::tuple<std::string, std::string> header_field;
     enum { FIELD_NAME, FIELD_VALUE };
 
     // reads a header field from `in' and returns it (as a tuple name, value)
     // see RFC 2616 chapter 4.2
-    header_field_t get_header_field(iostream &in) {
-      header_field_t ret;
+    header_field get_header_field(iostream &in) {
+      header_field ret;
       std::string *current = &ret.get<FIELD_NAME>();
       int t;
       while(!in.eof() &&
@@ -116,12 +125,12 @@ namespace http {
     }
 
     typedef ::boost::tuple<std::string, std::string, std::string>
-              request_line_t;
+              request_line;
 
     enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
-    request_line_t get_request_line(iostream &in) {
-      request_line_t ret;
+    request_line get_request_line(iostream &in) {
+      request_line ret;
       int t;
       while( (t = in.get()) != ' ')
         ret.get<REQUEST_METHOD>() += t;
@@ -146,8 +155,11 @@ namespace http {
       if(version != "HTTP/1.1")
         throw not_supported();
 
+      typedef std::map<std::string, std::string> header_fields;
+      header_fields fields;
       for(;;) {
-        header_field_t field = get_header_field(conn);
+        header_field field = get_header_field(conn);
+        fields[field.get<FIELD_NAME>()] = field.get<FIELD_VALUE>();
 
         std::cout << field.get<FIELD_NAME>() << " "
                   << field.get<FIELD_VALUE>() << "\n";
@@ -180,6 +192,20 @@ namespace http {
         return getter->x_get(path_id, kw);
       }
       else if(method == "POST") {
+        detail::poster_base *poster = responder->x_poster();
+        if (!poster)
+          throw not_supported();
+
+        header_fields::iterator i = fields.find("Content-Type");
+        if(i == fields.end())
+          // Set to default value; see RFC 2616 7.2.1 Type
+          fields["Content-Type"] = "application/octet-stream";
+        else {
+          // check if the content is multipart
+          // see RFC 2046 5.1. Multipart Media Type
+          if(i->second.compare(0, sizeof("multipart/")-1, "multipart/") == 0)
+            /* ... */;
+        }
       }
       else if(method == "PUT") {
       }
