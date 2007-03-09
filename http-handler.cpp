@@ -240,7 +240,7 @@ namespace http {
     return 200;
   }
 
-  void send(response &r) {
+  void send(response &) {
   }
 }}
 // for Testing purpose
@@ -272,5 +272,5 @@ int main() {
   context c;
   c.bind("/", t);
   response r = handle_http_request(c, std::cin);
-  std::cout << r.getcode() << "\n";
+  std::cout << r.get_code() << "\n";
 }
