@@ -137,12 +137,15 @@ namespace http {
     unsigned ResponseType,
     typename Path
     >
-  void handle_http_request(responder<ResponseType, Path> &r,
+  response handle_http_request(responder<ResponseType, Path> &r,
 			   iostream &conn)
   {
     try {
       std::string method, uri, version;
       boost::tie(method, uri, version) = get_request_line(conn);
+      if(version != "HTTP/1.1")
+	throw not_supported();
+
       for(;;) {
 	header_field_t field = get_header_field(conn);
 	// TODO do sth with the field
@@ -158,7 +161,7 @@ namespace http {
 
       if(method == "GET") {
 	if(r.x_getter())
-	  r.x_getter().x_get(uri, keywords());
+	  return r.x_getter().x_get(uri, keywords());
 	else
 	  throw not_supported();
       }
