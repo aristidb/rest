@@ -12,7 +12,7 @@ struct welcomer : rest::responder<rest::GET> {
 
 struct displayer : rest::responder<rest::GET | rest::PUT> {
   rest::response get(std::string const &path, rest::keywords &data) {
-    if (path == "/list") {
+    if (path == "list") {
       // return a list of objects
     } else {
       std::string id = data["id"];
@@ -20,7 +20,7 @@ struct displayer : rest::responder<rest::GET | rest::PUT> {
     }
   }
   rest::response put(std::string const &path, rest::keywords &data) {
-    if (path == "/list")
+    if (path == "list")
       return 404; // some error code
     else {
       // upload the new object

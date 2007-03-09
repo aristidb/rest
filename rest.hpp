@@ -218,7 +218,10 @@ public:
   context &get_interface() { return *this; }
 
   void find_responder(
-    std::string &path, detail::responder_base *&, context *&);
+    std::string const &,
+    detail::any_path &,
+    detail::responder_base *&,
+    context *&);
 
 private:
   void do_bind(

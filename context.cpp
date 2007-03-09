@@ -134,7 +134,8 @@ void context::do_bind(
 }
 
 void context::find_resolver(
-  std::string &path,
+  std::string const &path,
+  detail::any_path &path_id,
   det::responder_base *&out_responder,
   context *&out_context)
 {
