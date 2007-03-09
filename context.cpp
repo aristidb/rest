@@ -181,11 +181,11 @@ void context::do_find_responder(
   path_resolver_node *current = &p->root;
 
   for (; !current->ellipsis && it != end; ++it) {
-    if (current->type == path_resolver_node::closure)
-      out_keywords[current->data] = *it;
     current = current->child(*it);
     if (!current)
       return;
+    if (current->type == path_resolver_node::closure)
+      out_keywords.set(current->data, *it);
   }
 
   if (current->responder_)

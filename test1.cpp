@@ -60,7 +60,8 @@ int main() {
   rest::detail::any_path path_id;
   rest::detail::responder_base *responder;
   rest::context *local;
-  context.find_responder("/list", path_id, responder, local, kw);
+  context.find_responder("/search/keyword/foo", path_id, responder, local, kw);
 
   std::cout << responder << '/' << local << std::endl;
+  std::cout << ':' << kw["keyword"] << std::endl;
 }
