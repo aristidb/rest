@@ -196,16 +196,29 @@ namespace http {
         if (!poster)
           throw not_supported();
 
-        header_fields::iterator i = fields.find("Content-Type");
-        if(i == fields.end())
+        header_fields::iterator content_length = fields.find("Content-Length");
+        if(content_length == fields.end()) {
+          header_fields::iterator expect = fields.find("Expect");
+          if(expect == fields.end() ||
+             expect->second.compare(0,sizeof("100-continue")-1,
+                                    "100-continue") != 0)
+            throw bad_format();
+          return 100;
+        }
+        else {
+        }
+
+        header_fields::iterator content_type = fields.find("Content-Type");
+        if(content_type == fields.end())
           // Set to default value; see RFC 2616 7.2.1 Type
           fields["Content-Type"] = "application/octet-stream";
-        else {
+        else
           // check if the content is multipart
           // see RFC 2046 5.1. Multipart Media Type
-          if(i->second.compare(0, sizeof("multipart/")-1, "multipart/") == 0)
+          if(content_type->second.compare(0, sizeof("multipart/")-1,
+                                          "multipart/") == 0)
             /* ... */;
-        }
+        
       }
       else if(method == "PUT") {
       }
