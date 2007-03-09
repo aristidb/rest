@@ -239,6 +239,9 @@ namespace http {
     }
     return 200;
   }
+
+  void send(response &r) {
+  }
 }}
 // for Testing purpose
 using namespace rest::http;

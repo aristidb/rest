@@ -11,9 +11,19 @@
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
 
-#include "response.hpp"
-
 namespace rest {
+class response {
+  int code;
+  std::string data;
+public:
+  response(int code, std::string const &data="") : code(code), data(data) { }
+  response(std::string const &type) { }
+  void set_data(std::string const &d) { data=d; }
+  std::string const &get_data() const { return data; }
+  void set_code(int c) { code = c; }
+  int get_code() const { return code; }
+};
+
 enum response_type {
   GET = 1U,
   PUT = 2U,
