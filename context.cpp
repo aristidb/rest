@@ -133,9 +133,9 @@ void context::do_bind(
   current->associated_path_id = associated;
 }
 
-void context::find_resolver(
+void context::find_responder(
   std::string const &path,
-  detail::any_path &path_id,
+  det::any_path &path_id,
   det::responder_base *&out_responder,
   context *&out_context)
 {
