@@ -12,13 +12,16 @@
 #include <boost/function.hpp>
 
 namespace rest {
+
 class response {
+private: // TODO: make that less inline
   int code;
   std::string type;
   std::string data;
   std::string reason;
 
   static char const *default_reason(int code);
+
 public:
   response(int code,
            std::string const &type="",
