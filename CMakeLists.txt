@@ -3,7 +3,7 @@ include_directories(boost_asio_0_3_7)
 
 add_definitions(-Wall -W)
 
-add_library(rest context.cpp keywords.cpp response.cpp)
+add_library(rest context.cpp keywords.cpp response.cpp uri.cpp)
 
 add_executable(test1 test1.cpp)
 target_link_libraries(test1 rest)

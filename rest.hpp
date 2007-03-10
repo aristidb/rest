@@ -13,6 +13,11 @@
 
 namespace rest {
 
+namespace uri {
+  std::string escape(std::string const &);
+  std::string unescape(std::string const &);
+}
+
 class response {
 private: // TODO: make that less inline
   int code;
