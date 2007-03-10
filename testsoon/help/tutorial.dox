@@ -1,0 +1,320 @@
+/**
+@page tutorial Tutorial
+
+@section tut_start Getting started
+
+Let's start quickly. We must test whether the compiler actually works
+decently! We do this by testing whether 1 is actually the same as 1.
+
+@code
+#include <testsoon.hpp>
+
+TEST(compiler_check) {
+  Equals(1, 1); // let's hope it works!!
+}
+
+TEST_REGISTRY;
+
+int main() {
+  testsoon::default_reporter rep;
+  testsoon::tests().run(rep);
+}
+@endcode
+
+In order to compile this ... important test, you first need to make sure that
+a recent testsoon.hpp is in your include path. It can be found in the
+include/ directory of the distribution. You may just copy it into your
+project folder. No other installation is required.
+
+If you compile and run this program, you should see something like this on
+your console:
+@verbatim
+"simple.cpp" : .
+
+1 tests, 1 succeeded, 0 failed.
+@endverbatim
+
+I guess this means that we can trust our compiler a little bit. Or so it
+seems. Seriously, this is our first successful test. Let me explain what
+the code above actually means. I shall do this by thoroughly commenting
+the code.
+
+@code
+// You really can guess why we do this.
+#include <testsoon.hpp>
+
+// Declare a simple test with name "compiler_check". Note that no quotes are
+// required here.
+TEST(compiler_check) {
+  // Check whether the two numbers are equal.
+  Equals(1, 1);
+}
+
+// This line is required _once_ per executable. It ensures that if the code
+// compiles, everything works smoothly. The principle here: no surprises.
+TEST_REGISTRY;
+
+int main() {
+  // Declare a reporter. The default_reporter should be a sensible setting.
+  // That's why it's the default.
+  testsoon::default_reporter rep;
+
+  // Run all tests.
+  testsoon::tests().run(rep);
+}
+@endcode
+
+So now let's play around and test something different: are 1 and 2 equal?
+Change the check as follows:
+
+@code
+Equals(1, 2);
+@endcode
+
+Now, the output should look like something like this:
+
+@verbatim
+"simple.cpp" : [F=3.4]
+
+Error occured in test "compiler_check" in "simple.cpp" on line 3 in check on line 4.
+Problem: not equal: 1 and 2
+Data:
+        1
+        2
+
+1 tests, 0 succeeded, 1 failed.
+@endverbatim
+
+Obviously, both numbers differ. Lets look at the first strange thing:
+"[F=3.4]". This little thing means that there was a failure in the test on
+line 3 (simple.cpp), to be exact the check on line 4 failed. (I used the
+version without comments.)
+
+The same information is represented below and with additional information.
+"Data" are the two parameter values to Equals. This is necessary because
+in other situations the "problem" might not be "not equal: 1 and 2" but
+"not equal: a and b" where a and b are variables. In this case, "data" would
+contain the values of both variables in (readable) string representation.
+
+@section tut_checks Standard checks
+
+TODO
+
+@section tut_grouping Grouping
+
+@subsection tut_autogroup Automatic grouping
+
+Test soon supports automatic grouping by file name. You can place tests
+in any source file and the source file will automatically make up a group.
+You do not need to manually add a group for the file. Nor do you need to
+add a macro or some strange code somewhere in your file.
+
+In most circumstances you will structure a test executable like this:
+-# A runner executable containing \c #TEST_REGISTRY; and \c main().
+-# A hierarchy of test sources.
+
+@subsection tut_mangroup Manual grouping
+
+Named tests are nice, of course. And grouping by files is practical, too.
+However, you might want to group tests deeper. Or you might be to lazy to
+create a new file for this new test group. Do not despair!
+
+@code
+TEST_GROUP(group_one) {
+  TEST() {
+    Check(!"unnamed test in group_one");
+  }
+
+  TEST(named) {
+    Check(!"named test in group_one");
+  }
+}
+
+TEST_GROUP(group_two) {
+  TEST() {
+    Check(!"only test in group_two");
+  }
+  TEST_GROUP(nested) {
+    TEST() {
+      Check(!"except if you count this test in a nested group");
+    }
+  }
+}
+@endcode
+
+The Checks will all fail because they are passed a false value. \c ! applied
+to a non-null pointer value is always \c false.
+
+\note "Test soon" uses namespaces for grouping, so your group names must
+valid namespace names.
+
+@section tut_ext_syntax Extended syntax
+
+You already saw that you can define tests with the TEST macro. But there
+also is an alternative syntax which you can use, too. It has advantages
+that will become evident later.
+
+@code
+XTEST() {} // unnamed test
+XTEST((name, "my test")) {} // named test
+XTEST((n, "my other test")) {} // a named test, too
+XTEST((parameter1_name, parameter1_value) (parameter2_name, parameter2_value))
+  // illegal but demonstrates how to use multiple parameters
+@endcode
+
+#XTEST enables you to use named parameters. Some parameters have short and
+long names, like name, alias n. This syntax does not make much sense so far,
+but you will see how it is useful later.
+
+@section tut_fixtures Fixtures
+
+TODO: Explain fixtures.
+
+@subsection tut_explicit_fixtures Explicit fixtures
+
+There are two ways to create tests with (explicit) fixtures. First, however,
+you need a fixture. Just create a class with initialisation in the constructor
+and finalising in the destructor. Note that we don't use setUp / tearDown
+methods (please tell us why you need it if you do). Once you have a fixture
+class you can do the following (all variants are functionally equivalent):
+
+@code
+XTEST((name, "my test") (fixture, my_fixture_class)) {
+  fixture.do_something();
+    // the fixture is passed through the variable with the same name
+}
+
+XTEST((n, "my test") (f, my_fixture_class)) {
+  fixture.do_something();
+}
+
+FTEST(my test, my_fixture_class) {
+  fixture.do_something();
+}
+@endcode
+
+We recommend you to choose a style and stick to it (mostly). But keep in mind
+that XTEST is the most powerful.
+
+@subsection tut_group_fixtures Group fixtures
+
+It might be of tedious to type the name of the fixture class every time. The
+solution: group fixtures. The idea is that you declare a group fixture once
+per group and stick to it (technically you don't need to - you might figure out
+yourself how if you want). The group fixture is simply the first class in the
+current scope that your (standards compliant) C++ compiler finds when searching
+for \c group_fixture_t. Here come the examples:
+
+@code
+TEST_GROUP(group1) {
+  typedef fixture_for_group1 group_fixture_t;
+
+  XTEST((group_fixture, 1)) {
+    group_fixture.do_something_better_than_i_can_imagine();
+  }
+
+  XTEST((n, "differently named") (gf, 1)) {
+    group_fixture.hey_hey_hey();
+  }
+
+  GFTEST(and yet another name) {
+    group_fixture.call_this_method();
+  }
+}
+@endcode
+
+@section tut_generators Generators
+
+Sometimes you want to run a test more than once (at least I do) and with
+different data each time. This being one of the founding reasons for Test soon
+our framework sure does have this feature!
+
+@subsection tut_gen_plain Plain generators
+
+I shall begin with the most flexible form of generator. All you need is a class
+with subtype iterator and the methods begin() and end() in the same way as the
+C++ container classes. Test soon pre-defines two generator classes:
+\li #testsoon::range_generator
+\li #testsoon::array_generator
+
+The XTEST parameter syntax for generators is 
+<pre>(generator, (class)(p1)(p2)...(pN))</pre>
+where \c class is the name of the generator class and \c p1 to \c pN are the
+parameters to be passed to the constructor.
+
+The generated value is passed through the \c value variable (\c const).
+
+Example:
+
+@code
+XTEST((generator, (testsoon::range_generator)(0)(9))) {
+  Check(0 <= value);
+  Check(value < 9);
+}
+@endcode
+
+@subsection tut_gen_comfort "Comfort" syntax
+
+First, the above syntax was the only syntax available to Test soon users. But
+we received the feedback that this syntax was quite clumsy and rather hard to
+understand. Very soon (half an hour), we had come up with the following syntax.
+Again, you can use the facilities through XTEST and the \c value variable.
+
+@subsubsection tut_range Parameter: range
+
+This is simply syntactic sugar for #testsoon::range_generator. It takes the
+form of the XTEST parameter \c range:
+<pre>(range, (type, begin, end))</pre>
+
+Example:
+@code
+XTEST((range, (int, 0, 9))) {
+  Check(0 <= value);
+  Check(value < 9);
+}
+@endcode
+
+@subsubsection tut_values Parameter: values
+
+This one can be simulated via \c array or #testsoon::array_generator but is
+way more convenient. It currently depends on Boost.Assign though.
+
+Parameter syntax:
+<pre>(values, (type)(value1)(value2)...(valueN))</pre>
+
+Example:
+@code
+XTEST((values, (std::string)("x")("y")("z"))) {
+  Check(value == "x" || value == "y" || value == "z");
+}
+@endcode
+
+@subsubsection tut_array Parameter: array
+
+For larger numbers or if two tests share the values, you might not want to use
+values. Use array instead.
+
+Parameter syntax:
+<pre>(array, (element_type, array_name))</pre>
+
+Example:
+@code
+char const * const array[] = { // not problematic to name the array like this!
+  "abc",
+  "xyz",
+  "ghlxyfxt"
+};
+
+XTEST((array, (char const *, array))) {
+  Not_equals(value[0], '?');
+}
+@endcode
+
+@section Remarks
+
+Please note that the above tutorial is no introduction to unit testing. If you
+don't find the principle obvious, read something about it. Also, the code
+examples are by no means real unit tests. They just demonstrate the technical
+possibilities of Test soon.
+
+*/
