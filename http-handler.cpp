@@ -194,6 +194,7 @@ namespace http {
       else if(method == "DELETE") {
       }
       else if(method == "TRACE") {
+#ifndef NO_HTTP_TRACE
         rest::response ret("message/http");
         std::string data = method + " " + uri + " " + version + "\r\n";
         for(header_fields::iterator i = fields.begin();
@@ -203,6 +204,9 @@ namespace http {
         data += "\r\nEntity-Data not included!\r\n"; //TODO include entity data
         ret.set_data(data);
         return ret;
+#else
+        return 501;
+#endif
       }
       else if(method == "HEAD" || method == "CONNECT" || method == "OPTIONS")
         return 501; // Not Supported

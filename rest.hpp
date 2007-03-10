@@ -295,7 +295,7 @@ private:
   ~logger();
 };
 
-enum { CRITICAL = 0, IMPORTANT = 10, INFO=50, DEBUG = 100 };
+enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
 
 #define REST_LOG(prio, data) ::rest::logger::get().log((prio), (data))
 
