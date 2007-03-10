@@ -221,8 +221,6 @@ namespace http {
     // encodes data with chunked tranfer encoding;
     // see RFC 2616 3.6.1 Chunked Transfer Coding
     std::string chunk(iostream &conn, std::string const &data) {
-      std::cout << "CHUNK: " << data.length() << ' ' << std::hex
-                << data.length() << '\n';
       conn << std::hex << data.length() << "\r\n"
            << data << "\r\n0\r\n";
       return data;
