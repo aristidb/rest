@@ -278,6 +278,24 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
+class logger {
+public:
+  static logger &get(); // for all threads (!)
+
+public: // not thread safe
+  void open(char const *file);
+  void set_minimum_priority(int priority);
+
+public: // thread safe
+  void log(int priority, char const *file, int line, std::string const &data);
+
+private:
+  logger();
+  ~logger();
+};
+
+#define REST_LOG(prio, data) ::rest::logger::get().log((prio), (data))
+
 }
 
 #endif
