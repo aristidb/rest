@@ -10,25 +10,18 @@ Internal Todo
 
 #include "rest.hpp"
 
+#include "boost/asio.hpp"
 #include <cstdio>
 #include <cctype>
 #include <string>
 #include <boost/tuple/tuple.hpp>
 #include <map>
 
-#include <iostream>
-#ifdef USE_BOOST_ASIO
-#include <boost/asio.hpp>
-#endif
+#include <iostream> // DEBUG
 
 namespace rest {
 namespace http {
-#ifdef USE_BOOST_ASIO
-  typedef boost::asio::tcp::iostream iostream;
-#else
-  // !! Only for testing
-  typedef std::istream iostream;
-#endif
+  typedef ::boost::asio::ip::tcp::iostream iostream;
 
   namespace {
     struct bad_format { };
@@ -240,10 +233,16 @@ namespace http {
     return 200;
   }
 
-  void send(response &) {
+  void send(response &r, iostream &conn) {
+    // this is no HTTP/1.1. As usual just for testing
+    boost::asio::operator<<(conn, r.get_code()) << "\r\n" << r.get_data()
+                         << "\r\n";
   }
 }}
+
+
 // for Testing purpose
+using boost::asio::ip::tcp;
 using namespace rest::http;
 using namespace rest;
 
@@ -267,10 +266,25 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
   }
 };
 
+int const PORT = 8080;
+
 int main() {
-  tester t;
-  context c;
-  c.bind("/", t);
-  response r = handle_http_request(c, std::cin);
-  std::cout << r.get_code() << "\n";
+  try {
+    boost::asio::io_service io_service;
+    tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), PORT));
+    tester t;
+    context c;
+    c.bind("/", t);
+
+    for (;;) {
+      tcp::iostream stream;
+      acceptor.accept(*stream.rdbuf());
+      response r = handle_http_request(c, stream);
+      send(r, stream);
+    }
+  }
+  catch(std::exception &e) {
+    std::cerr << "ERROR: " << e.what() << "\n";
+  }
 }
+
