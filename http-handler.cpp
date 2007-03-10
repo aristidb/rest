@@ -137,14 +137,8 @@ namespace http {
                   << field.get<FIELD_VALUE>() << "\n"; // DEBUG
 
         // TODO do sth with the field
-        if(expect(conn, '\r')) {
-          if(expect(conn, '\n'))
-            break;
-          else
-            conn.unget();
-        }
-        else
-          conn.unget();
+        if(expect(conn, '\r') && expect(conn, '\n'))
+          break;
       }
 
       keywords kw;
@@ -215,8 +209,11 @@ namespace http {
 
     // encodes data with chunked tranfer encoding;
     // see RFC 2616 3.6.1 Chunked Transfer Coding
-    std::string chunk(std::string const &data) {
-      // TODO ...
+    std::string chunk(iostream &conn, std::string const &data) {
+      std::cout << "CHUNK: " << data.length() << ' ' << std::hex
+                << data.length() << '\n';
+      conn << std::hex << data.length() << "\r\n"
+           << data << "\r\n0\r\n";
       return data;
     }
 
@@ -238,14 +235,13 @@ namespace http {
     conn << "Server: " << server_name << "\r\n";
     if(!r.get_type().empty())
       conn << "Content-Type: " << r.get_type() << "\r\n";
-    /*    if(!r.get_data().empty())
+    if(!r.get_data().empty())
       conn << "Transfer-Encoding: chunked\r\n"; // TODO implement gzip and co
-    */
-    conn << "\r\n\r\n";
+    conn << "\r\n";
 
     // Entity
     if(!r.get_data().empty())
-      conn << chunk(r.get_data()) << "\r\n";
+      chunk(conn, r.get_data());
   }
 }}
 
@@ -259,7 +255,12 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                                 rest::POST> {
   rest::response get(std::string const &path, rest::keywords &) {
     std::cout << "GET: " << path << '\n';
-    return 200;
+
+    rest::response r(200, "text/html", "<html><head><title>supi</title></head>"
+                     "<body><h3>Allles Supi!!</h3><blink>blink</blink></body>"
+                     "</html>");
+
+    return r;
   }
   rest::response put(std::string const &path, rest::keywords &) {
     std::cout << "PUT: " << path << '\n';
