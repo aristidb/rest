@@ -201,11 +201,11 @@ void context::find_responder(
 
     for (tokenizer::iterator it = pairs.begin(); it != pairs.end(); ++it) {
       iterator split = std::find(it->begin(), it->end(), '=');
-      std::string key(it->begin(), split);
+      std::string key = uri::unescape(it->begin(), split);
       if (get_keyword_type(key) == FORM_PARAMETER) {
         if (split != it->end())
           ++split;
-        std::string value(split, it->end());
+        std::string value = uri::unescape(split, it->end());
         out_keywords.set(key, value);
       }
     }
@@ -227,11 +227,12 @@ void context::do_find_responder(
   std::string last;
 
   for (; !current->ellipsis && it != end; ++it) {
-    current = current->child(*it);
+    std::string text = uri::unescape(*it);
+    current = current->child(text);
     if (!current)
       return;
     if (current->type == path_resolver_node::closure)
-      out_keywords.set(current->data, *it);
+      out_keywords.set(current->data, text);
     else
       last = *it;
   }
@@ -275,12 +276,13 @@ path_resolver_node *context::impl::make_bindable(std::string const &path) {
     } else { // literal
       if (it->find_first_of("{}") != tokenizer::value_type::npos)
         throw std::logic_error("only full closures are allowed");
+      std::string text = uri::unescape(*it);
       path_resolver_node::conditional_children_t::iterator i_next =
-        current->conditional_children.find(*it);
+        current->conditional_children.find(text);
       if (i_next == current->conditional_children.end()) {
         path_resolver_node *next = new path_resolver_node;
         next->type = path_resolver_node::literal;
-        next->data = *it;
+        next->data = text;
         i_next = current->conditional_children.insert(next).first;
       }
       current = *i_next;

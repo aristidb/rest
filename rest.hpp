@@ -14,8 +14,17 @@
 namespace rest {
 
 namespace uri {
-  std::string escape(std::string const &);
-  std::string unescape(std::string const &);
+
+std::string escape(std::string::const_iterator, std::string::const_iterator);
+inline std::string escape(std::string const &x) {
+  return escape(x.begin(), x.end());
+}
+
+std::string unescape(std::string::const_iterator, std::string::const_iterator);
+inline std::string unescape(std::string const &x) {
+  return unescape(x.begin(), x.end());
+}
+
 }
 
 class response {

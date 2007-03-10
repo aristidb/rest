@@ -23,10 +23,11 @@ char to_hex(int c) {
 }
 }
 
-std::string unescape(std::string const &x) {
+std::string 
+unescape(std::string::const_iterator begin, std::string::const_iterator end) {
   std::string result;
-  for (std::string::const_iterator it = x.begin(); it != x.end(); ++it)
-    if (*it == '%' && it + 2 < x.end()) {
+  for (std::string::const_iterator it = begin; it != end; ++it)
+    if (*it == '%' && it + 2 < end) {
       char code = char(from_hex(it[1]) * 16 + from_hex(it[2]));
       if (code != '\0')
         result += code;
@@ -36,9 +37,10 @@ std::string unescape(std::string const &x) {
   return result;
 }
 
-std::string escape(std::string const &x) {
+std::string
+escape(std::string::const_iterator begin, std::string::const_iterator end) {
   std::string result;
-  for (std::string::const_iterator it = x.begin(); it != x.end(); ++it)
+  for (std::string::const_iterator it = begin; it != end; ++it)
     if (0) { // must_escape
       unsigned char ch = *it;
       char buf[3] = { '%', to_hex(ch >> 4), to_hex(ch & 0xF) };
