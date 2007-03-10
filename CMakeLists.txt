@@ -10,3 +10,5 @@ target_link_libraries(test1 rest)
 
 add_executable(http-handler http-handler.cpp)
 target_link_libraries(http-handler rest boost_thread)
+
+add_executable(pipedump pipedump.cpp)
