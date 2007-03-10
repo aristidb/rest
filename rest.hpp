@@ -29,8 +29,10 @@ public:
            std::string const &reason="")
     : code(code), type(type), data(data),
       reason(reason.empty() ? default_reason(code) : reason)
-  { }
-  response(std::string const &type) : type(type) { }
+  {}
+  response(std::string const &type)
+  : code(200), type(type), reason(default_reason(code)) {}
+
   void set_data(std::string const &d) { data = d; }
   std::string const &get_data() const { return data; }
   void set_code(int c) { code = c; }

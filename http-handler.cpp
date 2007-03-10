@@ -256,11 +256,12 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
   rest::response get(std::string const &path, rest::keywords &) {
     std::cout << "GET: " << path << '\n';
 
-    rest::response r(200, "text/html", "<html><head><title>supi</title></head>"
-                     "<body><h3>Allles Supi!!</h3><blink>blink</blink></body>"
-                     "</html>");
+    rest::response resp("text/html");
+    resp.set_data("<html><head><title>supi</title></head>"
+                  "<body><h3>Allles Supi!!</h3><blink>blink</blink></body>"
+                  "</html>");
 
-    return r;
+    return resp;
   }
   rest::response put(std::string const &path, rest::keywords &) {
     std::cout << "PUT: " << path << '\n';
