@@ -10,12 +10,13 @@ Internal Todo
 
 #include "rest.hpp"
 
-#include "boost/asio.hpp"
+#include <map>
 #include <cstdio>
 #include <cctype>
 #include <string>
+#include "boost/asio.hpp"
 #include <boost/tuple/tuple.hpp>
-#include <map>
+#include <boost/lexical_cast.hpp>
 
 #include <iostream> // DEBUG
 
@@ -235,8 +236,11 @@ namespace http {
 
   void send(response &r, iostream &conn) {
     // this is no HTTP/1.1. As usual just for testing
-    boost::asio::operator<<(conn, r.get_code()) << "\r\n" << r.get_data()
-                         << "\r\n";
+    conn << "HTTP/1.1 " << ::boost::lexical_cast<std::string>(r.get_code())
+         << " " << r.get_reason() << "\r\n";
+
+    // Header ...
+    conn << "\r\n\r\n" << r.get_data() << "\r\n";
   }
 }}
 
