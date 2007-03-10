@@ -8,9 +8,9 @@ int from_hex(char c) {
   if (c >= '0' && c <= '9')
     return c - '0';
   else if (c >= 'A' && c <= 'F')
-    return c - 'A';
+    return c - 'A' + 10;
   else if (c >= 'a' && c <= 'f')
-    return c - 'a';
+    return c - 'a' + 10;
   else
     return 0;
 }
@@ -19,12 +19,15 @@ char to_hex(int c) {
   if (c < 10)
     return '0' + c;
   else
-    return 'A' + c;
+    return 'A' + c - 10;
 }
 }
 
 std::string 
-unescape(std::string::const_iterator begin, std::string::const_iterator end) {
+unescape(
+    std::string::const_iterator begin, std::string::const_iterator end,
+    bool form)
+{
   std::string result;
   for (std::string::const_iterator it = begin; it != end; ++it)
     if (*it == '%' && it + 2 < end) {
@@ -32,7 +35,9 @@ unescape(std::string::const_iterator begin, std::string::const_iterator end) {
       if (code != '\0')
         result += code;
       it += 2;
-    } else
+    } else if (form && *it == '+')
+      result += ' ';
+    else
       result += *it;
   return result;
 }

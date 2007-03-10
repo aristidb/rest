@@ -55,7 +55,7 @@ int main() {
   context.bind("/", welcome);
   displayer display;
   context.bind("/list", display);
-  context.bind("/%20 /object/{id}", display);
+  context.bind("/%20 +/object/{id}", display);
   rest::context search;
   searcher search_obj;
   search.bind("/cookie", search_obj, COOKIE);
@@ -66,7 +66,7 @@ int main() {
   rest::detail::any_path path_id;
   rest::detail::responder_base *responder;
   rest::context *local;
-  context.find_responder("/ %20/object/17?xyz=bla", path_id, responder, local, kw);
+  context.find_responder("/ %20%2B/object/17?xyz=b+la", path_id, responder, local, kw);
 
   std::cout << responder << '/' << local << std::endl;
   std::cout << ':' << kw["id"] << std::endl;
