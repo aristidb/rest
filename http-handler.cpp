@@ -165,7 +165,7 @@ namespace http {
 
         // Handling Message Entity
         header_fields::iterator expect = fields.find("Expect");
-        if(expect != fields.end() ||
+        if(expect != fields.end() &&
            expect->second.compare(0,sizeof("100-continue")-1,
                                   "100-continue") == 0)
           return 100; // Continue
