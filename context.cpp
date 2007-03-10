@@ -5,6 +5,7 @@
 #include <boost/multi_index/key_extractors.hpp>
 #include <boost/tokenizer.hpp>
 #include <stdexcept>
+#include <algorithm>
 #include <iostream>//FIXME
 
 using namespace rest;
@@ -170,13 +171,38 @@ void context::find_responder(
 {
   out_responder = 0;
 
-  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-  boost::char_separator<char> sep("/=");
-  tokenizer tokens(path, sep);
+  typedef std::string::const_iterator iterator;
 
-  do_find_responder(
-    tokens.begin(), tokens.end(),
-    path_id, out_responder, out_context, out_keywords);
+  iterator start = path.begin();
+  iterator end = path.end();
+  iterator middle = std::find(start, end, '?');
+
+  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+
+  {
+    boost::char_separator<char> sep("/=");
+    tokenizer tokens(start, middle, sep);
+
+    do_find_responder(
+      tokens.begin(), tokens.end(),
+      path_id, out_responder, out_context, out_keywords);
+  }
+
+  if (middle != end) {
+    boost::char_separator<char> sep("&");
+    tokenizer pairs(++middle, end, sep);
+
+    for (tokenizer::iterator it = pairs.begin(); it != pairs.end(); ++it) {
+      iterator split = std::find(it->begin(), it->end(), '=');
+      std::string key(it->begin(), split);
+      if (get_keyword_type(key) == FORM_PARAMETER) {
+        if (split != it->end())
+          ++split;
+        std::string value(split, it->end());
+        out_keywords.set(key, value);
+      }
+    }
+  }
 }
 
 template<class Iterator>
