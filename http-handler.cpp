@@ -163,19 +163,28 @@ namespace http {
         if (!poster)
           return 404;
 
-        ::std::size_t length;
+        // Handling Message Entity
+        header_fields::iterator expect = fields.find("Expect");
+        if(expect != fields.end() ||
+           expect->second.compare(0,sizeof("100-continue")-1,
+                                  "100-continue") == 0)
+          return 100; // Continue
 
+        header_fields::iterator transfer_encoding =
+          fields.find("Transfer-Encoding");
+        bool has_transfer_encoding = transfer_encoding != fields.end();
+
+        ::std::size_t length;
         header_fields::iterator content_length = fields.find("Content-Length");
         if(content_length == fields.end()) {
-          header_fields::iterator expect = fields.find("Expect");
-          if(expect == fields.end() ||
-             expect->second.compare(0,sizeof("100-continue")-1,
-                                    "100-continue") != 0)
+          if(!has_transfer_encoding)
             return 411; // Content-length required
-          return 100; // Continue
         }
+        else if(!has_transfer_encoding)
+          length =
+            ::boost::lexical_cast< ::std::size_t>(content_length->second);
 
-        length = ::boost::lexical_cast< ::std::size_t>(content_length->second);
+        // TODO check for length limit
 
         header_fields::iterator content_type = fields.find("Content-Type");
         if(content_type == fields.end())
@@ -187,7 +196,21 @@ namespace http {
           if(content_type->second.compare(0, sizeof("multipart/")-1,
                                           "multipart/") == 0)
             /* ... */;
-        
+
+        // ignore content-le
+        if(has_transfer_encoding) {
+          if(transfer_encoding->second == "chunked") { // case sensitive?
+          }
+          else
+            ; // implement
+          std::cout << "Transfer-Encoding\n";
+        }
+        else {
+          // TODO check if Content-length includes LWS at the end of the header
+          std::string s(length, ' ');
+          conn.read(&s[0], length);
+          std::cout << "Entity: " << s << "\n";
+        }
       }
       else if(method == "PUT") {
       }
@@ -271,8 +294,13 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 
     rest::response resp("text/html");
     resp.set_data("<html><head><title>supi</title></head>"
-                  "<body><h3>Allles Supi!!</h3><blink>blink</blink></body>"
-                  "</html>");
+                  "<body><h3>Allles Supi!!</h3><blink>blink</blink>"
+                  "<form name=\"input\" action=\"/\""
+                  "method=\"post\">"
+                  "<input type=\"text\" name=\"user\">"
+                  "<input type=\"text\" name=\"bar\">"
+                  "<input type=\"submit\" value=\"Submit\">"
+                  "</form></body></html>");
 
     return resp;
   }
