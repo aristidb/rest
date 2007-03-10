@@ -4,7 +4,8 @@
 == Internal Todo
 
   * Look for Todos...
-  * implement POST, PUT, DELETE, TRACE and so on
+  * implement POST, PUT, DELETE
+  * implement handling entity data
   * find a way to let the HTTP-Parser and the HTTP-Response (send) method
     talk to each other (e.g. exchange Accept-information)
   * implement Transfer-encodings (chunked, gzip and co)
@@ -162,7 +163,8 @@ namespace http {
         if (!poster)
           return 404;
 
-        // TODO check: Is content-length really required?
+        ::std::size_t length;
+
         header_fields::iterator content_length = fields.find("Content-Length");
         if(content_length == fields.end()) {
           header_fields::iterator expect = fields.find("Expect");
@@ -172,8 +174,8 @@ namespace http {
             return 411; // Content-length required
           return 100; // Continue
         }
-        else {
-        }
+
+        length = ::boost::lexical_cast< ::std::size_t>(content_length->second);
 
         header_fields::iterator content_type = fields.find("Content-Type");
         if(content_type == fields.end())
@@ -192,6 +194,15 @@ namespace http {
       else if(method == "DELETE") {
       }
       else if(method == "TRACE") {
+        rest::response ret("message/http");
+        std::string data = method + " " + uri + " " + version + "\r\n";
+        for(header_fields::iterator i = fields.begin();
+            i != fields.end();
+            ++i)
+          data += i->first + ": " + i->second + "\r\n";
+        data += "\r\nEntity-Data not included!\r\n"; //TODO include entity data
+        ret.set_data(data);
+        return ret;
       }
       else if(method == "HEAD" || method == "CONNECT" || method == "OPTIONS")
         return 501; // Not Supported
