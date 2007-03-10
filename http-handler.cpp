@@ -1,12 +1,18 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 
 /*
-Internal Todo
+== Internal Todo
 
-* change get_header_field to integrate the fields into a map
-* clean up!!
+  * Look for Todos...
+  * implement POST, PUT, DELETE, TRACE and so on
+  * find a way to let the HTTP-Parser and the HTTP-Response (send) method
+    talk to each other (e.g. exchange Accept-information)
+  * implement Transfer-encodings (chunked, gzip and co)
 
- */
+  * change get_header_field to integrate the fields into a map
+  * remove exceptions
+  * clean up!!
+*/
 
 #include "rest.hpp"
 
@@ -26,41 +32,13 @@ namespace http {
 
   namespace {
     struct bad_format { };
-    struct not_supported { };
 
     bool expect(iostream &in, char c) {
-      return in.get() == c;
-    }
-
-    bool expect(iostream &in, char const *s) {
-      std::size_t n = std::strlen(s);
-      for(std::size_t i = 0; i < n; ++i)
-        if(in.get() != s[i])
-          return false;
-      return true;
-    }
-
-    //soft_expect reads any trailing spaces and tries to match the first
-    // non-space sequence read
-    bool soft_expect(iostream &in, char c) {
-      char t;
-      do {
-        t = in.get();
-      } while(std::isspace(t));
-
-      return t == c;
-    }
-
-    bool soft_expect(iostream &in, char const *s) {
-      char t;
-      do {
-        t = in.get();
-      } while(std::isspace(t));
-
-      std::size_t n = std::strlen(s);
-      for(std::size_t i = 0; i < n; ++i, t = in.get())
-        if(t != s[i])
-          return false;
+      int t = in.get();
+      if(t != c) {
+        in.unget();
+        return false;
+      }
       return true;
     }
 
@@ -144,10 +122,10 @@ namespace http {
       std::string method, uri, version;
       boost::tie(method, uri, version) = get_request_line(conn);
 
-      std::cout << method << " " << uri << " " << version << "\n";
+      std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
       if(version != "HTTP/1.1")
-        throw not_supported();
+        return 505; // HTTP Version not Supported
 
       typedef std::map<std::string, std::string> header_fields;
       header_fields fields;
@@ -155,8 +133,8 @@ namespace http {
         header_field field = get_header_field(conn);
         fields[field.get<FIELD_NAME>()] = field.get<FIELD_VALUE>();
 
-        std::cout << field.get<FIELD_NAME>() << " "
-                  << field.get<FIELD_VALUE>() << "\n";
+        std::cout << field.get<FIELD_NAME>() << ": "
+                  << field.get<FIELD_VALUE>() << "\n"; // DEBUG
 
         // TODO do sth with the field
         if(expect(conn, '\r')) {
@@ -182,22 +160,23 @@ namespace http {
       if (method == "GET") {
         detail::getter_base *getter = responder->x_getter();
         if (!getter)
-          throw not_supported();
+          return 404;
         return getter->x_get(path_id, kw);
       }
       else if(method == "POST") {
         detail::poster_base *poster = responder->x_poster();
         if (!poster)
-          throw not_supported();
+          return 404;
 
+        // TODO check: Is content-length really required?
         header_fields::iterator content_length = fields.find("Content-Length");
         if(content_length == fields.end()) {
           header_fields::iterator expect = fields.find("Expect");
           if(expect == fields.end() ||
              expect->second.compare(0,sizeof("100-continue")-1,
                                     "100-continue") != 0)
-            throw bad_format();
-          return 100;
+            return 411; // Content-length required
+          return 100; // Continue
         }
         else {
         }
@@ -221,26 +200,52 @@ namespace http {
       else if(method == "TRACE") {
       }
       else if(method == "HEAD" || method == "CONNECT" || method == "OPTIONS")
-        throw not_supported();
+        return 501; // Not Supported
       else
         throw bad_format();
     }
-    catch(not_supported &e) {
-      return 404;
-    }
     catch(bad_format &e) {
-      return 400;
+      return 400; // Bad Request
     }
     return 200;
   }
 
+  namespace {
+    char const * const server_name = "musikdings.rest";
+
+    // encodes data with chunked tranfer encoding;
+    // see RFC 2616 3.6.1 Chunked Transfer Coding
+    std::string chunk(std::string const &data) {
+      // TODO ...
+      return data;
+    }
+
+    // Returns a string with the correct formated current Data and Time
+    // see RFC 2616 3.3 Date/Time Formats
+    std::string current_date_time() {
+      // TODO ...
+      return "Sat, 10 Mar 2007 01:19:04 GMT";
+    }
+  }
+
   void send(response &r, iostream &conn) {
-    // this is no HTTP/1.1. As usual just for testing
+    // Status Line
     conn << "HTTP/1.1 " << ::boost::lexical_cast<std::string>(r.get_code())
          << " " << r.get_reason() << "\r\n";
 
-    // Header ...
-    conn << "\r\n\r\n" << r.get_data() << "\r\n";
+    // Header Fields
+    conn << "Date: " << current_date_time()  << "\r\n";
+    conn << "Server: " << server_name << "\r\n";
+    if(!r.get_type().empty())
+      conn << "Content-Type: " << r.get_type() << "\r\n";
+    /*    if(!r.get_data().empty())
+      conn << "Transfer-Encoding: chunked\r\n"; // TODO implement gzip and co
+    */
+    conn << "\r\n\r\n";
+
+    // Entity
+    if(!r.get_data().empty())
+      conn << chunk(r.get_data()) << "\r\n";
   }
 }}
 
