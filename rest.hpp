@@ -240,6 +240,7 @@ public:
   void enum_keywords(
     keyword_type,
     boost::function<void (std::string const &)> const &);
+  void prepare_keywords(keywords &);
 
   template<class T>
   void bind(std::string const &a, T &r) {

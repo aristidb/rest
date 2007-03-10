@@ -142,6 +142,13 @@ void context::enum_keywords(
       callback(it->keyword);
 }
 
+void context::prepare_keywords(keywords &kw) {
+  for (keyword_info_set::iterator it = p->predeclared_keywords.begin();
+      it != p->predeclared_keywords.end();
+      ++it)
+    kw.set(it->keyword, std::string());
+}
+
 void context::do_bind(
   std::string const &path,
   det::responder_base &responder_,
