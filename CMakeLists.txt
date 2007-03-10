@@ -9,4 +9,4 @@ add_executable(test1 test1.cpp)
 target_link_libraries(test1 rest)
 
 add_executable(http-handler http-handler.cpp)
-target_link_libraries(http-handler rest)
+target_link_libraries(http-handler rest boost_thread)
