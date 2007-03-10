@@ -56,10 +56,12 @@ public:
 
   std::string &operator[](std::string const &);
   std::istream &read(std::string const &);
-  std::string name(std::string const &);
+  std::string get_name(std::string const &) const;
 
   void set(std::string const &, std::string const &);
-  void set_stream(std::string const &, std::string const &, std::istream &);
+
+  void set_stream(std::string const &, std::istream *);
+  void set_name(std::string const &, std::string const &);
 
 private:
   class impl;

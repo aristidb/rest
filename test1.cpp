@@ -2,6 +2,7 @@
 #include "rest.hpp"
 #include <string>
 #include <iostream>
+#include <sstream>
 
 struct welcomer : rest::responder<rest::GET> {
   rest::response get(std::string const &, rest::keywords &data) {
@@ -69,4 +70,7 @@ int main() {
   std::cout << ':' << kw["id"] << std::endl;
   std::cout << path_id.type().name() << std::endl;
   std::cout << boost::any_cast<std::string>(path_id) << std::endl << std::endl;
+
+  kw.set_stream("other", new std::istringstream("test"));
+  std::cout << "$$ " << kw["other"] << std::endl;
 }
