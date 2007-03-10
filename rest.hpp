@@ -15,13 +15,22 @@ namespace rest {
 class response {
   int code;
   std::string data;
+  std::string reason;
+
+  static char const *default_reason(int code);
 public:
-  response(int code, std::string const &data="") : code(code), data(data) { }
+  response(int code, std::string const &data="",
+           std::string const &reason="")
+    : code(code), data(data),
+      reason(reason.empty() ? default_reason(code) : reason)
+  { }
   response(std::string const &type) { (void)type; }
-  void set_data(std::string const &d) { data=d; }
+  void set_data(std::string const &d) { data = d; }
   std::string const &get_data() const { return data; }
   void set_code(int c) { code = c; }
   int get_code() const { return code; }
+  void set_reason(std::string const &r) { reason = r; }
+  std::string const &get_reason() const { return reason; }
 };
 
 enum response_type {
