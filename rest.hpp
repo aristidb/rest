@@ -10,6 +10,8 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
+#include <iosfwd>
+#include <boost/iostreams/concepts.hpp>
 
 namespace rest {
 
@@ -293,6 +295,22 @@ private:
   class impl;
   boost::scoped_ptr<impl> p;
 };
+
+namespace util {
+
+class boundary_reader : public boost::iostreams::source {
+public:
+  boundary_reader(std::istream &source, std::string const &boundary);
+  ~boundary_reader();
+
+  std::streamsize read(char *s, std::streamsize n);
+
+private:
+  class impl;
+  boost::scoped_ptr<impl> p;
+};
+
+}
 
 class logger {
 public:
