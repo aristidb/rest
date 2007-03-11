@@ -195,6 +195,8 @@ void context::find_responder(
       path_id, out_responder, out_context, out_keywords);
   }
 
+  out_context->prepare_keywords(out_keywords);
+
   if (middle != end) {
     boost::char_separator<char> sep("&");
     tokenizer pairs(++middle, end, sep);
