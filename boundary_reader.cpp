@@ -37,6 +37,11 @@ std::streamsize boundary_reader::read(char *outbuf, std::streamsize n) {
   while (i < n && !p->eof) {
     std::size_t len = p->boundary.size() - p->pos;
     if (p->boundary.compare(0, len, p->buf.get() + p->pos, len) == 0) {
+      if (len == p->boundary.size()) {
+        p->eof = true;
+        break;
+      }
+
       std::memmove(
           p->buf.get(),
           p->buf.get() + p->pos,
@@ -54,14 +59,16 @@ std::streamsize boundary_reader::read(char *outbuf, std::streamsize n) {
         p->pos = p->boundary.size() - n;
         std::memmove(p->buf.get() + p->pos, p->buf.get(), n);
       }
-
-      int cmp =
-          p->boundary.compare(
-            0, p->boundary.size(),
-            p->buf.get(), p->boundary.size());
-      if (cmp == 0) {
-        p->eof = true;
-        break;
+      
+      if (p->pos == 0) {
+        int cmp =
+            p->boundary.compare(
+              0, p->boundary.size(),
+              p->buf.get(), p->boundary.size());
+        if (cmp == 0) {
+          p->eof = true;
+          break;
+        }
       }
     }
     outbuf[i++] = p->buf[p->pos++];
@@ -77,7 +84,7 @@ XTEST((values, (std::string)("")("ab")("abcd"))) {
   Equals('"' + y.str() + '"', '"' + value + '"');
 }
 
-XTEST((values, (std::string)("")("ab")("abcd")("abcdefg")("x\nf")("\nfo"))) {
+XTEST((values, (std::string)("")("ab")("abcd")("abcdefg"))) {
   std::istringstream x(value);
   stream<boundary_reader> s(x, "\nfoo");
   std::ostringstream y;
@@ -92,3 +99,20 @@ XTEST((values, (std::string)("")("ab")("abcd"))) {
   y << s.rdbuf();
   Equals("-" + y.str(), "-");
 }
+
+TEST() {
+  std::istringstream x("x\nf");
+  stream<boundary_reader> s(x, "\nfoo");
+  std::ostringstream y;
+  y << s.rdbuf();
+  Equals(y.str(), "x");
+}
+
+TEST() {
+  std::istringstream x("\nfo");
+  stream<boundary_reader> s(x, "\nfoo");
+  std::ostringstream y;
+  y << s.rdbuf();
+  Equals("-" + y.str(), "-\nfo");
+}
+
