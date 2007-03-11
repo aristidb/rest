@@ -256,8 +256,8 @@ public:
   keyword_type get_keyword_type(std::string const &name) const;
   void enum_keywords(
     keyword_type,
-    boost::function<void (std::string const &)> const &);
-  void prepare_keywords(keywords &);
+    boost::function<void (std::string const &)> const &) const;
+  void prepare_keywords(keywords &) const;
 
   template<class T>
   void bind(std::string const &a, T &r) {

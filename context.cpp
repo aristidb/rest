@@ -133,7 +133,7 @@ keyword_type context::get_keyword_type(std::string const &keyword) const {
 
 void context::enum_keywords(
   keyword_type type,
-  boost::function<void (std::string const &)> const &callback)
+  boost::function<void (std::string const &)> const &callback) const
 {
   for (keyword_info_set::iterator it = p->predeclared_keywords.begin();
       it != p->predeclared_keywords.end();
@@ -142,7 +142,7 @@ void context::enum_keywords(
       callback(it->keyword);
 }
 
-void context::prepare_keywords(keywords &kw) {
+void context::prepare_keywords(keywords &kw) const {
   for (keyword_info_set::iterator it = p->predeclared_keywords.begin();
       it != p->predeclared_keywords.end();
       ++it)
