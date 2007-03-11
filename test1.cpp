@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <boost/iostreams/stream.hpp>
 
 struct welcomer : rest::responder<rest::GET> {
   rest::response get(std::string const &, rest::keywords &data) {
@@ -76,4 +77,9 @@ int main() {
 
   kw.set_stream("other", new std::istringstream("test"));
   std::cout << "$$ " << kw["other"] << std::endl;
+
+  std::cout << "\n\n";
+
+  boost::iostreams::stream<rest::util::boundary_reader> in(std::cin, "\nfoo");
+  std::cout << in.rdbuf() << "\n\n" << std::flush;
 }

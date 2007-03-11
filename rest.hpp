@@ -301,7 +301,17 @@ namespace util {
 class boundary_reader : public boost::iostreams::source {
 public:
   boundary_reader(std::istream &source, std::string const &boundary);
+  boundary_reader(boundary_reader const &);
   ~boundary_reader();
+
+  void swap(boundary_reader &o) {
+    p.swap(o.p);
+  }
+
+  boundary_reader &operator=(boundary_reader o) {
+    o.swap(*this);
+    return *this;
+  }
 
   std::streamsize read(char *s, std::streamsize n);
 
