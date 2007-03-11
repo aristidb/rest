@@ -3,7 +3,10 @@
 #include <cstring>
 #include <boost/scoped_array.hpp>
 #include <istream>
+#include <sstream>
+
 #include <testsoon.hpp>
+#include <boost/iostreams/stream.hpp>
 
 using namespace rest::util;
 using namespace boost::iostreams;
@@ -19,25 +22,6 @@ public:
   boost::scoped_array<char> buf;
   bool eof;
   std::size_t pos;
-
-  void underflow() {
-    std::memmove(buf.get(), buf.get() + pos, boundary.size() - pos);
-    stream.read(buf.get() + boundary.size() - pos, pos);
-    pos = 0;
-    if (stream.eof())
-      eof = true;
-    if (boundary.compare(0, boundary.size(), buf.get(), boundary.size()) == 0)
-      eof = true;
-  }
-
-  void get(char &ch) {
-    std::size_t len = boundary.size() - pos;
-    if (boundary.compare(0, len, buf.get() + pos, len) == 0)
-      underflow();
-    if (eof)
-      return;
-    ch = buf[pos++];
-  }
 };
 
 boundary_reader::boundary_reader(std::istream &s, std::string const &b)
@@ -48,16 +32,63 @@ boundary_reader::boundary_reader(boundary_reader const &o)
 
 boundary_reader::~boundary_reader() {}
 
-std::streamsize boundary_reader::read(char *buf, std::streamsize n) {
+std::streamsize boundary_reader::read(char *outbuf, std::streamsize n) {
   std::streamsize i = 0;
   while (i < n && !p->eof) {
-    p->get(buf[i]);
-    if (p->eof)
-      break;
-    ++i;
+    std::size_t len = p->boundary.size() - p->pos;
+    if (p->boundary.compare(0, len, p->buf.get() + p->pos, len) == 0) {
+      std::memmove(
+          p->buf.get(),
+          p->buf.get() + p->pos,
+          p->boundary.size() - p->pos);
+
+      p->stream.read(p->buf.get() + p->boundary.size() - p->pos, p->pos);
+      p->pos = 0;
+
+      if (p->stream.eof()) {
+        std::streamsize n = p->stream.gcount();
+        if (n <= 0) {
+          p->eof = true;
+          break;
+        }
+        p->pos = p->boundary.size() - n;
+        std::memmove(p->buf.get() + p->pos, p->buf.get(), n);
+      }
+
+      int cmp =
+          p->boundary.compare(
+            0, p->boundary.size(),
+            p->buf.get(), p->boundary.size());
+      if (cmp == 0) {
+        p->eof = true;
+        break;
+      }
+    }
+    outbuf[i++] = p->buf[p->pos++];
   }
   return i;
 }
 
-TEST() {
+XTEST((values, (std::string)("")("ab")("abcd"))) {
+  std::istringstream x(value + "\nfoo");
+  stream<boundary_reader> s(x, "\nfoo");
+  std::ostringstream y;
+  y << s.rdbuf();
+  Equals('"' + y.str() + '"', '"' + value + '"');
+}
+
+XTEST((values, (std::string)("")("ab")("abcd")("abcdefg")("x\nf")("\nfo"))) {
+  std::istringstream x(value);
+  stream<boundary_reader> s(x, "\nfoo");
+  std::ostringstream y;
+  y << s.rdbuf();
+  Equals('"' + y.str() + '"', '"' + value + '"');
+}
+
+XTEST((values, (std::string)("")("ab")("abcd"))) {
+  std::istringstream x(value);
+  stream<boundary_reader> s(x, "");
+  std::ostringstream y;
+  y << s.rdbuf();
+  Equals("-" + y.str(), "-");
 }
