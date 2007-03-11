@@ -1,5 +1,7 @@
 include_directories(/usr/local/include/boost-1_33_1)
+
 include_directories(boost_asio_0_3_7)
+include_directories(testsoon/include)
 
 add_definitions(-Wall -W)
 
@@ -12,3 +14,5 @@ add_executable(http-handler http-handler.cpp)
 target_link_libraries(http-handler rest boost_thread)
 
 add_executable(pipedump pipedump.cpp)
+
+add_executable(unit unit.cpp) #add what you test
