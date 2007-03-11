@@ -3,6 +3,7 @@
 #include <cstring>
 #include <boost/scoped_array.hpp>
 #include <istream>
+#include <testsoon.hpp>
 
 using namespace rest::util;
 using namespace boost::iostreams;
@@ -56,4 +57,7 @@ std::streamsize boundary_reader::read(char *buf, std::streamsize n) {
     ++i;
   }
   return i;
+}
+
+TEST() {
 }

@@ -7,6 +7,7 @@ include_directories(testsoon/include)
 add_definitions(-Wall -W)
 
 add_library(rest SHARED
+  rest_test.cpp
   context.cpp keywords.cpp response.cpp uri.cpp boundary_reader.cpp)
 target_link_libraries(rest boost_iostreams)
 
@@ -19,3 +20,4 @@ target_link_libraries(http-handler rest boost_thread)
 add_executable(pipedump pipedump.cpp)
 
 add_executable(unit unit.cpp) #add what you test
+target_link_libraries(unit rest)
