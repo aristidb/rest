@@ -116,7 +116,7 @@ namespace http {
     }
   }
 
-  response handle_http_request(context &global, iostream &conn)
+  response http_handler::handle_request(context &global)
   {
     try {
       std::string method, uri, version;
@@ -234,13 +234,13 @@ namespace http {
           }
           else
             ; // implement
-          std::cout << "Transfer-Encoding\n";
+          std::cout << "Transfer-Encoding\n"; // DEBUG
         }
         else {
           // TODO check if Content-length includes LWS at the end of the header
           std::string s(length, ' ');
           conn.read(&s[0], length);
-          std::cout << "Entity: " << s << "\n";
+          std::cout << "Entity: " << s << "\n"; // DEBUG
         }
       }
       else if(method == "PUT") {
@@ -292,7 +292,7 @@ namespace http {
     }
   }
 
-  void send(response &r, iostream &conn) {
+  void http_handler::send(response &r) {
     // Status Line
     conn << "HTTP/1.1 " << ::boost::lexical_cast<std::string>(r.get_code())
          << " " << r.get_reason() << "\r\n";

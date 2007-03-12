@@ -31,7 +31,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     return 200;
   }
   rest::response delete_(std::string const &path, rest::keywords &) {
-    std::cout << "PUT: " << path << '\n';
+    std::cout << "DELETE: " << path << '\n';
     return 200;
   }
   rest::response post(std::string const &path, rest::keywords &) {
@@ -53,8 +53,9 @@ int main() {
     for (;;) {
       tcp::iostream stream;
       acceptor.accept(*stream.rdbuf());
-      response r = handle_http_request(c, stream);
-      send(r, stream);
+      http_handler http(stream);
+      response r = http.handle_request(c);
+      http.send(r);
     }
   }
   catch(std::exception &e) {
