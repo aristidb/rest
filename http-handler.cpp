@@ -2,6 +2,7 @@
 
 /*
 == Internal Todo
+  * This Code is so horrible!
 
   * Look for Todos...
   * implement POST, PUT, DELETE
@@ -186,6 +187,9 @@ namespace http {
 
         // TODO check for length limit
 
+        bool is_multipart = false;
+        std::string boundary;
+
         header_fields::iterator content_type = fields.find("Content-Type");
         if(content_type == fields.end())
           // Set to default value; see RFC 2616 7.2.1 Type
@@ -195,11 +199,43 @@ namespace http {
           // see RFC 2046 5.1. Multipart Media Type
           if(content_type->second.compare(0, sizeof("multipart/")-1,
                                           "multipart/") == 0)
-            /* ... */;
+          {
+            is_multipart = true;
+            std::string const &type = content_type->second;
+            for(;;) {
+              std::size_t pos = type.find(';', 0);
+              if(pos == std::string::npos)
+                throw bad_format();
+              ++pos;
+              while(type[pos] == ' ') // ignore empty spaces
+                ++pos;
+              if(type.compare(pos, sizeof("boundary=")-1,
+                              "boundary=") == 0)
+                {
+                  pos += sizeof("boundary=");
+                  std::size_t end = pos;
+                  if(type[pos] == '"') {
+                    ++pos; ++end;
+                    // TODO is there a way to escape " in MIME-Flags?
+                    while(type[end] != '"' && type[end] != '\r')
+                      ++end;
+                  }
+                  else
+                    while(type[end] != ';' && !std::isspace(type[end]))
+                      ++end;
 
-        // ignore content-le
+                  boundary = type.substr(pos, end);
+                  break;
+                }
+            }
+          }
+
+        // TODO handle multipart data
+
+        // ignore content-le if it has a transfer-encoding
         if(has_transfer_encoding) {
           if(transfer_encoding->second == "chunked") { // case sensitive?
+            
           }
           else
             ; // implement
@@ -296,9 +332,11 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     resp.set_data("<html><head><title>supi</title></head>"
                   "<body><h3>Allles Supi!!</h3><blink>blink</blink>"
                   "<form name=\"input\" action=\"/\""
-                  "method=\"post\">"
+                  "method=\"post\" enctype=\"multipart/form-data\">"
                   "<input type=\"text\" name=\"user\">"
                   "<input type=\"text\" name=\"bar\">"
+                  "<input name=\"Datei\" type=\"file\" size=\"50\""
+                  "maxlength=\"100000\" accept=\"text/*\">"
                   "<input type=\"submit\" value=\"Submit\">"
                   "</form></body></html>");
 
