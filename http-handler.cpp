@@ -250,6 +250,10 @@ namespace http {
       else if(method == "PUT") {
       }
       else if(method == "DELETE") {
+        detail::deleter_base *deleter = responder->x_deleter();
+        if (!deleter)
+          return 404;
+        return deleter->x_delete(path_id, kw);
       }
       else if(method == "TRACE") {
 #ifndef NO_HTTP_TRACE
