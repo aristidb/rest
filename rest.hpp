@@ -56,14 +56,35 @@ public:
   keywords();
   ~keywords();
 
-  std::string &operator[](std::string const &);
-  std::istream &read(std::string const &);
-  std::string get_name(std::string const &) const;
+  bool exists(std::string const &, int = 0) const;
 
-  void set(std::string const &, std::string const &);
+  std::string const &get(std::string const &keyword, int index = 0) const {
+    return const_cast<keywords *>(this)->access(keyword, index);
+  }
 
-  void set_stream(std::string const &, std::istream *);
-  void set_name(std::string const &, std::string const &);
+  std::string &access(std::string const &, int = 0);
+
+  std::string &operator[](std::string const &key) {
+    return access(key);
+  }
+
+  std::istream &read(std::string const &, int = 0);
+  std::string get_name(std::string const &, int = 0) const;
+
+  void set(std::string const &key, std::string const &value) {
+    return set(key, 0, value);
+  }
+  void set(std::string const &, int, std::string const &);
+
+  void set_stream(std::string const &key, std::istream *value) {
+    return set_stream(key, 0, value);
+  }
+  void set_stream(std::string const &, int, std::istream *);
+
+  void set_name(std::string const &key, std::string const &value) {
+    set_name(key, 0, value);
+  }
+  void set_name(std::string const &, int, std::string const &);
 
 private:
   class impl;

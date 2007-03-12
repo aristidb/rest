@@ -3,6 +3,7 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <stdexcept>
 #include <sstream>
 
@@ -12,9 +13,9 @@ using namespace boost::multi_index;
 class keywords::impl {
 public:
   struct entry {
-    entry(std::string const &keyword)
-    : keyword(keyword), pending_read(false) {}
-    entry(entry const &o) : keyword(o.keyword) {} // dirty, yeah
+    entry(std::string const &keyword, int index)
+    : keyword(keyword), index(index), pending_read(false) {}
+    entry(entry const &o) : keyword(o.keyword), index(o.index) {} // dirty, yeah
 
     void read() const {
       if (!pending_read) return;
@@ -25,6 +26,7 @@ public:
     }
 
     std::string keyword;
+    int index;
     mutable bool pending_read;
     mutable std::string name;
     mutable std::string data;
@@ -36,7 +38,11 @@ public:
     entry,
     indexed_by<
       hashed_unique<
-        member<entry, std::string, &entry::keyword>
+        composite_key<
+          entry,
+          member<entry, std::string, &entry::keyword>,
+          member<entry, int, &entry::index>
+        >
       >
     >
   > data_t;
@@ -50,43 +56,54 @@ keywords::keywords() : p(new impl) {
 keywords::~keywords() {
 }
 
-std::string &keywords::operator[](std::string const &keyword) {
-  impl::data_t::iterator it = p->data.find(keyword);
+bool keywords::exists(std::string const &keyword, int index) const {
+  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
+  return it != p->data.end();
+}
+
+std::string &keywords::access(std::string const &keyword, int index) {
+  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
   if (it == p->data.end())
     throw std::logic_error("invalid keyword");
   it->read();
   return it->data;
 }
 
-void keywords::set(std::string const &keyword, std::string const &data) {
-  impl::data_t::iterator it = p->data.insert(impl::entry(keyword)).first;
+void keywords::set(
+    std::string const &keyword, int index, std::string const &data)
+{
+  impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
   it->data = data;
   it->pending_read = false;
   it->stream.reset();
 }
 
-void keywords::set_stream(std::string const &keyword, std::istream *stream) {
-  impl::data_t::iterator it = p->data.insert(impl::entry(keyword)).first;
+void keywords::set_stream(
+    std::string const &keyword, int index, std::istream *stream)
+{
+  impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
   it->pending_read = true;
   it->stream.reset(stream);
 }
 
-void keywords::set_name(std::string const &keyword, std::string const &name) {
-  impl::data_t::iterator it = p->data.find(keyword);
+void keywords::set_name(
+    std::string const &keyword, int index, std::string const &name)
+{
+  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
   if (it == p->data.end())
     throw std::logic_error("invalid keyword");
   it->name = name;
 }
 
-std::string keywords::get_name(std::string const &keyword) const {
-  impl::data_t::iterator it = p->data.find(keyword);
+std::string keywords::get_name(std::string const &keyword, int index) const {
+  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
   if (it == p->data.end())
     throw std::logic_error("invalid keyword");
   return it->name;
 }
 
-std::istream &keywords::read(std::string const &keyword) {
-  impl::data_t::iterator it = p->data.find(keyword);
+std::istream &keywords::read(std::string const &keyword, int index) {
+  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
   if (it == p->data.end())
     throw std::logic_error("invalid keyword");
   if (!it->stream)
