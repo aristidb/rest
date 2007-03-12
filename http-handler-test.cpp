@@ -1,3 +1,5 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+
 #include "http-handler.hpp"
 
 // for Testing purpose
