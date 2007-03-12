@@ -157,13 +157,13 @@ namespace http {
 
       if (method == "GET") {
         detail::getter_base *getter = responder->x_getter();
-        if (!getter)
+        if (!getter || !responder->x_exists(path_id, kw))
           return 404;
         return getter->x_get(path_id, kw);
       }
       else if(method == "POST") {
         detail::poster_base *poster = responder->x_poster();
-        if (!poster)
+        if (!poster || !responder->x_exists(path_id, kw))
           return 404;
 
         // Handling Message Entity
@@ -251,7 +251,7 @@ namespace http {
       }
       else if(method == "DELETE") {
         detail::deleter_base *deleter = responder->x_deleter();
-        if (!deleter)
+        if (!deleter || !responder->x_exists(path_id, kw))
           return 404;
         return deleter->x_delete(path_id, kw);
       }
