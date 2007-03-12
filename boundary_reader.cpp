@@ -1,5 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest.hpp"
+#include "rest-utils.hpp"
 #include <cstring>
 #include <boost/scoped_array.hpp>
 #include <istream>
@@ -8,7 +8,7 @@
 #include <testsoon.hpp>
 #include <boost/iostreams/stream.hpp>
 
-using namespace rest::util;
+using namespace rest::utils;
 using namespace boost::iostreams;
 
 class boundary_reader::impl {

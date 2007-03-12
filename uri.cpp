@@ -1,7 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest.hpp"
 
-namespace rest { namespace uri {
+namespace rest { namespace utils { namespace uri {
 
 namespace {
 int from_hex(char c) {
@@ -55,4 +55,4 @@ escape(std::string::const_iterator begin, std::string::const_iterator end) {
   return result;
 }
 
-}}
+}}}

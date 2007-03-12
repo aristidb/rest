@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest.hpp"
+#include "rest-utils.hpp"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
@@ -11,6 +12,7 @@
 using namespace rest;
 namespace det = rest::detail;
 using namespace boost::multi_index;
+namespace uri = rest::utils::uri;
 
 namespace {
   struct keyword_info {
