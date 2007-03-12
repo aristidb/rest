@@ -2,8 +2,10 @@
 
 #include "http-handler.hpp"
 
+#include "boost/asio.hpp"
+
 // for Testing purpose
-using boost::asio::ip::tcp;
+using namespace boost::asio;
 using namespace rest::http;
 using namespace rest;
 
@@ -44,14 +46,15 @@ int const PORT = 8080;
 
 int main() {
   try {
-    boost::asio::io_service io_service;
-    tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), PORT));
+    io_service io_service;
+    ip::tcp::acceptor acceptor(io_service, ip::tcp::endpoint(ip::tcp::v4(),
+                                                             PORT));
     tester t;
     context c;
     c.bind("/", t);
 
     for (;;) {
-      tcp::iostream stream;
+      ip::tcp::iostream stream;
       acceptor.accept(*stream.rdbuf());
       http_handler http(stream);
       response r = http.handle_request(c);

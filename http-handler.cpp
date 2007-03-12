@@ -30,6 +30,7 @@
 
 namespace rest {
 namespace http {
+  typedef std::iostream iostream;
   namespace {
     struct bad_format { };
 
@@ -311,3 +312,30 @@ namespace http {
       chunk(conn, r.get_data());
   }
 }}
+/*
+XTEST((values, (std::string)("ab")("\r\n"))) {
+  std::stringstream x(value);
+  Equals(expect(x, value[0]), true);
+  Equals(x.get(), value[1]);
+}
+
+XTEST((values, (std::string)("ab")("\r\n"))) {
+  std::stringstream x(value);
+  Not_equals(value[0], value[1]);
+  Equals(expect(x, value[1]), false);
+  Equals(x.get(), value[0]);
+}
+
+XTEST((values, (char)(' ')('\t'))) {
+  Check(isspht(value));
+}
+
+XTEST((values, (char)('\n')('\v')('\a')('a'))) {
+  Check(!isspth(value));
+}
+
+XTEST((values, (std::string)())) {
+  std::stringstream x(value);
+  header_field field = get_header_field(x);
+}
+*/

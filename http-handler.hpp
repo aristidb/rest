@@ -7,12 +7,10 @@
 
 namespace rest {
 namespace http {
-  typedef ::boost::asio::ip::tcp::iostream iostream;
-
   class http_handler {
-    iostream &conn;
+    std::iostream &conn;
   public:
-    http_handler(iostream &conn)
+    http_handler(std::iostream &conn)
       : conn(conn)
     { }
 
