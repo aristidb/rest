@@ -26,7 +26,9 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <testsoon.hpp>
 #include <iostream> // DEBUG
+#include <sstream>
 
 namespace rest {
 namespace http {
@@ -312,7 +314,9 @@ namespace http {
       chunk(conn, r.get_data());
   }
 }}
-/*
+
+using namespace rest::http;
+
 XTEST((values, (std::string)("ab")("\r\n"))) {
   std::stringstream x(value);
   Equals(expect(x, value[0]), true);
@@ -331,11 +335,11 @@ XTEST((values, (char)(' ')('\t'))) {
 }
 
 XTEST((values, (char)('\n')('\v')('\a')('a'))) {
-  Check(!isspth(value));
+  Check(!isspht(value));
 }
 
-XTEST((values, (std::string)())) {
+XTEST((values, (std::string)("C: D")("A: B"))) {
   std::stringstream x(value);
   header_field field = get_header_field(x);
 }
-*/
+
