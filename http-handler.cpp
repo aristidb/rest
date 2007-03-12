@@ -93,6 +93,8 @@ namespace http {
           current = &ret.get<FIELD_VALUE>();
           *current += in.get();
         }
+        else if(t == iostream::traits_type::eof())
+          break;
         else
           *current += t;
       }
@@ -101,7 +103,6 @@ namespace http {
 
     typedef ::boost::tuple<std::string, std::string, std::string>
               request_line;
-
     enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
     request_line get_request_line(iostream &in) {
@@ -315,6 +316,7 @@ namespace http {
   }
 }}
 
+namespace {
 using namespace rest::http;
 
 XTEST((values, (std::string)("ab")("\r\n"))) {
@@ -338,8 +340,32 @@ XTEST((values, (char)('\n')('\v')('\a')('a'))) {
   Check(!isspht(value));
 }
 
-XTEST((values, (std::string)("C: D")("A: B"))) {
-  std::stringstream x(value);
+TEST() {
+  char const *value[] = { "foo", "bar, kotz=\"haHA;\"" };
+
+  std::string header(value[0]);
+  header += ":         ";
+  header += value[1];
+  std::stringstream x(header);
   header_field field = get_header_field(x);
+  Equals(field.get<FIELD_NAME>(), value[0]);
+  Equals(field.get<FIELD_VALUE>(), value[1]);
 }
 
+XTEST((values, (std::string)("   x")("\t\ny")(" z "))) {
+  std::stringstream x(value);
+  int r = remove_spaces(x);
+  int t = x.get();
+  Equals(r, t);
+  Check(!isspht(t));
+}
+
+TEST() {
+  std::string line = "GET /foo/?bar&k=kk HTTP/1.1\r\n";
+  std::stringstream x(line);
+  request_line req = get_request_line(x);
+  Equals(req.get<REQUEST_METHOD>(), "GET");
+  Equals(req.get<REQUEST_URI>(), "/foo/?bar&k=kk");
+  Equals(req.get<REQUEST_HTTP_VERSION>(), "HTTP/1.1");
+}
+}
