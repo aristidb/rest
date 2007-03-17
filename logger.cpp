@@ -3,6 +3,10 @@
 #include <boost/thread/once.hpp>
 #include <testsoon.hpp>
 
+#ifndef REST_LOGPIPE
+#define REST_LOGPIPE "/tmp/rest-logpipe"
+#endif
+
 using namespace rest::utils;
 
 class logger::impl {

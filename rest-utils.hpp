@@ -48,14 +48,11 @@ private:
 };
 
 class logger : boost::noncopyable {
-public:
-  static logger &get(); // for all threads (!)
+public: // thread safe
+  static logger &get();
 
-public: // not thread safe
-  void open(char const *file);
   void set_minimum_priority(int priority);
 
-public: // thread safe
   void log(int priority, char const *file, int line, std::string const &data);
 
 private:
@@ -71,7 +68,8 @@ private:
 
 enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
 
-#define REST_LOG(prio, data) ::rest::logger::get().log((prio), (data))
+#define REST_LOG(prio, data) \
+  ::rest::logger::get().log((prio), __FILE__, __LINE__, (data))
 
 }}
 
