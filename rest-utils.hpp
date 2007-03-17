@@ -5,6 +5,8 @@
 #include <iosfwd>
 #include <string>
 #include <boost/iostreams/concepts.hpp>
+#include <boost/iostreams/read.hpp>
+#include <boost/iostreams/pipeline.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
@@ -26,11 +28,14 @@ namespace uri {
   }
 }
 
-// TODO: filter
 class boundary_filter : public boost::iostreams::multichar_input_filter {
 public:
   boundary_filter(std::string const &boundary)
   : boundary(boundary), buf(new char[boundary.size()]), eof(false),
+    pos(boundary.size()) {}
+    
+  boundary_filter(boundary_filter const &o)
+  : boundary(o.boundary), buf(new char[boundary.size()]), eof(false),
     pos(boundary.size()) {}
 
   template<typename Source>
@@ -49,7 +54,8 @@ public:
             buf.get() + pos,
             boundary.size() - pos);
 
-        std::streamsize c = source.read(buf.get() + boundary.size() - pos, pos);
+        std::streamsize c = 
+          boost::iostreams::read(source, buf.get() + boundary.size() - pos, pos);
 
         if (c == -1) {
           eof = true;
@@ -80,6 +86,7 @@ private:
   bool eof;
   std::streamsize pos;
 };
+BOOST_IOSTREAMS_PIPABLE(boundary_filter, 0)
 
 class logger : boost::noncopyable {
 public: // thread safe
