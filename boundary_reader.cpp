@@ -49,6 +49,6 @@ TEST() {
   filtering_istream s(boundary_filter("\nfoo") | boost::ref(x));
   std::ostringstream y;
   y << s.rdbuf();
-  Equals("-" + y.str(), "-\nfo");
+  Equals("-" + y.str(), "-");
 }
 

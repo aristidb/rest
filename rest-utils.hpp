@@ -61,6 +61,7 @@ public:
         } else if (c != pos) {
           pos = boundary.size() - c;
           std::memmove(buf.get() + pos, buf.get(), c);
+          continue;
         } else {
           pos = 0;
           int cmp =
