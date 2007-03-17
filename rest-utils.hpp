@@ -46,16 +46,14 @@ public:
       if (boundary.compare(0, len, buf.get() + pos, len) == 0) {
         if (len == boundary.size()) {
           eof = true;
-         break;
+          break;
         }
 
-        std::memmove(
-            buf.get(),
-            buf.get() + pos,
-            boundary.size() - pos);
+        if (len > 0)
+          std::memmove(buf.get(), buf.get() + pos, len);
 
-        std::streamsize c = 
-          boost::iostreams::read(source, buf.get() + boundary.size() - pos, pos);
+        std::streamsize c =
+          boost::iostreams::read(source, buf.get() + len, pos);
 
         if (c == -1) {
           eof = true;
