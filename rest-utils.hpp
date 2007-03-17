@@ -5,6 +5,7 @@
 #include <iosfwd>
 #include <string>
 #include <boost/iostreams/concepts.hpp>
+#include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
 
@@ -25,26 +26,59 @@ namespace uri {
   }
 }
 
-class boundary_reader : public boost::iostreams::source {
+// TODO: filter
+class boundary_filter : public boost::iostreams::multichar_input_filter {
 public:
-  boundary_reader(std::istream &source, std::string const &boundary);
-  boundary_reader(boundary_reader const &);
-  ~boundary_reader();
+  boundary_filter(std::string const &boundary)
+  : boundary(boundary), buf(new char[boundary.size()]), eof(false),
+    pos(boundary.size()) {}
 
-  void swap(boundary_reader &o) {
-    p.swap(o.p);
-  }
+  template<typename Source>
+  std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+    std::streamsize i = 0;
+    while (i < n && !eof) {
+      std::size_t len = boundary.size() - pos;
+      if (boundary.compare(0, len, buf.get() + pos, len) == 0) {
+        if (len == boundary.size()) {
+          eof = true;
+         break;
+        }
 
-  boundary_reader &operator=(boundary_reader o) {
-    o.swap(*this);
-    return *this;
-  }
+        std::memmove(
+            buf.get(),
+            buf.get() + pos,
+            boundary.size() - pos);
 
-  std::streamsize read(char *s, std::streamsize n);
+        std::streamsize c = source.read(buf.get() + boundary.size() - pos, pos);
+
+        if (c == -1) {
+          eof = true;
+          break;
+        } else if (c != pos) {
+          pos = boundary.size() - c;
+          std::memmove(buf.get() + pos, buf.get(), c);
+        } else {
+          pos = 0;
+          int cmp =
+              boundary.compare(
+                0, boundary.size(),
+                buf.get(), boundary.size());
+          if (cmp == 0) {
+            eof = true;
+            break;
+          }
+        }
+      }
+      outbuf[i++] = buf[pos++];
+    }
+    return i ? i : -1;
+}
 
 private:
-  class impl;
-  boost::scoped_ptr<impl> p;
+  std::string boundary;
+  boost::scoped_array<char> buf;
+  bool eof;
+  std::streamsize pos;
 };
 
 class logger : boost::noncopyable {

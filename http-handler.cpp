@@ -5,7 +5,7 @@
   * This Code is so horrible!
 
   * Look for Todos...
-  * implement POST, PUT, DELETE
+  * implement POST, PUT
   * implement handling entity data
   * find a way to let the HTTP-Parser and the HTTP-Response (send) method
     talk to each other (e.g. exchange Accept-information)
@@ -223,6 +223,7 @@ namespace http {
                       ++end;
 
                   std::string boundary = type.substr(pos, end);
+                  // muss man hier nich chunked etc. beachten?
                   //....
                   break;
                 }
@@ -237,7 +238,7 @@ namespace http {
             
           }
           else
-            ; // implement
+            ; // TODO implement
           std::cout << "Transfer-Encoding\n"; // DEBUG
         }
         else {

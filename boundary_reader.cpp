@@ -1,4 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#if 0
 #include "rest-utils.hpp"
 #include <cstring>
 #include <boost/scoped_array.hpp>
@@ -115,4 +116,4 @@ TEST() {
   y << s.rdbuf();
   Equals("-" + y.str(), "-\nfo");
 }
-
+#endif
