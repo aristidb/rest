@@ -6,6 +6,7 @@
 #include <string>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace rest { namespace utils {
 
@@ -46,7 +47,7 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
-class logger {
+class logger : boost::noncopyable {
 public:
   static logger &get(); // for all threads (!)
 
@@ -60,6 +61,12 @@ public: // thread safe
 private:
   logger();
   ~logger();
+
+  static void init();
+
+private:
+  class impl;
+  boost::scoped_ptr<impl> p;
 };
 
 enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
