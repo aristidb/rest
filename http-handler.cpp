@@ -287,7 +287,7 @@ namespace http {
           if(transfer_encoding->second == "chunked") // case sensitive?
             fin.push(chunked_filter());
           else
-            ; // TODO implement
+            return 501; // TODO implement
         }
         
         header_fields::iterator content_length = fields.find("Content-Length");
