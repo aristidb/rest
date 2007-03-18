@@ -126,11 +126,11 @@ namespace http {
   }
 
   boost::tuple<bool,int> hex2int(int ascii) {
-    if(std::isdigit(ascii)) {
+    if(std::isdigit(ascii))
       return boost::make_tuple(true, ascii - '0');
     else if(ascii >= 'a' && ascii <= 'f')
       return boost::make_tuple(true, ascii - 'a' + 0xa);
-    else if(ascii >? 'A' && ascii <= 'F')
+    else if(ascii >= 'A' && ascii <= 'F')
       return boost::make_tuple(true, ascii - 'A' + 0xa);
     else
       return boost::make_tuple(false, 0);
@@ -321,8 +321,8 @@ namespace http {
         //if(!is_multipart) {
           // TODO check if Content-length includes LWS at the end of the header
           std::string s(length, ' ');
-          if (fin.read(&s[0], length) != length)
-            ;// TODO: CLOSE
+          fin.read(&s[0], length);
+          // TODO: check fin
           std::cout << "Entity: " << s << "\n"; // DEBUG
           
           // und was nu mit den Daten?
@@ -456,7 +456,7 @@ TEST() {
   Equals(req.get<REQUEST_HTTP_VERSION>(), "HTTP/1.1");
 }
 
-XTEST((values (int)('a', '1', 'F'))) {
-  //...
+XTEST((values, (int)('a')('1')('F'))) {
+  Equals(value, 0);
 }
 }
