@@ -146,7 +146,7 @@ namespace http {
         // read header and set pending
         int c;
         c = io::get(source);
-        if(c == EOF) // was ist mit WOULD_BLOCK? einfach blocken lassen oder signalisieren? ...
+        if(c == EOF)
           return -1;
         else if(c == '\r') {
           c = io::get(source);
@@ -166,7 +166,7 @@ namespace http {
           else
             break;
           c = io::get(source);
-          if(c == EOF) // was ist mit WOULD_BLOCK? einfach blocken lassen oder signalisieren? ...
+          if(c == EOF)
             return -1;
         }
         bool cr = false;
@@ -202,7 +202,7 @@ namespace http {
     template<typename Source>
     std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
       std::streamsize c;
-      if (n >= length)
+      if (n <= length)
         c = io::read(source, outbuf, n);
       else
         c = io::read(source, outbuf, length);
@@ -269,8 +269,6 @@ namespace http {
                                   "100-continue") == 0)
           return 100; // Continue
 
-        io::filtering_istream fin;
-
         header_fields::iterator transfer_encoding =
           fields.find("Transfer-Encoding");
         bool has_transfer_encoding = transfer_encoding != fields.end();
@@ -281,7 +279,7 @@ namespace http {
           if(!has_transfer_encoding)
             return 411; // Content-length required
         }
-        else if(!has_transfer_encoding)
+        else
           length =
             ::boost::lexical_cast< ::std::size_t>(content_length->second);
 
@@ -329,20 +327,20 @@ namespace http {
             }
           }
 */
+        io::filtering_istream fin;
         if(has_transfer_encoding) {
           if(transfer_encoding->second == "chunked") // case sensitive?
             fin.push(chunked_filter());
           else
             ; // TODO implement
-          std::cout << "Transfer-Encoding\n"; // DEBUG
-        
-          fin.push(conn); 
+          std::cout << "Transfer-Encoding\n"; // DEBUG 
         }
+        fin.push(*conn.rdbuf()); 
         
         //if(!is_multipart) {
           // TODO check if Content-length includes LWS at the end of the header
           std::string s(length, ' ');
-          fin.read(&s[0], length);
+          fin.read(&s[0], length); // <- hier isses nich initialisiert. manchmal zumindest
           // TODO: check fin
           std::cout << "Entity: " << s << "\n"; // DEBUG
           
@@ -478,17 +476,45 @@ TEST() {
 }
 
 TEST_GROUP(aux) {
-
-XTEST((values, (char)('a')('1')('F'))) {
-  std::stringstream s;
-  s << value;
-  int x;
-  s >> std::hex >> x;
-  boost::tuple<bool, int> t = hex2int(value);
-  Check(t.get<0>());
-  Equals(t.get<1>(), x);
+  XTEST((values, (char)('a')('1')('F'))) {
+    std::stringstream s;
+    s << value;
+    int x;
+    s >> std::hex >> x;
+    boost::tuple<bool, int> t = hex2int(value);
+    Check(t.get<0>());
+    Equals(t.get<1>(), x);
+  }
 }
 
+TEST_GROUP(filters) {
+  TEST(length #1) {
+    std::stringstream s1;
+    s1 << std::string(133, 'x');
+
+    io::filtering_istream fs;
+    fs.push(length_filter(100));
+    fs.push(boost::ref(s1));
+
+    std::stringstream s2;
+    s2 << fs.rdbuf();
+
+    Equals(s2.str(), std::string(100, 'x'));
+  }
+
+  TEST(length #2) {
+    std::stringstream s1;
+    s1 << std::string(40, 'x');
+
+    io::filtering_istream fs;
+    fs.push(length_filter(100));
+    fs.push(boost::ref(s1));
+
+    std::stringstream s2;
+    s2 << fs.rdbuf();
+
+    Equals(s2.str(), std::string(40, 'x'));
+  }
 }
 
 }

@@ -3,7 +3,7 @@
 #define REST_HTTP_HTTP_HANDLER_HPP
 
 #include "rest.hpp"
-#include "boost/asio.hpp"
+#include <iosfwd>
 
 namespace rest {
 namespace http {
