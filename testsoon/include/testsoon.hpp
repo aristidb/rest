@@ -46,6 +46,7 @@
 #include <boost/preprocessor/comparison/equal.hpp>
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #ifndef NO_STDLIB
 #include <string>
@@ -718,7 +719,6 @@ private:
   } \
   void test_class::do_test(test_param) const
 
-
 #define TESTSOON_GEN_TUPLE2SEQ_PROCESS2(x, y) \
   ((x, y)) \
   TESTSOON_GEN_TUPLE2SEQ_PROCESS
@@ -796,6 +796,21 @@ private:
       operator std::vector<BOOST_PP_SEQ_HEAD(x)>() \
     ) \
   )
+
+#define TESTSOON_PARAM__2tuples(x) \
+  TESTSOON_PARAM_2tuples1(TESTSOON_GEN_TUPLE2SEQ(x))
+
+#define TESTSOON_PARAM_2tuples1(x) \
+  TESTSOON_PARAM_2tuples2(BOOST_PP_SEQ_HEAD(x), BOOST_PP_SEQ_TAIL(x))
+
+#define TESTSOON_PARAM_2tuples2(types, values) \
+  TESTSOON_PARAM__generator( \
+    (std::vector<boost::tuple<BOOST_PP_TUPLE_REM(2) types> >) \
+    (boost::assign::list_of \
+      BOOST_PP_SEQ_FOR_EACH(TESTSOON_PARAM_2tuples3, ~, values)))
+
+#define TESTSOON_PARAM_2tuples3(r, x, value) \
+  (boost::make_tuple value)
 
 #define TESTSOON_PARAM_INITIAL \
   ("") ((0, ~)) (0) ((0, ()))
