@@ -329,20 +329,28 @@ namespace http {
 */
         io::filtering_istream fin;
         if(has_transfer_encoding) {
+          std::cout << "te... " << transfer_encoding->second << std::endl;
           if(transfer_encoding->second == "chunked") // case sensitive?
             fin.push(chunked_filter());
           else
             ; // TODO implement
           std::cout << "Transfer-Encoding\n"; // DEBUG 
         }
-        fin.push(*conn.rdbuf()); 
+        fin.push(length_filter(length));
+        fin.push(boost::ref(conn), 0, 0);
         
         //if(!is_multipart) {
           // TODO check if Content-length includes LWS at the end of the header
-          std::string s(length, ' ');
-          fin.read(&s[0], length); // <- hier isses nich initialisiert. manchmal zumindest
+          //std::string s(length, ' ');
+          // der code hier ist eh falsch:
+          std::cout << "reading: " << length << std::endl;
+          std::cout << "<<" << fin.rdbuf() << ">>" << std::endl;
+          //fin.read(&s[0], length); // <- hier isses nich initialisiert. manchmal zumindest
+          // ich denke, später wird das eher so aussehen:
+          // mystream << fin.rdbuf(); - bzw. in keywords
+
           // TODO: check fin
-          std::cout << "Entity: " << s << "\n"; // DEBUG
+          //std::cout << "Entity: " << s << "\n"; // DEBUG
           
           // und was nu mit den Daten?
           // auf cout ausgeben und testen.
@@ -514,6 +522,10 @@ TEST_GROUP(filters) {
     s2 << fs.rdbuf();
 
     Equals(s2.str(), std::string(40, 'x'));
+  }
+
+  TEST(chunked #1) {
+    Check(!"TODO");
   }
 }
 
