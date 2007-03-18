@@ -14,6 +14,8 @@
   * change get_header_field to integrate the fields into a map
   * remove exceptions
   * clean up!!
+
+  * use streambuf instead of iostreams
 */
 
 #include "http-handler.hpp"
@@ -142,7 +144,9 @@ namespace http {
   
     template<typename Source>
     std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
-      if (pending == 0) {
+      if (pending == -1)
+        return -1;
+      else if (pending == 0) {
         // read header and set pending
         int c;
         c = io::get(source);
@@ -178,6 +182,10 @@ namespace http {
           else if(c == EOF)
             return -1;
           c = io::get(source);
+        }
+        if(pending == 0) {
+          pending = -1;
+          return -1;
         }
       }
       std::streamsize c;
@@ -273,89 +281,30 @@ namespace http {
           fields.find("Transfer-Encoding");
         bool has_transfer_encoding = transfer_encoding != fields.end();
 
-        ::std::size_t length;
+        io::filtering_istream fin;
+        if(has_transfer_encoding) {
+          std::cout << "te... " << transfer_encoding->second << std::endl; // DEBUG
+          if(transfer_encoding->second == "chunked") // case sensitive?
+            fin.push(chunked_filter());
+          else
+            ; // TODO implement
+        }
+        
         header_fields::iterator content_length = fields.find("Content-Length");
         if(content_length == fields.end()) {
           if(!has_transfer_encoding)
             return 411; // Content-length required
         }
-        else
-          length =
-            ::boost::lexical_cast< ::std::size_t>(content_length->second);
-
-        // TODO check for length limit
-/*
-        bool is_multipart = false;
-        header_fields::iterator content_type = fields.find("Content-Type");
-        if(content_type == fields.end())
-          // Set to default value; see RFC 2616 7.2.1 Type
-          fields["Content-Type"] = "application/octet-stream";
-        else
-          // check if the content is multipart
-          // see RFC 2046 5.1. Multipart Media Type
-          if(content_type->second.compare(0, sizeof("multipart/")-1,
-                                          "multipart/") == 0)
-          {
-            is_multipart = true;
-            std::string const &type = content_type->second;
-            for(;;) {
-              std::size_t pos = type.find(';', 0);
-              if(pos == std::string::npos)
-                throw bad_format();
-              ++pos;
-              while(type[pos] == ' ') // ignore empty spaces
-                ++pos;
-              if(type.compare(pos, sizeof("boundary=")-1,
-                              "boundary=") == 0)
-                {
-                  pos += sizeof("boundary=");
-                  std::size_t end = pos;
-                  if(type[pos] == '"') {
-                    ++pos; ++end;
-                    // TODO is there a way to escape " in MIME-Flags?
-                    while(type[end] != '"' && type[end] != '\r')
-                      ++end;
-                  }
-                  else
-                    while(type[end] != ';' && !std::isspace(type[end]))
-                      ++end;
-
-                  fin.push(boundary_filter(type.substr(pos, end))); // ist das wirklich aufgabe dieser funktion?
-                  // ist mir suspekt, dass diese funktion genau den ersten boundary rausholt aber sonst keinen, oder?
-                  break;
-                }
-            }
-          }
-*/
-        io::filtering_istream fin;
-        if(has_transfer_encoding) {
-          std::cout << "te... " << transfer_encoding->second << std::endl;
-          if(transfer_encoding->second == "chunked") // case sensitive?
-            fin.push(chunked_filter());
-          else
-            ; // TODO implement
-          std::cout << "Transfer-Encoding\n"; // DEBUG 
+        else {
+          std::size_t length = boost::lexical_cast<std::size_t>(content_length->second);
+          fin.push(length_filter(length));
         }
-        fin.push(length_filter(length));
         fin.push(boost::ref(conn), 0, 0);
         
-        //if(!is_multipart) {
-          // TODO check if Content-length includes LWS at the end of the header
-          //std::string s(length, ' ');
-          // der code hier ist eh falsch:
-          std::cout << "reading: " << length << std::endl;
+        //DEBUG
+          //std::cout << "reading: " << length << std::endl;
           std::cout << "<<" << fin.rdbuf() << ">>" << std::endl;
-          //fin.read(&s[0], length); // <- hier isses nich initialisiert. manchmal zumindest
-          // ich denke, später wird das eher so aussehen:
-          // mystream << fin.rdbuf(); - bzw. in keywords
-
-          // TODO: check fin
-          //std::cout << "Entity: " << s << "\n"; // DEBUG
-          
-          // und was nu mit den Daten?
-          // auf cout ausgeben und testen.
-          // bzw.: an keywords weiterreichen
-        //}
+        //TODO: an keyword weitergeben
       }
       else if(method == "PUT") {
       }
@@ -525,7 +474,33 @@ TEST_GROUP(filters) {
   }
 
   TEST(chunked #1) {
-    Check(!"TODO");
+    std::stringstream s1;
+    std::size_t n=10;
+    std::string s(n, 'x');
+    s1 << std::hex << n << "\r\n"
+       << s << "\r\n0\r\n";
+    "a\r\nabcdefghij\r\n0\r\n"
+    ); // nimm doch lieber ziffern
+    
+    io::filtering_istream fs;
+    fs.push(chunked_filter());
+    fs.push(boost::ref(s1));
+    
+    
+  }
+
+  TEST(chunked invalid) {
+    std::stringstream s1;
+    s1 << "this is invalid";
+
+    io::filtering_stream fs;
+    fs.push(chunked_filter());
+    fs.push(boost::ref(s1));
+
+    std::stringstream s2;
+    s2 << fs.rdbuf();
+
+    Equals(s2.str(), "");
   }
 }
 
