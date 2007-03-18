@@ -477,7 +477,18 @@ TEST() {
   Equals(req.get<REQUEST_HTTP_VERSION>(), "HTTP/1.1");
 }
 
-XTEST((values, (int)('a')('1')('F'))) {
-  Equals(value, 0);
+TEST_GROUP(aux) {
+
+XTEST((values, (char)('a')('1')('F'))) {
+  std::stringstream s;
+  s << value;
+  int x;
+  s >> std::hex >> x;
+  boost::tuple<bool, int> t = hex2int(value);
+  Check(t.get<0>());
+  Equals(t.get<1>(), x);
 }
+
+}
+
 }
