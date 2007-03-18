@@ -192,7 +192,28 @@ namespace http {
     }
 
   private:
-    std::streamsize pending; // bis zum nächsten chunk header
+    std::streamsize pending;
+  };
+
+  class length_filter : public io::multichar_input_filter {
+  public:
+    length_filter(std::streamsize length) : length(length) {}
+
+    template<typename Source>
+    std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+      std::streamsize c;
+      if (n >= length)
+        c = io::read(source, outbuf, n);
+      else
+        c = io::read(source, outbuf, length);
+      if (c == -1)
+        return -1;
+      length -= c;
+      return c;
+    }
+
+  private:
+    std::streamsize length;
   };
 
   response http_handler::handle_request(context &global)
