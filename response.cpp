@@ -19,7 +19,7 @@ namespace rest {
       "Request Entity Too Large", "Request-URI Too Long",
       "Unsupported Media Type", "Requested Range Not Satisfiable",
       "Expectation Failed",
-      // 500 - 5005
+      // 500 - 505
       "Internal Server Error", "Not Implemented", "Bad Gateway",
       "Service Unavailable", "Gateway Timeout", "HTTP Version Not Supported"
     };

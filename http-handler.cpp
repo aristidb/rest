@@ -6,10 +6,7 @@
 
   * Look for Todos...
   * implement POST, PUT
-  * implement handling entity data
-  * find a way to let the HTTP-Parser and the HTTP-Response (send) method
-    talk to each other (e.g. exchange Accept-information)
-  * implement Transfer-encodings (chunked, gzip and co)
+  * implement other Transfer-encodings (gzip and co)
 
   * change get_header_field to integrate the fields into a map
   * remove exceptions
@@ -224,8 +221,7 @@ namespace http {
     std::streamsize length;
   };
 
-  response http_handler::handle_request(context &global)
-  {
+  response http_handler::handle_request(context &global) {
     try {
       std::string method, uri, version;
       boost::tie(method, uri, version) = get_request_line(conn);
@@ -270,13 +266,6 @@ namespace http {
         if (!poster || !responder->x_exists(path_id, kw))
           return 404;
 
-        // Handling Message Entity
-        header_fields::iterator expect = fields.find("Expect");
-        if(expect != fields.end() &&
-           expect->second.compare(0,sizeof("100-continue")-1,
-                                  "100-continue") == 0)
-          return 100; // Continue
-
         header_fields::iterator transfer_encoding =
           fields.find("Transfer-Encoding");
         bool has_transfer_encoding = transfer_encoding != fields.end();
@@ -300,6 +289,12 @@ namespace http {
           fin.push(length_filter(length));
         }
         fin.push(boost::ref(conn), 0, 0);
+        
+        header_fields::iterator expect = fields.find("Expect");
+        if(expect != fields.end() &&
+           expect->second.compare(0,sizeof("100-continue")-1,
+                                  "100-continue") == 0)
+          return 100; // Continue
         
         //DEBUG
           //std::cout << "reading: " << length << std::endl;
