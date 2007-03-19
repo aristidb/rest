@@ -5,6 +5,7 @@ include_directories(boost_asio_0_3_7)
 include_directories(testsoon/include)
 
 add_definitions(-Wall -W)
+#add_definitions(-fvisibility=hidden) #TODO
 
 add_library(rest SHARED
   rest_test.cpp http-handler.cpp

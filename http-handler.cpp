@@ -100,7 +100,7 @@ namespace http {
         else if(t == iostream::traits_type::eof())
           break;
         else
-          *current += t;
+          *current += t; //TODO FIELD_NAME is case-insensitive
       }
       return ret;
     }
@@ -240,7 +240,6 @@ namespace http {
         std::cout << field.get<FIELD_NAME>() << ": "
                   << field.get<FIELD_VALUE>() << "\n"; // DEBUG
 
-        // TODO do sth with the field
         if(expect(conn, '\r') && expect(conn, '\n'))
           break;
       }
