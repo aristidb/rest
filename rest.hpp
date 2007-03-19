@@ -295,6 +295,50 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
+class host : boost::noncopyable {
+public:
+  host(std::string const &);
+  ~host();
+
+  void set_host(std::string const &);
+  std::string get_host() const;
+
+  context &get_context();
+
+private:
+  template<class T>
+  static void delete_helper(void *p) { delete static_cast<T *>(p); }
+
+public:
+  template<class T>
+  void store(T *p) {
+    do_store(p, &delete_helper<T>);
+  }
+
+private:
+  void do_store(void *, void (*)(void*));
+
+  class impl;
+  boost::scoped_ptr<impl> p;
+};
+
+class server : boost::noncopyable {
+public:
+  server(short port);
+  ~server();
+
+  void set_port(short);
+  short get_port() const;
+
+  void add_host(host const &);
+
+  void serve();
+
+private:
+  class impl;
+  boost::scoped_ptr<impl> p;
+};
+
 }
 
 #endif
