@@ -21,6 +21,7 @@
 #include <map>
 #include <cstdio>
 #include <cctype>
+#include <ctime>
 #include <string>
 #include <boost/tuple/tuple.hpp>
 #include <boost/lexical_cast.hpp>
@@ -348,8 +349,11 @@ namespace http {
     // Returns a string with the correct formated current Data and Time
     // see RFC 2616 3.3 Date/Time Formats
     std::string current_date_time() {
-      // TODO ...
-      return "Sat, 10 Mar 2007 01:19:04 GMT";
+      time_t t = std::time(0x0);
+      // warning: the following functions are not thread safe!
+      //   see localtime_r and asctime_r
+      std::tm *ltime = std::localtime(&t);
+      return std::asctime(ltime);
     }
   }
 
