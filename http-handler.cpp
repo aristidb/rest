@@ -410,12 +410,10 @@ namespace http {
     if(!r.get_type().empty())
       conn << "Content-Type: " << r.get_type() << "\r\n";
     if(!r.get_data().empty())
-      conn << "Transfer-Encoding: chunked\r\n"; // TODO implement gzip and co
+      conn << "Content-Length: " << r.get_data().size() << "\r\n";
     conn << "\r\n";
 
-    // Entity
-    if(!r.get_data().empty())
-      chunk(conn, r.get_data());
+    conn << r.get_data();
   }
 }}
 
