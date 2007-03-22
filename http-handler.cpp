@@ -44,13 +44,13 @@ namespace http {
 
     bool expect(iostream &in, char c) {
       int t = in.get();
-      if(t != c) {
-        in.unget();
-        return false;
-      }
+      if(t == c)
+        return true;
       else if(t == EOF)
         throw bad_format();
-      return true;
+
+      in.unget();
+      return false;
     }
 
     // checks if `c' is a space or a h-tab (see RFC 2616 chapter 2.2)
