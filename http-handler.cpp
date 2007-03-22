@@ -244,6 +244,7 @@ namespace http {
         std::cout << field.get<FIELD_NAME>() << ": "
                   << field.get<FIELD_VALUE>() << "\n"; // DEBUG
 
+        // XXX this is kind of a hard condition, see EOF handling
         if(expect(conn, '\r') && expect(conn, '\n'))
           break;
       }
