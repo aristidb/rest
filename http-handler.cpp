@@ -48,6 +48,8 @@ namespace http {
         in.unget();
         return false;
       }
+      else if(t == EOF)
+        throw bad_format();
       return true;
     }
 
