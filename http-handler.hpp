@@ -15,7 +15,7 @@ namespace http {
     { }
 
     response handle_request(context &global);
-    void send(response &r);
+    void send(response const &r);
   };
 }}
 

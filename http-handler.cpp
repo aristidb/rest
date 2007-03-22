@@ -408,9 +408,9 @@ namespace http {
     }
   }
 
-  void http_handler::send(response &r) {
+  void http_handler::send(response const &r) {
     // Status Line
-    conn << "HTTP/1.1 " << ::boost::lexical_cast<std::string>(r.get_code())
+    conn << "HTTP/1.1 " << r.get_code()
          << " " << r.get_reason() << "\r\n";
 
     // Header Fields
