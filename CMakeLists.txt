@@ -8,8 +8,15 @@ add_definitions(-Wall -W)
 #add_definitions(-fvisibility=hidden) #TODO
 
 add_library(rest SHARED
-  rest_test.cpp http-handler.cpp
-  context.cpp keywords.cpp response.cpp uri.cpp boundary_reader.cpp
+  rest_test.cpp
+  http-handler.cpp
+  context.cpp
+  keywords.cpp
+  response.cpp
+  uri.cpp
+  boundary_reader.cpp
+  host.cpp
+  server.cpp
   logger.cpp
 )
 target_link_libraries(rest boost_iostreams boost_thread)
