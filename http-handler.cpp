@@ -74,11 +74,27 @@ namespace http {
     // see RFC 2616 chapter 4.2
     header_field get_header_field(iostream &in) {
       header_field ret;
-      std::string *current = &ret.get<FIELD_NAME>();
-      int t;
+      int t = 0;
       while(!in.eof() &&
-             in.good()) {
-        t = in.get();
+            in.good())
+      {
+        t = io::get(in);
+        if(t == '\n' || t == '\r')
+          throw bad_format();
+        else if(t == iostream::traits_type::eof())
+          break;
+        else if(t == ':') {
+          remove_spaces(in);
+          break;
+        }
+        else
+          ret.get<FIELD_NAME>() += std::tolower(t);
+      }
+
+      while(!in.eof() &&
+            in.good())
+      {
+        t = io::get(in);
         if(t == '\n' || t == '\r') {
           // Newlines in header fields are allowed when followed
           // by an SP (space or horizontal tab)
@@ -87,24 +103,17 @@ namespace http {
           t = in.get();
           if(isspht(t)) {
             remove_spaces(in);
-            *current += ' ';
+            ret.get<FIELD_VALUE>() += ' ';
           }
           else {
             in.unget();
             break;
           }
         }
-        else if(t == ':' && // Seperates name and value
-                current != &ret.get<FIELD_VALUE>())
-        {
-          remove_spaces(in);
-          current = &ret.get<FIELD_VALUE>();
-          *current += in.get();
-        }
         else if(t == iostream::traits_type::eof())
           break;
         else
-          *current += t; //TODO FIELD_NAME is case-insensitive
+          ret.get<FIELD_VALUE>() += t;
       }
       return ret;
     }
@@ -277,7 +286,7 @@ namespace http {
             return 404;
         }
         header_fields::iterator transfer_encoding =
-          fields.find("Transfer-Encoding");
+          fields.find("transfer-encoding");
         bool has_transfer_encoding = transfer_encoding != fields.end();
 
         io::filtering_istream fin;
@@ -289,7 +298,7 @@ namespace http {
             return 501; // TODO implement
         }
         
-        header_fields::iterator content_length = fields.find("Content-Length");
+        header_fields::iterator content_length = fields.find("content-length");
         if(content_length == fields.end()) {
           if(!has_transfer_encoding)
             return 411; // Content-length required
@@ -300,7 +309,7 @@ namespace http {
         }
         fin.push(boost::ref(conn), 0, 0);
         
-        header_fields::iterator expect = fields.find("Expect");
+        header_fields::iterator expect = fields.find("expect");
         if(expect != fields.end() &&
            expect->second.compare(0,sizeof("100-continue")-1,
                                   "100-continue") == 0)
