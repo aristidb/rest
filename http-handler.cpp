@@ -244,7 +244,6 @@ namespace http {
         std::cout << field.get<FIELD_NAME>() << ": "
                   << field.get<FIELD_VALUE>() << "\n"; // DEBUG
 
-        // XXX this is kind of a hard condition, see EOF handling
         if(expect(conn, '\r') && expect(conn, '\n'))
           break;
       }
@@ -265,11 +264,18 @@ namespace http {
           return 404;
         return getter->x_get(path_id, kw);
       }
-      else if(method == "POST") {
-        detail::poster_base *poster = responder->x_poster();
-        if (!poster || !responder->x_exists(path_id, kw))
-          return 404;
-
+      else if(method == "POST" || method == "PUT") {
+        // bisschen problematisch mit den keywords
+        if(method == "POST") {
+          detail::poster_base *poster = responder->x_poster();
+          if (!poster || !responder->x_exists(path_id, kw))
+            return 404;
+        }
+        else if(method == "PUT") {
+          detail::putter_base *putter = responder->x_putter();
+          if (!putter || !responder->x_exists(path_id, kw))
+            return 404;
+        }
         header_fields::iterator transfer_encoding =
           fields.find("Transfer-Encoding");
         bool has_transfer_encoding = transfer_encoding != fields.end();
@@ -304,8 +310,6 @@ namespace http {
           //std::cout << "reading: " << length << std::endl;
           std::cout << "<<" << fin.rdbuf() << ">>" << std::endl;
         //TODO: an keyword weitergeben
-      }
-      else if(method == "PUT") {
       }
       else if(method == "DELETE") {
         detail::deleter_base *deleter = responder->x_deleter();
