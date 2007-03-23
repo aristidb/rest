@@ -38,7 +38,16 @@ namespace algo = boost::algorithm;
 #define REST_SERVER_ID "Musikdings.rest/0.1"
 
 namespace {
-  class http_connection {    io::stream_buffer<io::file_descriptor> &conn;    typedef std::bitset<4> state_flags;    enum { NO_ENTITY, HTTP_1_0_COMPAT, ACCEPT_GZIP, ACCEPT_BZIP2 };    state_flags flags;  public:    http_connection(io::stream_buffer<io::file_descriptor> &conn)      : conn(conn) {}    response handle_request();    void send(response const &r);  };
+  class http_connection {    io::stream_buffer<io::file_descriptor> &conn;    enum {
+      CLOSED,
+      NO_ENTITY,
+      HTTP_1_0_COMPAT,
+      ACCEPT_GZIP,
+      ACCEPT_BZIP2,
+      X_NO_FLAG
+    };    typedef std::bitset<X_NO_FLAG> state_flags;    state_flags flags;  public:    http_connection(io::stream_buffer<io::file_descriptor> &conn)      : conn(conn) {}
+
+    bool open() const { return !flags.test(CLOSED); }    response handle_request();    void send(response const &r);  };
 }
 
 class server::impl {
@@ -94,10 +103,11 @@ void server::serve() {
     else if(pid == 0) {
       ::close(listenfd);
       {
-        for(;;) {
-          //http_handler http( ... );
-          //response r = http.handle_request( ... ); // <-- hier
-          //http.send(r);
+        io::stream_buffer<io::file_descriptor> buf(connfd);
+        http_connection conn(buf);
+        while (conn.open()) {
+          response r = conn.handle_request();
+          conn.send(r);
         }
       }
       ::exit(0);
