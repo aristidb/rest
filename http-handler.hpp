@@ -9,9 +9,10 @@ namespace rest {
 namespace http {
   class http_handler {
     std::iostream &conn;
+    bool head_method;
   public:
     http_handler(std::iostream &conn)
-      : conn(conn)
+      : conn(conn), head_method(false)
     { }
 
     response handle_request(context &global);

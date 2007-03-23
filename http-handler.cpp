@@ -5,7 +5,6 @@
   * This Code is so horrible!
 
   * Look for Todos...
-  * implement POST, PUT
   * implement other Transfer-encodings (gzip and co)
 
   * change get_header_field to integrate the fields into a map
@@ -241,7 +240,10 @@ namespace http {
 
       std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
-      if(version != "HTTP/1.1")
+      if(version == "HTTP/1.0") {
+        // TODO HTTP/1.0 compat modus
+      }
+      else if(version != "HTTP/1.1")
         return 505; // HTTP Version not Supported
 
       typedef std::map<std::string, std::string> header_fields;
@@ -272,6 +274,14 @@ namespace http {
         if (!getter || !responder->x_exists(path_id, kw))
           return 404;
         return getter->x_get(path_id, kw);
+      }
+      else if(method == "HEAD") {
+        head_method = true;
+        detail::getter_base *getter = responder->x_getter();
+        if (!getter || !responder->x_exists(path_id, kw))
+          return 404;
+        return getter->x_get(path_id, kw);
+        // TODO tell get-method not to send entity
       }
       else if(method == "POST" || method == "PUT") {
         // bisschen problematisch mit den keywords
@@ -304,7 +314,8 @@ namespace http {
             return 411; // Content-length required
         }
         else {
-          std::size_t length = boost::lexical_cast<std::size_t>(content_length->second);
+          std::size_t length = boost::lexical_cast<std::size_t
+            (content_length->second);
           fin.push(length_filter(length));
         }
         fin.push(boost::ref(conn), 0, 0);
@@ -341,7 +352,7 @@ namespace http {
         return 501;
 #endif
       }
-      else if(method == "HEAD" || method == "CONNECT" || method == "OPTIONS")
+      else if(method == "CONNECT" || method == "OPTIONS")
         return 501; // Not Supported
       else
         throw bad_format();
@@ -422,7 +433,8 @@ namespace http {
       conn << "Content-Length: " << r.get_data().size() << "\r\n";
     conn << "\r\n";
 
-    conn << r.get_data();
+    if(!head_method)
+      conn << r.get_data();
   }
 }}
 
