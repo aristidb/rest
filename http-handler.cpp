@@ -66,13 +66,15 @@ namespace http {
       return c;
     }
 
-    typedef ::boost::tuple<std::string, std::string> header_field;
-    enum { FIELD_NAME, FIELD_VALUE };
+    typedef std::map<std::string, std::string> header_fields;
 
-    // reads a header field from `in' and returns it (as a tuple name, value)
+    // reads a header field from `in' and adds it to `fields'
     // see RFC 2616 chapter 4.2
-    header_field get_header_field(iostream &in) {
-      header_field ret;
+    // Warning: Field names are converted to all lower-case!
+    std::pair<header_fields::iterator, bool> get_header_field
+                                     (iostream &in, header_fields &fields)
+    {
+      std::string name;
       int t = 0;
       while(!in.eof() &&
             in.good())
@@ -87,9 +89,10 @@ namespace http {
           break;
         }
         else
-          ret.get<FIELD_NAME>() += std::tolower(t);
+          name += std::tolower(t);
       }
 
+      std::string value;
       while(!in.eof() &&
             in.good())
       {
@@ -102,7 +105,7 @@ namespace http {
           t = in.get();
           if(isspht(t)) {
             remove_spaces(in);
-            ret.get<FIELD_VALUE>() += ' ';
+            value += ' ';
           }
           else {
             in.unget();
@@ -112,9 +115,10 @@ namespace http {
         else if(t == iostream::traits_type::eof())
           break;
         else
-          ret.get<FIELD_VALUE>() += t;
+          value += t;
       }
-      return ret;
+
+      return fields.insert(std::make_pair(name, value));
     }
 
     typedef ::boost::tuple<std::string, std::string, std::string>
@@ -246,14 +250,17 @@ namespace http {
       else if(version != "HTTP/1.1")
         return 505; // HTTP Version not Supported
 
-      typedef std::map<std::string, std::string> header_fields;
       header_fields fields;
       for(;;) {
-        header_field field = get_header_field(conn);
-        fields[field.get<FIELD_NAME>()] = field.get<FIELD_VALUE>();
+        std::pair<header_fields::iterator, bool> ret =
+          get_header_field(conn, fields);
 
-        std::cout << field.get<FIELD_NAME>() << ": "
-                  << field.get<FIELD_VALUE>() << "\n"; // DEBUG
+        // DEBUG
+        if(ret.second)
+          std::cerr << ret.first->first << ": "
+                    << ret.first->second << "\n";
+        else
+          std::cerr << "field not added!\n";
 
         if(expect(conn, '\r') && expect(conn, '\n'))
           break;
@@ -314,7 +321,7 @@ namespace http {
             return 411; // Content-length required
         }
         else {
-          std::size_t length = boost::lexical_cast<std::size_t
+          std::size_t length = boost::lexical_cast<std::size_t>
             (content_length->second);
           fin.push(length_filter(length));
         }
@@ -469,9 +476,11 @@ TEST() {
   header += ":         ";
   header += value[1];
   std::stringstream x(header);
-  header_field field = get_header_field(x);
-  Equals(field.get<FIELD_NAME>(), value[0]);
-  Equals(field.get<FIELD_VALUE>(), value[1]);
+  header_fields fields;
+  std::pair<header_fields::iterator, bool> field = get_header_field(x, fields);
+  Check(field.second);
+  Equals(field.first->first, value[0]);
+  Equals(field.first->second, value[1]);
 }
 
 XTEST((values, (std::string)("   x")("\t\ny")(" z "))) {
