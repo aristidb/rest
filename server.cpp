@@ -31,8 +31,15 @@
 
 using namespace rest;
 using namespace boost::multi_index;
+namespace det = rest::detail;
 namespace io = boost::iostreams;
 namespace algo = boost::algorithm;
+
+#define REST_SERVER_ID "Musikdings.rest/0.1"
+
+namespace {
+  class http_connection {    io::stream_buffer<io::file_descriptor> &conn;    typedef std::bitset<4> state_flags;    enum { NO_ENTITY, HTTP_1_0_COMPAT, ACCEPT_GZIP, ACCEPT_BZIP2 };    state_flags flags;  public:    http_connection(io::stream_buffer<io::file_descriptor> &conn)      : conn(conn) {}    response handle_request();    void send(response const &r);  };
+}
 
 class server::impl {
 public:
@@ -47,25 +54,9 @@ public:
 
   cont_t hosts;
 
-  io::stream_buffer<io::file_descriptor> conn;
-
-  typedef std::bitset<4> state_flags;
-  enum { // index(!)
-    NO_ENTITY,
-    HTTP_1_0_COMPAT,
-    ACCEPT_GZIP,
-    ACCEPT_BZIP2
-  };
-  state_flags flags;
-
   static const int LISTENQ = 5; // TODO: configurable
 
   impl(short port) : port(port) {}
-
-  response handle_request();
-  void send(response const &);
-
-  static char const *server_id() { return "Musikdings.rest/0.1"; }
 };
 
 server::server(short port) : p(new impl(port)) {}
@@ -221,7 +212,7 @@ namespace {
   }
 }
 
-response server::impl::handle_request() {
+response http_connection::handle_request() {
   try {
     std::string method, uri, version;
     boost::tie(method, uri, version) = get_request_line(conn);
@@ -261,8 +252,8 @@ response server::impl::handle_request() {
 
     keywords kw;
 
-    detail::any_path path_id;
-    detail::responder_base *responder;
+    det::any_path path_id;
+    det::responder_base *responder;
     context *local;
     global.find_responder(uri, path_id, responder, local, kw);
 
@@ -270,14 +261,14 @@ response server::impl::handle_request() {
       return 404;
 
     if (method == "GET") {
-      detail::getter_base *getter = responder->x_getter();
+      det::getter_base *getter = responder->x_getter();
       if (!getter || !responder->x_exists(path_id, kw))
         return 404;
       return getter->x_get(path_id, kw);
     }
     else if(method == "HEAD") {
       flags.set(NO_ENTITY);
-      detail::getter_base *getter = responder->x_getter();
+      det::getter_base *getter = responder->x_getter();
       if (!getter || !responder->x_exists(path_id, kw))
         return 404;
       return getter->x_get(path_id, kw);
@@ -338,7 +329,7 @@ response server::impl::handle_request() {
      fin.pop();//FRESH
     }
     else if (method == "DELETE") {
-      detail::deleter_base *deleter = responder->x_deleter();
+      det::deleter_base *deleter = responder->x_deleter();
       if (!deleter || !responder->x_exists(path_id, kw))
         return 404;
       return deleter->x_delete(path_id, kw);
@@ -368,7 +359,7 @@ response server::impl::handle_request() {
   return 200;
 }
 
-void server::impl::send(response const &r) {
+void http_connection::send(response const &r) {
   //TODO implement partial-GET, entity data from streams
 
   io::filtering_ostream out;
@@ -387,7 +378,7 @@ void server::impl::send(response const &r) {
 
   // Header Fields
   out << "Date: " << utils::current_date_time()  << "\r\n";
-  out << "Server: " << server_id() << "\r\n";
+  out << "Server: " << REST_SERVER_ID << "\r\n";
   if (!r.get_type().empty())
     out << "Content-Type: " << r.get_type() << "\r\n";
   if (!r.get_data().empty()) {
