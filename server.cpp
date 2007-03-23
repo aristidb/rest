@@ -6,6 +6,8 @@
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
 
+#include <boost/lexical_cast.hpp>
+
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -45,7 +47,7 @@ public:
 
   cont_t hosts;
 
-  io::file_descriptor conn;
+  io::stream_buffer<io::file_descriptor> conn;
 
   typedef std::bitset<4> state_flags;
   enum { // index(!)
@@ -217,7 +219,155 @@ namespace {
       throw bad_format();
     return ret;
   }
+}
 
+response server::impl::handle_request() {
+  try {
+    std::string method, uri, version;
+    boost::tie(method, uri, version) = get_request_line(conn);
+
+    std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
+
+    if (version == "HTTP/1.0") {
+      flags.set(HTTP_1_0_COMPAT);
+      // TODO HTTP/1.0 compat modus (set connection header to close)
+    } else if(version != "HTTP/1.1")
+      return 505; // HTTP Version not Supported
+
+    header_fields fields;
+    for (;;) {
+      std::pair<header_fields::iterator, bool> ret =
+        get_header_field(conn, fields);
+
+      if (ret.second)
+        if (ret.first->first == "accept-encoding") {
+          flags.set(ACCEPT_GZIP, algo::ifind_first(ret.first->second, "gzip"));
+          flags.set(ACCEPT_BZIP2, algo::ifind_first(ret.first->second, "bzip2"));
+        }
+
+      // DEBUG
+      if(ret.second)
+        std::cerr << ret.first->first << ": "
+                  << ret.first->second << "\n";
+      else
+        std::cerr << "field not added!\n";
+
+      if(expect(conn, '\r') && expect(conn, '\n'))
+        break;
+    }
+
+    //XXX look-up
+    context global;
+
+    keywords kw;
+
+    detail::any_path path_id;
+    detail::responder_base *responder;
+    context *local;
+    global.find_responder(uri, path_id, responder, local, kw);
+
+    if (!responder)
+      return 404;
+
+    flags.reset(NO_ENTITY);
+
+    if (method == "GET") {
+      detail::getter_base *getter = responder->x_getter();
+      if (!getter || !responder->x_exists(path_id, kw))
+        return 404;
+      return getter->x_get(path_id, kw);
+    }
+    else if(method == "HEAD") {
+      flags.set(NO_ENTITY);
+      detail::getter_base *getter = responder->x_getter();
+      if (!getter || !responder->x_exists(path_id, kw))
+        return 404;
+      return getter->x_get(path_id, kw);
+    }
+    else if(method == "POST" || method == "PUT") {
+      // bisschen problematisch mit den keywords
+      if(method == "POST") {
+        if (!responder->x_exists(path_id, kw) || !responder->x_poster())
+          return 404;
+      }
+      else if(method == "PUT") {
+        if (!responder->x_putter())
+          return 404;
+      }
+
+      // TODO move entity handling to keyword
+      header_fields::iterator transfer_encoding =
+        fields.find("transfer-encoding");
+      bool has_transfer_encoding = transfer_encoding != fields.end();
+
+      io::filtering_istream fin;
+      if(has_transfer_encoding) {
+        std::cout << "te... " << transfer_encoding->second << std::endl; // DEBUG
+        if(algo::iequals(transfer_encoding->second, "chunked"))
+          fin.push(utils::chunked_filter());
+        else
+          return 501;
+      }
+
+      header_fields::iterator content_length = fields.find("content-length");
+      if(content_length == fields.end()) {
+        if(!has_transfer_encoding)
+          return 411; // Content-length required
+      }
+      else {
+        std::size_t length =
+            boost::lexical_cast<std::size_t>(content_length->second);
+        fin.push(utils::length_filter(length));
+      }
+      fin.push(boost::ref(conn), 0, 0);
+
+      fin.set_auto_close(false);//FRESH
+
+      header_fields::iterator expect = fields.find("expect");
+      if (expect != fields.end()) {
+        if (!flags.test(HTTP_1_0_COMPAT) &&
+            algo::istarts_with(expect->second, "100-continue"))
+          send(100); // Continue
+        else
+          return 417; // Expectation Failed
+      }
+
+      //DEBUG
+        //std::cout << "reading: " << length << std::endl;
+        std::cout << "<<" << fin.rdbuf() << ">>" << std::endl;
+      //TODO: an keyword weitergeben
+
+     fin.pop();//FRESH
+    }
+    else if (method == "DELETE") {
+      detail::deleter_base *deleter = responder->x_deleter();
+      if (!deleter || !responder->x_exists(path_id, kw))
+        return 404;
+      return deleter->x_delete(path_id, kw);
+    }
+    else if (method == "TRACE") {
+#ifndef NO_HTTP_TRACE
+      rest::response ret("message/http");
+      std::string data = method + " " + uri + " " + version + "\r\n";
+      for (header_fields::iterator i = fields.begin();
+           i != fields.end();
+           ++i)
+        data += i->first + ": " + i->second + "\r\n";
+      data += "\r\nEntity-Data not included!\r\n"; //TODO include entity data
+      ret.set_data(data);
+      return ret;
+#else
+      return 501;
+#endif
+    }
+    else if (method == "CONNECT" || method == "OPTIONS")
+      return 501; // Not Supported
+    else
+      throw bad_format();
+  } catch (bad_format &e) {
+    return 400; // Bad Request
+  }
+  return 200;
 }
 
 void server::impl::send(response const &r) {
