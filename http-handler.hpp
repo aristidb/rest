@@ -4,12 +4,17 @@
 
 #include "rest.hpp"
 #include <iosfwd>
+#include <bitset>
 
 namespace rest {
 namespace http {
   class http_handler {
     std::streambuf &conn;
     // should rather use std::vector<bool>, std::bitset or flags!
+    typedef std::bitset<4> state_flags;
+    enum { HEAD_METHOD, HTTP_1_0_COMPAT, ACCEPT_GZIP, ACCEPT_BZIP2 };
+    state_flags flags;
+
     bool head_method;
     bool http_1_0_compat;
     bool accept_gzip;

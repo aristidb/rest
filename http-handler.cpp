@@ -348,10 +348,15 @@ namespace http {
         fin.push(boost::ref(conn), 0, 0);
         
         header_fields::iterator expect = fields.find("expect");
-        if(expect != fields.end() &&
-           expect->second.compare(0,sizeof("100-continue")-1,
-                                  "100-continue") == 0)
-          return 100; // Continue
+        if(expect != fields.end()) {
+          //TODO compare case insensitive
+          if(!http_1_0_compat &&
+             expect->second.compare(0,sizeof("100-continue")-1,
+                                    "100-continue") == 0)
+            return 100; // Continue
+          else
+            return 417; // Expectation Failed
+        }
         
         //DEBUG
           //std::cout << "reading: " << length << std::endl;
