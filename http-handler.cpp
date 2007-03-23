@@ -4,12 +4,15 @@
 == Internal Todo
   * This Code is so horrible!
 
+  * Keep-Alive (check filtering_stream. It closes pushed devices!)
   * complete POST, PUT and HEAD
   * Look for Todos...
   * implement Content-encodings (gzip and co)
   * implement HTTPS
   * remove exceptions
   * clean up!!
+
+difference between content-encoding and transfer-encoding
 */
 
 #include "http-handler.hpp"
@@ -25,6 +28,8 @@
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/operations.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
 
 #include <testsoon.hpp>
 #include <iostream> // DEBUG
@@ -262,6 +267,12 @@ namespace http {
         std::pair<header_fields::iterator, bool> ret =
           get_header_field(conn, fields);
 
+        if(ret.second)
+          if(ret.first->first == "accept-encoding") {
+            accept_gzip = ret.first->second.find("gzip") != std::string::npos;
+            accept_bzip2 = ret.first->second.find("bzip2") != std::string::npos;
+          }
+
         // DEBUG
         if(ret.second)
           std::cerr << ret.first->first << ": "
@@ -318,10 +329,10 @@ namespace http {
         io::filtering_istream fin;
         if(has_transfer_encoding) {
           std::cout << "te... " << transfer_encoding->second << std::endl; // DEBUG
-          if(transfer_encoding->second == "chunked") // case sensitive?
+          if(transfer_encoding->second == "chunked") //TODO case insensitive
             fin.push(chunked_filter());
           else
-            return 501; // TODO implement
+            return 501;
         }
         
         header_fields::iterator content_length = fields.find("content-length");
@@ -381,15 +392,6 @@ namespace http {
 
   namespace {
     char const * const server_name = "musikdings.rest";
-
-    // encodes data with chunked tranfer encoding;
-    // see RFC 2616 3.6.1 Chunked Transfer Coding
-    template<typename Source>
-    std::string chunk(Source &conn, std::string const &data) {
-      conn << std::hex << data.length() << "\r\n"
-           << data << "\r\n0\r\n";
-      return data;
-    }
 
     // Returns a string with the correct formated current Data and Time
     // see RFC 2616 3.3 Date/Time Formats
@@ -455,15 +457,21 @@ namespace http {
     if(!r.get_type().empty())
       out << "Content-Type: " << r.get_type() << "\r\n";
     if(!r.get_data().empty())
+      // TODO send length of encoded data if content-encoded! (?)
       out << "Content-Length: " << r.get_data().size() << "\r\n";
+    if(accept_gzip)
+      out << "Content-Encoding: gzip\r\n";
+    else if(accept_bzip2)
+      out << "Content-Encoding: bzip2\r\n";
     out << "\r\n";
 
+    // Entity
     if(!head_method) {
       io::filtering_ostream out2;
-      /*      if(accepts_gzip)
+      if(accept_gzip)
         out2.push(io::gzip_compressor());
-      else if(accepts_bzip2)
-      out2.push(io::bzip2_compressor());*/
+      else if(accept_bzip2)
+        out2.push(io::bzip2_compressor());
       out2.push(boost::ref(out), 0, 0);
       out2 << r.get_data();
     }

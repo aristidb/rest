@@ -19,7 +19,7 @@ add_library(rest SHARED
   server.cpp
   logger.cpp
 )
-target_link_libraries(rest boost_iostreams boost_thread)
+target_link_libraries(rest boost_iostreams boost_thread z bz2)
 
 add_executable(test1 test1.cpp)
 target_link_libraries(test1 rest)
