@@ -10,8 +10,6 @@
   * implement HTTPS
   * remove exceptions
   * clean up!!
-
-  * use streambuf instead of iostreams
 */
 
 #include "http-handler.hpp"
@@ -441,24 +439,25 @@ namespace http {
   void http_handler::send(response const &r) {
     //TODO implement partial-GET and Content-Encoding (gzip)
 
+    std::iostream out(&conn);
     // Status Line
     if(http_1_0_compat)
-      conn << "HTTP/1.0 ";
+      out << "HTTP/1.0 ";
     else
-      conn << "HTTP/1.1 ";
-    conn << r.get_code() << " " << r.get_reason() << "\r\n";
+      out << "HTTP/1.1 ";
+    out << r.get_code() << " " << r.get_reason() << "\r\n";
 
     // Header Fields
-    conn << "Date: " << current_date_time()  << "\r\n";
-    conn << "Server: " << server_name << "\r\n";
+    out << "Date: " << current_date_time()  << "\r\n";
+    out << "Server: " << server_name << "\r\n";
     if(!r.get_type().empty())
-      conn << "Content-Type: " << r.get_type() << "\r\n";
+      out << "Content-Type: " << r.get_type() << "\r\n";
     if(!r.get_data().empty())
-      conn << "Content-Length: " << r.get_data().size() << "\r\n";
-    conn << "\r\n";
+      out << "Content-Length: " << r.get_data().size() << "\r\n";
+    out << "\r\n";
 
     if(!head_method)
-      conn << r.get_data();
+      out << r.get_data();
   }
 }}
 

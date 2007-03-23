@@ -56,7 +56,7 @@ int main() {
     for (;;) {
       ip::tcp::iostream stream;
       acceptor.accept(*stream.rdbuf());
-      http_handler http(stream);
+      http_handler http(*stream.rdbuf());
       response r = http.handle_request(c);
       http.send(r);
     }

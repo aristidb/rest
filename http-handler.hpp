@@ -8,11 +8,11 @@
 namespace rest {
 namespace http {
   class http_handler {
-    std::iostream &conn;
+    std::streambuf &conn;
     bool head_method;
     bool http_1_0_compat;
   public:
-    http_handler(std::iostream &conn)
+    http_handler(std::streambuf &conn)
       : conn(conn), head_method(false), http_1_0_compat(false)
     { }
 
