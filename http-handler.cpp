@@ -4,10 +4,9 @@
 == Internal Todo
   * This Code is so horrible!
 
+  * complete POST, PUT and HEAD
   * Look for Todos...
-  * implement other Transfer-encodings (gzip and co)
-
-  * change get_header_field to integrate the fields into a map
+  * implement Content-encodings (gzip and co)
   * remove exceptions
   * clean up!!
 
@@ -42,13 +41,13 @@ namespace http {
     struct bad_format { };
 
     bool expect(iostream &in, char c) {
-      int t = in.get();
+      int t = io::get(in);
       if(t == c)
         return true;
       else if(t == EOF)
         throw bad_format();
 
-      in.unget();
+      io::putback(in, t);
       return false;
     }
 
@@ -60,9 +59,9 @@ namespace http {
     int remove_spaces(iostream &in) {
       int c;
       do {
-        c = in.get();
+        c = io::get(in);
       } while(isspht(c));
-      in.unget();
+      io::putback(in, c);
       return c;
     }
 
@@ -102,13 +101,13 @@ namespace http {
           // by an SP (space or horizontal tab)
           if(t == '\r')
             expect(in, '\n');
-          t = in.get();
+          t = io::get(in);
           if(isspht(t)) {
             remove_spaces(in);
             value += ' ';
           }
           else {
-            in.unget();
+            io::putback(in, t);
             break;
           }
         }
@@ -126,13 +125,14 @@ namespace http {
     enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
     request_line get_request_line(iostream &in) {
+      // TODO handle EOF!
       request_line ret;
       int t;
-      while( (t = in.get()) != ' ')
+      while( (t = io::get(in)) != ' ')
         ret.get<REQUEST_METHOD>() += t;
-      while( (t = in.get()) != ' ')
+      while( (t = io::get(in)) != ' ')
         ret.get<REQUEST_URI>() += t;
-      while( (t = in.get()) != '\r')
+      while( (t = io::get(in)) != '\r')
         ret.get<REQUEST_HTTP_VERSION>() += t;
       if(!expect(in, '\n'))
         throw bad_format();
