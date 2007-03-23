@@ -10,9 +10,10 @@ namespace http {
   class http_handler {
     std::iostream &conn;
     bool head_method;
+    bool http_1_0_compat;
   public:
     http_handler(std::iostream &conn)
-      : conn(conn), head_method(false)
+      : conn(conn), head_method(false), http_1_0_compat(false)
     { }
 
     response handle_request(context &global);

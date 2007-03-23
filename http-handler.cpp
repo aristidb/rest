@@ -245,6 +245,7 @@ namespace http {
       std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
       if(version == "HTTP/1.0") {
+        http_1_0_compat = true;
         // TODO HTTP/1.0 compat modus
       }
       else if(version != "HTTP/1.1")
@@ -302,6 +303,8 @@ namespace http {
           if (!putter || !responder->x_exists(path_id, kw))
             return 404;
         }
+
+        // TODO move entity handling to keyword
         header_fields::iterator transfer_encoding =
           fields.find("transfer-encoding");
         bool has_transfer_encoding = transfer_encoding != fields.end();
@@ -428,8 +431,11 @@ namespace http {
 
   void http_handler::send(response const &r) {
     // Status Line
-    conn << "HTTP/1.1 " << r.get_code()
-         << " " << r.get_reason() << "\r\n";
+    if(http_1_0_compat)
+      conn << "HTTP/1.0 ";
+    else
+      conn << "HTTP/1.1 ";
+    conn << r.get_code() << " " << r.get_reason() << "\r\n";
 
     // Header Fields
     conn << "Date: " << current_date_time()  << "\r\n";
