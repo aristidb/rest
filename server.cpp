@@ -8,9 +8,9 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/operations.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
