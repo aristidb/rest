@@ -269,8 +269,6 @@ response server::impl::handle_request() {
     if (!responder)
       return 404;
 
-    flags.reset(NO_ENTITY);
-
     if (method == "GET") {
       detail::getter_base *getter = responder->x_getter();
       if (!getter || !responder->x_exists(path_id, kw))
