@@ -10,9 +10,8 @@ namespace rest {
 namespace http {
   class http_handler {
     std::streambuf &conn;
-    // should rather use std::vector<bool>, std::bitset or flags!
     typedef std::bitset<4> state_flags;
-    enum { NO_ENTITY, HTTP_1_0_COMPAT, ACCEPT_GZIP, ACCEPT_BZIP2 };
+    enum { NO_ENTITY = 1, HTTP_1_0_COMPAT = 2, ACCEPT_GZIP = 4, ACCEPT_BZIP2 = 8 };
     state_flags flags;
 
     bool head_method;

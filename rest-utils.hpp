@@ -9,6 +9,7 @@
 #include <boost/iostreams/pipeline.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace rest { namespace utils {
@@ -26,6 +27,17 @@ namespace uri {
   inline std::string unescape(std::string const &x, bool form) {
     return unescape(x.begin(), x.end(), form);
   }
+}
+
+inline boost::tuple<bool,int> hex2int(int ascii) {
+  if(std::isdigit(ascii))
+    return boost::make_tuple(true, ascii - '0');
+  else if(ascii >= 'a' && ascii <= 'f')
+    return boost::make_tuple(true, ascii - 'a' + 0xa);
+  else if(ascii >= 'A' && ascii <= 'F')
+    return boost::make_tuple(true, ascii - 'A' + 0xA);
+  else
+    return boost::make_tuple(false, 0);
 }
 
 class boundary_filter : public boost::iostreams::multichar_input_filter {
@@ -86,6 +98,94 @@ private:
   std::streamsize pos;
 };
 BOOST_IOSTREAMS_PIPABLE(boundary_filter, 0)
+
+class length_filter : public boost::iostreams::multichar_input_filter {
+public:
+  length_filter(std::streamsize length) : length(length) {}
+
+  template<typename Source>
+  std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+    namespace io = boost::iostreams;
+
+    std::streamsize c;
+    if (n <= length)
+      c = io::read(source, outbuf, n);
+    else
+      c = io::read(source, outbuf, length);
+    if (c == -1)
+      return -1;
+    length -= c;
+    return c;
+  }
+
+private:
+  std::streamsize length;
+};
+BOOST_IOSTREAMS_PIPABLE(length_filter, 0)
+
+class chunked_filter : public boost::iostreams::multichar_input_filter {
+public:
+  chunked_filter() : pending(0) {}
+
+  template<typename Source>
+  std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+    namespace io = boost::iostreams;
+
+    if (pending == -1)
+      return -1;
+    else if (pending == 0) {
+      int c = io::get(source);
+      if(c == Source::traits_type::eof())
+        return -1;
+      else if(c == '\r') {
+        c = io::get(source);
+        if(c != '\n')
+         return -1;
+        c = io::get(source);
+        if(c == Source::traits_type::eof())
+          return -1;
+      }
+      for(;;) {
+        boost::tuple<bool, int> value = hex2int(c);
+        if(value.get<0>()) {
+          pending *= 0x10;
+          pending += value.get<1>();
+        }
+        else
+          break;
+        c = io::get(source);
+        if(c == Source::traits_type::eof())
+          return -1;
+      }
+      bool cr = false;
+      for(;;) {
+        if(c == '\r')
+          cr = true;
+        else if(cr && c == '\n')
+          break;
+        else if(c == Source::traits_type::eof())
+          return -1;
+        c = io::get(source);
+      }
+      if(pending == 0) {
+        pending = -1;
+        return -1;
+      }
+    }
+    std::streamsize c;
+    if (n <= pending)
+      c = io::read(source, outbuf, n);
+    else
+      c = io::read(source, outbuf, pending);
+    if (c == -1)
+      return -1;
+    pending -= c;
+    return c;
+  }
+
+private:
+  std::streamsize pending;
+};
 
 class logger : boost::noncopyable {
 public: // thread safe

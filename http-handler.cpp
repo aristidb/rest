@@ -17,6 +17,7 @@ difference between content-encoding and transfer-encoding
 
 #include "http-handler.hpp"
 #include "rest.hpp"
+#include "rest-utils.hpp"
 
 #include <map>
 #include <cstdio>
@@ -25,6 +26,7 @@ difference between content-encoding and transfer-encoding
 #include <string>
 #include <boost/tuple/tuple.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/operations.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -37,6 +39,7 @@ difference between content-encoding and transfer-encoding
 #include <iomanip> // setw()...
 
 namespace io = boost::iostreams;
+namespace algo = boost::algorithm;
 
 namespace rest {
 namespace http {
@@ -151,103 +154,6 @@ namespace http {
     }
   }
 
-  boost::tuple<bool,int> hex2int(int ascii) {
-    if(std::isdigit(ascii))
-      return boost::make_tuple(true, ascii - '0');
-    else if(ascii >= 'a' && ascii <= 'f')
-      return boost::make_tuple(true, ascii - 'a' + 0xa);
-    else if(ascii >= 'A' && ascii <= 'F')
-      return boost::make_tuple(true, ascii - 'A' + 0xa);
-    else
-      return boost::make_tuple(false, 0);
-  }
-
-  class chunked_filter : public io::multichar_input_filter {
-  public:
-    chunked_filter() : pending(0) {}
-  
-    template<typename Source>
-    std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
-      if (pending == -1)
-        return -1;
-      else if (pending == 0) {
-        // read header and set pending
-        int c;
-        c = io::get(source);
-        if(c == Source::traits_type::eof())
-          return -1;
-        else if(c == '\r') {
-          c = io::get(source);
-          if(c != '\n')
-           return -1;
-          c = io::get(source);
-          if(c == Source::traits_type::eof())
-            return -1;
-        }
-
-        for(;;) {
-          boost::tuple<bool, int> value = hex2int(c);
-          if(value.get<0>()) {
-            pending *= 0x10;
-            pending += value.get<1>();
-          }
-          else
-            break;
-          c = io::get(source);
-          if(c == Source::traits_type::eof())
-            return -1;
-        }
-        bool cr = false;
-        for(;;) {
-          if(c == '\r')
-            cr = true;
-          else if(cr && c == '\n')
-            break;
-          else if(c == Source::traits_type::eof())
-            return -1;
-          c = io::get(source);
-        }
-        if(pending == 0) {
-          pending = -1;
-          return -1;
-        }
-      }
-      std::streamsize c;
-      if (n <= pending)
-        c = io::read(source, outbuf, n);
-      else
-        c = io::read(source, outbuf, pending);
-      if (c == -1)
-        return -1;
-      pending -= c;
-      return c;
-    }
-
-  private:
-    std::streamsize pending;
-  };
-
-  class length_filter : public io::multichar_input_filter {
-  public:
-    length_filter(std::streamsize length) : length(length) {}
-
-    template<typename Source>
-    std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
-      std::streamsize c;
-      if (n <= length)
-        c = io::read(source, outbuf, n);
-      else
-        c = io::read(source, outbuf, length);
-      if (c == -1)
-        return -1;
-      length -= c;
-      return c;
-    }
-
-  private:
-    std::streamsize length;
-  };
-
   response http_handler::handle_request(context &global) {
     try {
       std::string method, uri, version;
@@ -269,8 +175,8 @@ namespace http {
 
         if(ret.second)
           if(ret.first->first == "accept-encoding") {
-            accept_gzip = ret.first->second.find("gzip") != std::string::npos;
-            accept_bzip2 = ret.first->second.find("bzip2") != std::string::npos;
+            accept_gzip = algo::ifind_first(ret.first->second, "gzip");
+            accept_bzip2 = algo::ifind_first(ret.first->second, "bzip2");
           }
 
         // DEBUG
@@ -311,13 +217,11 @@ namespace http {
       else if(method == "POST" || method == "PUT") {
         // bisschen problematisch mit den keywords
         if(method == "POST") {
-          detail::poster_base *poster = responder->x_poster();
-          if (!poster || !responder->x_exists(path_id, kw))
+          if (!responder->x_exists(path_id, kw) || !responder->x_poster())
             return 404;
         }
         else if(method == "PUT") {
-          detail::putter_base *putter = responder->x_putter();
-          if (!putter || !responder->x_exists(path_id, kw))
+          if (!responder->x_putter())
             return 404;
         }
 
@@ -329,8 +233,8 @@ namespace http {
         io::filtering_istream fin;
         if(has_transfer_encoding) {
           std::cout << "te... " << transfer_encoding->second << std::endl; // DEBUG
-          if(transfer_encoding->second == "chunked") //TODO case insensitive
-            fin.push(chunked_filter());
+          if(algo::iequals(transfer_encoding->second, "chunked"))
+            fin.push(utils::chunked_filter());
           else
             return 501;
         }
@@ -343,16 +247,16 @@ namespace http {
         else {
           std::size_t length = boost::lexical_cast<std::size_t>
             (content_length->second);
-          fin.push(length_filter(length));
+          fin.push(utils::length_filter(length));
         }
         fin.push(boost::ref(conn), 0, 0);
+
+        fin.set_auto_close(false);//FRESH
         
         header_fields::iterator expect = fields.find("expect");
         if(expect != fields.end()) {
-          //TODO compare case insensitive
           if(!http_1_0_compat &&
-             expect->second.compare(0,sizeof("100-continue")-1,
-                                    "100-continue") == 0)
+             algo::istarts_with(expect->second, "100-continue"))
             send(100); // Continue
           else
             return 417; // Expectation Failed
@@ -362,6 +266,8 @@ namespace http {
           //std::cout << "reading: " << length << std::endl;
           std::cout << "<<" << fin.rdbuf() << ">>" << std::endl;
         //TODO: an keyword weitergeben
+
+        fin.pop();//FRESH
       }
       else if(method == "DELETE") {
         detail::deleter_base *deleter = responder->x_deleter();
@@ -444,17 +350,19 @@ namespace http {
   }
 
   void http_handler::send(response const &r) {
-    //TODO implement partial-GET, Content-Encoding (gzip),
-    // entity data from streams
+    //TODO implement partial-GET, entity data from streams
 
     io::filtering_ostream out;
+
+    out.set_auto_close(false);
+
     out.push(boost::ref(conn), 0, 0);
     // Status Line
     if(http_1_0_compat)
       out << "HTTP/1.0 ";
     else
       out << "HTTP/1.1 ";
-    std::cout << "Send: " << r.get_code() << "\n"; //DEBUG
+    std::cout << "Send: " << r.get_code() << " CE:" << (accept_gzip ? "gzip" : (accept_bzip2 ? "bzip2" : "none")) << "\n"; //DEBUG
     out << r.get_code() << " " << r.get_reason() << "\r\n";
 
     // Header Fields
@@ -475,18 +383,22 @@ namespace http {
     // Entity
     if(!head_method) {
       io::filtering_ostream out2;
+      out2.set_auto_close(false);
       if(accept_gzip)
         out2.push(io::gzip_compressor());
       else if(accept_bzip2)
         out2.push(io::bzip2_compressor());
       out2.push(boost::ref(out), 0, 0);
       out2 << r.get_data();
+      out2.pop();
     }
+    out.pop();
   }
 }}
 
 namespace {
 using namespace rest::http;
+using namespace rest::utils;
 
 XTEST((values, (std::string)("ab")("\r\n"))) {
   std::stringstream x(value);
