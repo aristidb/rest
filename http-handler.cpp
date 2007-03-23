@@ -37,7 +37,6 @@ namespace io = boost::iostreams;
 
 namespace rest {
 namespace http {
-  typedef std::iostream iostream;
   namespace {
     struct bad_format { };
 
@@ -46,7 +45,7 @@ namespace http {
       int t = io::get(in);
       if(t == c)
         return true;
-      else if(t == EOF)
+      else if(t == Source::traits_type::eof())
         throw bad_format();
 
       io::putback(in, t);
@@ -83,7 +82,7 @@ namespace http {
         t = io::get(in);
         if(t == '\n' || t == '\r')
           throw bad_format();
-        else if(t == iostream::traits_type::eof())
+        else if(t == Source::traits_type::eof())
           break;
         else if(t == ':') {
           remove_spaces(in);
@@ -111,7 +110,7 @@ namespace http {
             break;
           }
         }
-        else if(t == iostream::traits_type::eof())
+        else if(t == Source::traits_type::eof())
           break;
         else
           value += t;
@@ -129,17 +128,17 @@ namespace http {
       request_line ret;
       int t;
       while( (t = io::get(in)) != ' ') {
-        if(t == EOF)
+        if(t == Source::traits_type::eof())
           throw bad_format();
         ret.get<REQUEST_METHOD>() += t;
       }
       while( (t = io::get(in)) != ' ') {
-        if(t == EOF)
+        if(t == Source::traits_type::eof())
           throw bad_format();
         ret.get<REQUEST_URI>() += t;
       }
       while( (t = io::get(in)) != '\r') {
-        if(t == EOF)
+        if(t == Source::traits_type::eof())
           throw bad_format();
         ret.get<REQUEST_HTTP_VERSION>() += t;
       }
@@ -172,14 +171,14 @@ namespace http {
         // read header and set pending
         int c;
         c = io::get(source);
-        if(c == EOF)
+        if(c == Source::traits_type::eof())
           return -1;
         else if(c == '\r') {
           c = io::get(source);
           if(c != '\n')
            return -1;
           c = io::get(source);
-          if(c == EOF)
+          if(c == Source::traits_type::eof())
             return -1;
         }
 
@@ -192,7 +191,7 @@ namespace http {
           else
             break;
           c = io::get(source);
-          if(c == EOF)
+          if(c == Source::traits_type::eof())
             return -1;
         }
         bool cr = false;
@@ -201,7 +200,7 @@ namespace http {
             cr = true;
           else if(cr && c == '\n')
             break;
-          else if(c == EOF)
+          else if(c == Source::traits_type::eof())
             return -1;
           c = io::get(source);
         }
