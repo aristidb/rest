@@ -122,7 +122,7 @@ namespace http {
       return fields.insert(std::make_pair(name, value));
     }
 
-    typedef ::boost::tuple<std::string, std::string, std::string>
+    typedef boost::tuple<std::string, std::string, std::string>
               request_line;
     enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
