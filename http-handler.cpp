@@ -437,9 +437,11 @@ namespace http {
   }
 
   void http_handler::send(response const &r) {
-    //TODO implement partial-GET and Content-Encoding (gzip)
+    //TODO implement partial-GET, Content-Encoding (gzip),
+    // entity data from streams
 
-    std::iostream out(&conn);
+    io::filtering_ostream out;
+    out.push(boost::ref(conn), 0, 0);
     // Status Line
     if(http_1_0_compat)
       out << "HTTP/1.0 ";
@@ -456,8 +458,15 @@ namespace http {
       out << "Content-Length: " << r.get_data().size() << "\r\n";
     out << "\r\n";
 
-    if(!head_method)
-      out << r.get_data();
+    if(!head_method) {
+      io::filtering_ostream out2;
+      /*      if(accepts_gzip)
+        out2.push(io::gzip_compressor());
+      else if(accepts_bzip2)
+      out2.push(io::bzip2_compressor());*/
+      out2.push(boost::ref(out), 0, 0);
+      out2 << r.get_data();
+    }
   }
 }}
 
