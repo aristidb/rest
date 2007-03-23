@@ -12,7 +12,7 @@ namespace http {
     std::streambuf &conn;
     // should rather use std::vector<bool>, std::bitset or flags!
     typedef std::bitset<4> state_flags;
-    enum { HEAD_METHOD, HTTP_1_0_COMPAT, ACCEPT_GZIP, ACCEPT_BZIP2 };
+    enum { NO_ENTITY, HTTP_1_0_COMPAT, ACCEPT_GZIP, ACCEPT_BZIP2 };
     state_flags flags;
 
     bool head_method;

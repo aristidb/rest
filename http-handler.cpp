@@ -353,7 +353,7 @@ namespace http {
           if(!http_1_0_compat &&
              expect->second.compare(0,sizeof("100-continue")-1,
                                     "100-continue") == 0)
-            return 100; // Continue
+            send(100); // Continue
           else
             return 417; // Expectation Failed
         }
@@ -454,6 +454,7 @@ namespace http {
       out << "HTTP/1.0 ";
     else
       out << "HTTP/1.1 ";
+    std::cout << "Send: " << r.get_code() << "\n"; //DEBUG
     out << r.get_code() << " " << r.get_reason() << "\r\n";
 
     // Header Fields
@@ -461,13 +462,14 @@ namespace http {
     out << "Server: " << server_name << "\r\n";
     if(!r.get_type().empty())
       out << "Content-Type: " << r.get_type() << "\r\n";
-    if(!r.get_data().empty())
+    if(!r.get_data().empty()) {
       // TODO send length of encoded data if content-encoded! (?)
       out << "Content-Length: " << r.get_data().size() << "\r\n";
-    if(accept_gzip)
-      out << "Content-Encoding: gzip\r\n";
-    else if(accept_bzip2)
-      out << "Content-Encoding: bzip2\r\n";
+      if(accept_gzip)
+        out << "Content-Encoding: gzip\r\n";
+      else if(accept_bzip2)
+        out << "Content-Encoding: bzip2\r\n";
+    }
     out << "\r\n";
 
     // Entity
