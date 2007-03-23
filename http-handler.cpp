@@ -7,6 +7,7 @@
   * complete POST, PUT and HEAD
   * Look for Todos...
   * implement Content-encodings (gzip and co)
+  * implement HTTPS
   * remove exceptions
   * clean up!!
 
@@ -40,7 +41,8 @@ namespace http {
   namespace {
     struct bad_format { };
 
-    bool expect(iostream &in, char c) {
+    template<class Source, typename Char>
+    bool expect(Source &in, Char c) {
       int t = io::get(in);
       if(t == c)
         return true;
@@ -56,7 +58,8 @@ namespace http {
       return c == ' ' || c == '\t';
     }
 
-    int remove_spaces(iostream &in) {
+    template<class Source>
+    int remove_spaces(Source &in) {
       int c;
       do {
         c = io::get(in);
@@ -70,14 +73,13 @@ namespace http {
     // reads a header field from `in' and adds it to `fields'
     // see RFC 2616 chapter 4.2
     // Warning: Field names are converted to all lower-case!
+    template<class Source>
     std::pair<header_fields::iterator, bool> get_header_field
-                                     (iostream &in, header_fields &fields)
+                                     (Source &in, header_fields &fields)
     {
       std::string name;
       int t = 0;
-      while(!in.eof() &&
-            in.good())
-      {
+      for(;;) {
         t = io::get(in);
         if(t == '\n' || t == '\r')
           throw bad_format();
@@ -92,9 +94,7 @@ namespace http {
       }
 
       std::string value;
-      while(!in.eof() &&
-            in.good())
-      {
+      for(;;) {
         t = io::get(in);
         if(t == '\n' || t == '\r') {
           // Newlines in header fields are allowed when followed
@@ -124,16 +124,25 @@ namespace http {
               request_line;
     enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
-    request_line get_request_line(iostream &in) {
-      // TODO handle EOF!
+    template<class Source>
+    request_line get_request_line(Source &in) {
       request_line ret;
       int t;
-      while( (t = io::get(in)) != ' ')
+      while( (t = io::get(in)) != ' ') {
+        if(t == EOF)
+          throw bad_format();
         ret.get<REQUEST_METHOD>() += t;
-      while( (t = io::get(in)) != ' ')
+      }
+      while( (t = io::get(in)) != ' ') {
+        if(t == EOF)
+          throw bad_format();
         ret.get<REQUEST_URI>() += t;
-      while( (t = io::get(in)) != '\r')
+      }
+      while( (t = io::get(in)) != '\r') {
+        if(t == EOF)
+          throw bad_format();
         ret.get<REQUEST_HTTP_VERSION>() += t;
+      }
       if(!expect(in, '\n'))
         throw bad_format();
       return ret;
@@ -246,7 +255,7 @@ namespace http {
 
       if(version == "HTTP/1.0") {
         http_1_0_compat = true;
-        // TODO HTTP/1.0 compat modus
+        // TODO HTTP/1.0 compat modus (set connection header to close)
       }
       else if(version != "HTTP/1.1")
         return 505; // HTTP Version not Supported
@@ -378,7 +387,8 @@ namespace http {
 
     // encodes data with chunked tranfer encoding;
     // see RFC 2616 3.6.1 Chunked Transfer Coding
-    std::string chunk(iostream &conn, std::string const &data) {
+    template<typename Source>
+    std::string chunk(Source &conn, std::string const &data) {
       conn << std::hex << data.length() << "\r\n"
            << data << "\r\n0\r\n";
       return data;
@@ -430,6 +440,8 @@ namespace http {
   }
 
   void http_handler::send(response const &r) {
+    //TODO implement partial-GET and Content-Encoding (gzip)
+
     // Status Line
     if(http_1_0_compat)
       conn << "HTTP/1.0 ";
