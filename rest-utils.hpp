@@ -211,6 +211,8 @@ enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
 #define REST_LOG(prio, data) \
   ::rest::logger::get().log((prio), __FILE__, __LINE__, (data))
 
+std::string current_date_time();
+
 }}
 
 #endif

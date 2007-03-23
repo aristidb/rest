@@ -22,7 +22,6 @@ difference between content-encoding and transfer-encoding
 #include <map>
 #include <cstdio>
 #include <cctype>
-#include <ctime>
 #include <string>
 #include <boost/tuple/tuple.hpp>
 #include <boost/lexical_cast.hpp>
@@ -35,8 +34,6 @@ difference between content-encoding and transfer-encoding
 
 #include <testsoon.hpp>
 #include <iostream> // DEBUG
-#include <sstream>
-#include <iomanip> // setw()...
 
 namespace io = boost::iostreams;
 namespace algo = boost::algorithm;
@@ -306,47 +303,6 @@ namespace http {
 
     // Returns a string with the correct formated current Data and Time
     // see RFC 2616 3.3 Date/Time Formats
-    std::string current_date_time() { 
-      time_t time_buf;
-      time(&time_buf);
-      tm gmtime;
-      gmtime_r(&time_buf, &gmtime);
-      std::stringstream out;
-      switch (gmtime.tm_wday) {
-      case 0: out << "Sun"; break;
-      case 1: out << "Mon"; break;
-      case 2: out << "Tue"; break;
-      case 3: out << "Wed"; break;
-      case 4: out << "Thu"; break;
-      case 5: out << "Fri"; break;
-      case 6: out << "Sat"; break;
-      }
-      out << ", ";
-      out << std::setfill('0');
-      out << std::setw(2) << gmtime.tm_mday << ' ';
-      switch (gmtime.tm_mon) {
-      case 0: out << "Jan"; break;
-      case 1: out << "Feb"; break;
-      case 2: out << "Mar"; break;
-      case 3: out << "Apr"; break;
-      case 4: out << "May"; break;
-      case 5: out << "Jun"; break;
-      case 6: out << "Jul"; break;
-      case 7: out << "Aug"; break;
-      case 8: out << "Sep"; break;
-      case 9: out << "Oct"; break;
-      case 10: out << "Nov"; break;
-      case 11: out << "Dec"; break;
-      }
-      out << ' ';
-      out << (1900 + gmtime.tm_year);
-      out << ' ';
-      out << std::setw(2) << gmtime.tm_hour << ':';
-      out << std::setw(2) << gmtime.tm_min << ':';
-      out << std::setw(2) << gmtime.tm_sec;
-      out << " GMT";
-      return out.str();
-    }
   }
 
   void http_handler::send(response const &r) {
@@ -366,7 +322,7 @@ namespace http {
     out << r.get_code() << " " << r.get_reason() << "\r\n";
 
     // Header Fields
-    out << "Date: " << current_date_time()  << "\r\n";
+    out << "Date: " << utils::current_date_time()  << "\r\n";
     out << "Server: " << server_name << "\r\n";
     if(!r.get_type().empty())
       out << "Content-Type: " << r.get_type() << "\r\n";
