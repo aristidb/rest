@@ -48,6 +48,8 @@ public:
   > data_t;
 
   data_t data;
+
+  boost::scoped_ptr<std::istream> entity;
 };
 
 keywords::keywords() : p(new impl) {
@@ -109,4 +111,8 @@ std::istream &keywords::read(std::string const &keyword, int index) {
   if (!it->stream)
     it->stream.reset(new std::istringstream(it->data));
   return *it->stream;
+}
+
+void keywords::set_entity(std::istream *entity) {
+  p->entity.reset(entity);
 }

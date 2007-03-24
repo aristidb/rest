@@ -3,6 +3,7 @@
 #define REST_HPP
 
 #include <string>
+#include <iosfwd>
 #include <boost/mpl/void.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/type_traits/is_scalar.hpp>
@@ -85,6 +86,8 @@ public:
     set_name(key, 0, value);
   }
   void set_name(std::string const &, int, std::string const &);
+
+  void set_entity(std::istream *);
 
 private:
   class impl;
