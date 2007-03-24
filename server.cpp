@@ -40,7 +40,7 @@ namespace algo = boost::algorithm;
 /*
  * Big TODO:
  *
- * - actually notice if the socket is closed
+ * - actually notice if the socket is closed - DONE
  * - see below for more
  */
 
@@ -52,6 +52,10 @@ typedef
     indexed_by<
       hashed_unique<const_mem_fun<host, std::string, &host::get_host> > > >
   hosts_cont_t;
+
+namespace {
+  struct remote_close {};
+}
 
 class server::impl {
 public:
@@ -135,10 +139,14 @@ void server::serve() {
         try {
           io::stream_buffer<io::file_descriptor> buf(connfd);
           http_connection conn(buf);
-          while (conn.open()) {
-            conn.reset_flags();
-            response r = conn.handle_request(p->hosts);
-            conn.send(r);
+          try {
+            while (conn.open()) {
+              conn.reset_flags();
+              response r = conn.handle_request(p->hosts);
+              conn.send(r);
+            }
+          } catch (remote_close&) {
+            std::cout << "%% remote" << std::endl;
           }
           std::cout << "%% CLOSING" << std::endl; // DEBUG
           buf.close(); //kommt der hier hin? passiert das nicht automatisch?
@@ -168,7 +176,7 @@ namespace {
     if(t == c)
       return true;
     else if(t == Source::traits_type::eof())
-      throw bad_format();
+      throw remote_close();
 
     io::putback(in, t);
     return false;
@@ -211,7 +219,7 @@ namespace {
       if(t == '\n' || t == '\r')
         throw bad_format();
       else if(t == Source::traits_type::eof())
-        break;
+        throw remote_close();
       else if(t == ':') {
         remove_spaces(in);
         break;
@@ -235,7 +243,7 @@ namespace {
           break;
         }
       } else if(t == Source::traits_type::eof())
-        break;
+        throw remote_close();
       else
         value += t;
     }
@@ -252,17 +260,17 @@ namespace {
     int t;
     while( (t = io::get(in)) != ' ') {
       if(t == Source::traits_type::eof())
-        throw bad_format();
+        throw remote_close();
       boost::get<REQUEST_METHOD>(ret) += t;
     }
     while( (t = io::get(in)) != ' ') {
       if(t == Source::traits_type::eof())
-        throw bad_format();
+        throw remote_close();
       boost::get<REQUEST_URI>(ret) += t;
     }
     while( (t = io::get(in)) != '\r') {
       if(t == Source::traits_type::eof())
-        throw bad_format();
+        throw remote_close();
       boost::get<REQUEST_HTTP_VERSION>(ret) += t;
     }
     if(!expect(in, '\n'))
