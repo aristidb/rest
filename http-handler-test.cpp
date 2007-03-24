@@ -1,13 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 
-#include "http-handler.hpp"
-
-#include "boost/asio.hpp"
-
-// for Testing purpose
-using namespace boost::asio;
-using namespace rest::http;
-using namespace rest;
+#include "rest.hpp"
+#include <iostream>
 
 struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                                 rest::POST> {
@@ -42,36 +36,11 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
   }
 };
 
-int const PORT = 8080;
-
 int main() {
-#if 0
-  try {
-    io_service io_service;
-    ip::tcp::acceptor acceptor(io_service, ip::tcp::endpoint(ip::tcp::v4(),
-                                                             PORT));
-    tester t;
-    context c;
-    c.bind("/", t);
-
-    for (;;) {
-      ip::tcp::iostream stream;
-      acceptor.accept(*stream.rdbuf());
-      std::cout << "%%-- ACCEPT --" << std::endl;
-      http_handler http(*stream.rdbuf());
-      response r = http.handle_request(c);
-      http.send(r);
-    }
-  }
-  catch(std::exception &e) {
-    std::cerr << "ERROR: " << e.what() << "\n";
-  }
-#else
-  host h("localhost");
+  rest::host h("localhost");
   tester t;
   h.get_context().bind("/", t);
-  server s(8080);
+  rest::server s(8080);
   s.add_host(h);
   s.serve();
-#endif
 }

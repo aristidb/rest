@@ -22,7 +22,6 @@
 #include <cstring>
 #include <cerrno>
 #include <bitset>
-#include <tr1/tuple>
 #include <map>
 
 #include <sys/types.h>
@@ -236,7 +235,7 @@ namespace {
     return fields.insert(std::make_pair(name, value));
   }
 
-  typedef std::tr1::tuple<std::string, std::string, std::string>
+  typedef boost::tuple<std::string, std::string, std::string>
   request_line;
     enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
@@ -247,17 +246,17 @@ namespace {
     while( (t = io::get(in)) != ' ') {
       if(t == Source::traits_type::eof())
         throw bad_format();
-      std::tr1::get<REQUEST_METHOD>(ret) += t;
+      boost::get<REQUEST_METHOD>(ret) += t;
     }
     while( (t = io::get(in)) != ' ') {
       if(t == Source::traits_type::eof())
         throw bad_format();
-      std::tr1::get<REQUEST_URI>(ret) += t;
+      boost::get<REQUEST_URI>(ret) += t;
     }
     while( (t = io::get(in)) != '\r') {
       if(t == Source::traits_type::eof())
         throw bad_format();
-      std::tr1::get<REQUEST_HTTP_VERSION>(ret) += t;
+      boost::get<REQUEST_HTTP_VERSION>(ret) += t;
     }
     if(!expect(in, '\n'))
       throw bad_format();
@@ -268,7 +267,7 @@ namespace {
 response http_connection::handle_request(hosts_cont_t const &hosts) {
   try {
     std::string method, uri, version;
-    std::tr1::tie(method, uri, version) = get_request_line(conn);
+    boost::tie(method, uri, version) = get_request_line(conn);
 
     std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
@@ -538,8 +537,6 @@ XTEST((values, (std::string)("   x")("\t\ny")(" z "))) {
   Check(!isspht(t));
 }
 
-//XXX: does not compile
-#if 0 
 TEST() {
   std::string line = "GET /foo/?bar&k=kk HTTP/1.1\r\n";
   std::stringstream x(line);
@@ -548,7 +545,6 @@ TEST() {
   Equals(req.get<REQUEST_URI>(), "/foo/?bar&k=kk");
   Equals(req.get<REQUEST_HTTP_VERSION>(), "HTTP/1.1");
 }
-#endif
 
 TEST_GROUP(aux) {
   XTEST((values, (char)('a')('1')('F'))) {
