@@ -261,8 +261,15 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
         break;
     }
 
-    //XXX look-up
-    context global;
+    header_fields::iterator host_header = fields.find("host");
+    if(host_header == fields.end())
+      return 400;
+    hosts_cont_t::const_iterator it = hosts.find(host_header->second);
+    if (it == hosts.end())
+      return 404; // or whatever to indicate that this is no good host
+
+    host const &host = *it;
+    context &global = host.get_context();
 
     keywords kw;
 

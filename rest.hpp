@@ -303,7 +303,7 @@ public:
   void set_host(std::string const &);
   std::string get_host() const;
 
-  context &get_context();
+  context &get_context() const;
 
 private:
   template<class T>

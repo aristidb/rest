@@ -29,7 +29,7 @@ void host::set_host(std::string const &name) { p->name = name; }
 
 std::string host::get_host() const { return p->name; }
 
-context &host::get_context() { return p->con; }
+context &host::get_context() const { return p->con; }
 
 void host::do_store(void *x, void (*destruct)(void *))  {
   p->storage.push_back(std::make_pair(x, destruct));
