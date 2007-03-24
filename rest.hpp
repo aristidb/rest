@@ -89,6 +89,13 @@ public:
 
   void set_entity(std::istream *);
 
+  void set_output(std::string const &key, std::ostream *stream) {
+    set_output(key, 0, stream);
+  }
+  void set_output(std::string const &, int, std::ostream *);
+
+  void flush();
+
 private:
   class impl;
   boost::scoped_ptr<impl> p;

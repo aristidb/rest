@@ -31,6 +31,7 @@ public:
     mutable std::string name;
     mutable std::string data;
     mutable boost::scoped_ptr<std::istream> stream;
+    mutable boost::scoped_ptr<std::ostream> output;
   };
 
   typedef
@@ -115,4 +116,16 @@ std::istream &keywords::read(std::string const &keyword, int index) {
 
 void keywords::set_entity(std::istream *entity) {
   p->entity.reset(entity);
+}
+
+void keywords::set_output(
+    std::string const &keyword, int index, std::ostream *stream)
+{
+  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
+  if (it == p->data.end())
+    throw std::logic_error("invalid keyword");
+  it->output.reset(stream);
+}
+
+void keywords::flush() {
 }
