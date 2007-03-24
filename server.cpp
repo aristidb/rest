@@ -37,31 +37,18 @@ namespace algo = boost::algorithm;
 
 #define REST_SERVER_ID "Musikdings.rest/0.1"
 
-namespace {
-  class http_connection {    io::stream_buffer<io::file_descriptor> &conn;    enum {
-      CLOSED,
-      NO_ENTITY,
-      HTTP_1_0_COMPAT,
-      ACCEPT_GZIP,
-      ACCEPT_BZIP2,
-      X_NO_FLAG
-    };    typedef std::bitset<X_NO_FLAG> state_flags;    state_flags flags;  public:    http_connection(io::stream_buffer<io::file_descriptor> &conn)      : conn(conn) {}
-
-    bool open() const { return !flags.test(CLOSED); }    response handle_request();    void send(response const &r);  };
-}
+typedef
+  boost::multi_index_container<
+    boost::reference_wrapper<host const>,
+    indexed_by<
+      hashed_unique<const_mem_fun<host, std::string, &host::get_host> > > >
+  hosts_cont_t;
 
 class server::impl {
 public:
   short port;
 
-  typedef
-    boost::multi_index_container<
-      boost::reference_wrapper<host const>,
-      indexed_by<
-        hashed_unique<const_mem_fun<host, std::string, &host::get_host> > > >
-    cont_t;
-
-  cont_t hosts;
+  hosts_cont_t hosts;
 
   static const int LISTENQ = 5; // TODO: configurable
 
@@ -74,6 +61,22 @@ server::~server() {}
 void server::add_host(host const &h) {
   if (!p->hosts.insert(boost::ref(h)).second)
     throw std::logic_error("cannot serve two hosts with same name");
+}
+
+namespace {
+  class http_connection {    io::stream_buffer<io::file_descriptor> &conn;
+    bool open_;    enum {
+      NO_ENTITY,
+      HTTP_1_0_COMPAT,
+      ACCEPT_GZIP,
+      ACCEPT_BZIP2,
+      X_NO_FLAG
+    };
+    typedef std::bitset<X_NO_FLAG> state_flags;    state_flags flags;  public:    http_connection(io::stream_buffer<io::file_descriptor> &conn)      : conn(conn), open_(true) {}
+
+    bool open() const { return open_; }
+
+    void reset_flags() { flags.reset(); }    response handle_request(hosts_cont_t const &hosts);    void send(response const &r);  };
 }
 
 void server::serve() {
@@ -106,7 +109,8 @@ void server::serve() {
         io::stream_buffer<io::file_descriptor> buf(connfd);
         http_connection conn(buf);
         while (conn.open()) {
-          response r = conn.handle_request();
+          conn.reset_flags();
+          response r = conn.handle_request(p->hosts);
           conn.send(r);
         }
       }
@@ -222,7 +226,7 @@ namespace {
   }
 }
 
-response http_connection::handle_request() {
+response http_connection::handle_request(hosts_cont_t const &hosts) {
   try {
     std::string method, uri, version;
     boost::tie(method, uri, version) = get_request_line(conn);
