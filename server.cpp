@@ -19,7 +19,10 @@
 
 #include <boost/ref.hpp>
 
+#include <cstring>
+#include <cerrno>
 #include <bitset>
+#include <tr1/tuple>
 #include <map>
 
 #include <sys/types.h>
@@ -64,19 +67,29 @@ void server::add_host(host const &h) {
 }
 
 namespace {
-  class http_connection {    io::stream_buffer<io::file_descriptor> &conn;
-    bool open_;    enum {
+  class http_connection {
+    io::stream_buffer<io::file_descriptor> &conn;
+    bool open_;
+    enum {
       NO_ENTITY,
       HTTP_1_0_COMPAT,
       ACCEPT_GZIP,
       ACCEPT_BZIP2,
       X_NO_FLAG
     };
-    typedef std::bitset<X_NO_FLAG> state_flags;    state_flags flags;  public:    http_connection(io::stream_buffer<io::file_descriptor> &conn)      : conn(conn), open_(true) {}
+    typedef std::bitset<X_NO_FLAG> state_flags;
+    state_flags flags;
+
+  public:
+    http_connection(io::stream_buffer<io::file_descriptor> &conn)
+      : conn(conn), open_(true) {}
 
     bool open() const { return open_; }
 
-    void reset_flags() { flags.reset(); }    response handle_request(hosts_cont_t const &hosts);    void send(response const &r);  };
+    void reset_flags() { flags.reset(); }
+    response handle_request(hosts_cont_t const &hosts);
+    void send(response const &r);
+  };
 }
 
 void server::serve() {
@@ -101,7 +114,8 @@ void server::serve() {
     socklen_t clilen = sizeof(cliaddr);
     int connfd = ::accept(listenfd, reinterpret_cast<sockaddr *>(&cliaddr), &clilen);
     if(connfd == -1)
-      ; //was ?
+      REST_LOG_E(utils::CRITICAL, "accept failed: `"
+                 << std::strerror(errno) << "'");
 
     std::cout << "%% ACCEPTED" << std::endl;
 
@@ -110,20 +124,32 @@ void server::serve() {
       ; //was ?
     else if(pid == 0) {
       ::close(listenfd);
+      int status = 0;
       {
-        io::stream_buffer<io::file_descriptor> buf(connfd);
-        http_connection conn(buf);
-        while (conn.open()) {
-          conn.reset_flags();
-          response r = conn.handle_request(p->hosts);
-          conn.send(r);
+        try {
+          io::stream_buffer<io::file_descriptor> buf(connfd);
+          http_connection conn(buf);
+          while (conn.open()) {
+            conn.reset_flags();
+            response r = conn.handle_request(p->hosts);
+            conn.send(r);
+          }
+          std::cout << "%% CLOSING" << std::endl; // DEBUG
+          buf.close(); //kommt der hier hin? passiert das nicht automatisch?
         }
-        std::cout << "%% CLOSING" << std::endl;
-        buf.close(); //kommt der hier hin?
+        catch(std::exception &e) {
+          std::cerr << "ERROR: unexpected exception `" << e.what() << "'\n";
+          status = 1;
+        }
+        catch(...) {
+          std::cerr << "ERROR: unexpected exception\n";
+          status = 1;
+        }
       }
-      ::exit(0);
+      ::exit(status);
     }
-    ::close(connfd);
+    else
+      ::close(connfd);
   }
 }
 
@@ -166,6 +192,12 @@ namespace {
   std::pair<header_fields::iterator, bool> get_header_field(
       Source &in, header_fields &fields)
   {
+    /*
+== TODO
+   Multiple message-header fields with the same field-name MAY be
+   present in a message if and only if the entire field-value for that
+   header field is defined as a comma-separated list [i.e., #(values)].
+     */
     std::string name;
     int t = 0;
     for(;;) {
@@ -204,8 +236,8 @@ namespace {
     return fields.insert(std::make_pair(name, value));
   }
 
-    typedef boost::tuple<std::string, std::string, std::string>
-              request_line;
+  typedef std::tr1::tuple<std::string, std::string, std::string>
+  request_line;
     enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
   template<class Source>
@@ -215,17 +247,17 @@ namespace {
     while( (t = io::get(in)) != ' ') {
       if(t == Source::traits_type::eof())
         throw bad_format();
-      ret.get<REQUEST_METHOD>() += t;
+      std::tr1::get<REQUEST_METHOD>(ret) += t;
     }
     while( (t = io::get(in)) != ' ') {
       if(t == Source::traits_type::eof())
         throw bad_format();
-      ret.get<REQUEST_URI>() += t;
+      std::tr1::get<REQUEST_URI>(ret) += t;
     }
     while( (t = io::get(in)) != '\r') {
       if(t == Source::traits_type::eof())
         throw bad_format();
-      ret.get<REQUEST_HTTP_VERSION>() += t;
+      std::tr1::get<REQUEST_HTTP_VERSION>(ret) += t;
     }
     if(!expect(in, '\n'))
       throw bad_format();
@@ -236,14 +268,15 @@ namespace {
 response http_connection::handle_request(hosts_cont_t const &hosts) {
   try {
     std::string method, uri, version;
-    boost::tie(method, uri, version) = get_request_line(conn);
+    std::tr1::tie(method, uri, version) = get_request_line(conn);
 
     std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
     if (version == "HTTP/1.0") {
       flags.set(HTTP_1_0_COMPAT);
       open_ = false;
-    } else if(version != "HTTP/1.1")
+    }
+    else if(version != "HTTP/1.1")
       return 505; // HTTP Version not Supported
 
     header_fields fields;
@@ -254,7 +287,8 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
       if (ret.second)
         if (ret.first->first == "accept-encoding") {
           flags.set(ACCEPT_GZIP, algo::ifind_first(ret.first->second, "gzip"));
-          flags.set(ACCEPT_BZIP2, algo::ifind_first(ret.first->second, "bzip2"));
+          flags.set(ACCEPT_BZIP2, algo::ifind_first(ret.first->second,
+                                                    "bzip2"));
         }
 
       // DEBUG
@@ -287,7 +321,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     context &global = host.get_context();
 
     if(!flags.test(HTTP_1_0_COMPAT)) {
-      header_fields::iterator connect_header = fields.find("connect");
+      header_fields::iterator connect_header = fields.find("connection");
       if(connect_header != fields.end() && connect_header->second == "close")
         open_ = false;
     }
@@ -333,7 +367,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
 
       io::filtering_istream fin;
       if(has_transfer_encoding) {
-        std::cout << "te... " << transfer_encoding->second << std::endl; // DEBUG
+        std::cout << "TE: " << transfer_encoding->second << std::endl; // DEBUG
         if(algo::iequals(transfer_encoding->second, "chunked"))
           fin.push(utils::chunked_filter());
         else
@@ -341,10 +375,8 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
       }
 
       header_fields::iterator content_length = fields.find("content-length");
-      if(content_length == fields.end()) {
-        if(!has_transfer_encoding)
-          return 411; // Content-length required
-      }
+      if(content_length == fields.end() && !has_transfer_encoding)
+        return 411; // Content-length required
       else {
         std::size_t length =
             boost::lexical_cast<std::size_t>(content_length->second);
@@ -358,7 +390,11 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
       if (expect != fields.end()) {
         if (!flags.test(HTTP_1_0_COMPAT) &&
             algo::istarts_with(expect->second, "100-continue"))
-          send(100); // Continue
+          {
+            flags.set(NO_ENTITY);
+            send(100); // Continue
+            flags.reset(NO_ENTITY);
+          }
         else
           return 417; // Expectation Failed
       }
@@ -434,7 +470,7 @@ void http_connection::send(response const &r) {
   // Entity
   if (!r.get_data().empty() && !flags.test(NO_ENTITY)) {
     io::filtering_ostream out2;
-    out2.set_auto_close(false);
+    //out2.set_auto_close(false); // so funktioniert es und es schließt auch nicht die Verbindung
     if (flags.test(ACCEPT_GZIP))
       out2.push(io::gzip_compressor());
     else if (flags.test(ACCEPT_BZIP2))

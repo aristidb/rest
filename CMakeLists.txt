@@ -9,7 +9,7 @@ add_definitions(-Wall -W)
 
 add_library(rest SHARED
   rest_test.cpp
-  http-handler.cpp
+#  http-handler.cpp
   context.cpp
   keywords.cpp
   response.cpp
