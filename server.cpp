@@ -24,10 +24,11 @@
 #include <bitset>
 #include <map>
 
+#include <signal.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-//#include <netdb.h>
 
 #include <iostream>//DEBUG
 
@@ -66,6 +67,10 @@ public:
   static const int LISTENQ = 5; // TODO: configurable
 
   impl(short port) : port(port) {}
+
+  static void sigchld_handler(int) {
+    ::wait(0);
+  }
 };
 
 server::server(short port) : p(new impl(port)) {}
@@ -103,6 +108,8 @@ namespace {
 }
 
 void server::serve() {
+  void (*oldhandler)(int) = ::signal(SIGCHLD, &impl::sigchld_handler);
+
   int listenfd = ::socket(AF_INET, SOCK_STREAM, 0); // TODO AF_INET6
   if (listenfd == -1)
     throw std::runtime_error("could not start server (socket)"); //sollte errno auswerten!
@@ -165,6 +172,8 @@ void server::serve() {
     else
       ::close(connfd);
   }
+
+  ::signal(SIGCHLD, oldhandler);
 }
 
 namespace {
