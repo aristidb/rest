@@ -310,12 +310,19 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     std::string::const_iterator delim = std::find(begin, end, ':');
     std::string the_host(begin, delim);
 
-    std::cout << "THE HOST: " << the_host << std::endl;
-
     hosts_cont_t::const_iterator it = hosts.find(the_host);
-    // TODO: strip subdomains until found
-    if (it == hosts.end())
-      return 404; // or whatever to indicate that this is no good host
+    while(it == hosts.end())
+      {
+        std::string::const_iterator begin = the_host.begin();
+        std::string::const_iterator end = the_host.end();
+        std::string::const_iterator delim = std::find(begin, end, '.');
+        if(delim == end)
+          return 404;
+
+        the_host = the_host.substr((delim-begin)+1);
+        it = hosts.find(the_host);
+      }
+    std::cout << "THE HOST: " << the_host << std::endl; //DEBUG
 
     host const &host = *it;
     context &global = host.get_context();
