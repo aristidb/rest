@@ -103,6 +103,8 @@ void server::serve() {
     if(connfd == -1)
       ; //was ?
 
+    std::cout << "%% ACCEPTED" << std::endl;
+
     pid_t pid = ::fork();
     if(pid == -1)
       ; //was ?
@@ -116,6 +118,8 @@ void server::serve() {
           response r = conn.handle_request(p->hosts);
           conn.send(r);
         }
+        std::cout << "%% CLOSING" << std::endl;
+        buf.close(); //kommt der hier hin?
       }
       ::exit(0);
     }
@@ -282,6 +286,12 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     host const &host = *it;
     context &global = host.get_context();
 
+    if(!flags.test(HTTP_1_0_COMPAT)) {
+      header_fields::iterator connect_header = fields.find("connect");
+      if(connect_header != fields.end() && connect_header->second == "close")
+        open_ = false;
+    }
+
     keywords kw;
 
     det::any_path path_id;
@@ -394,11 +404,9 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
 void http_connection::send(response const &r) {
   //TODO implement partial-GET, entity data from streams
 
-  io::filtering_ostream out;
-
+  io::filtering_ostream out(boost::ref(conn), 0, 0);
   out.set_auto_close(false);
 
-  out.push(boost::ref(conn), 0, 0);
   // Status Line
   if (flags.test(HTTP_1_0_COMPAT))
     out << "HTTP/1.0 ";
@@ -432,6 +440,7 @@ void http_connection::send(response const &r) {
     else if (flags.test(ACCEPT_BZIP2))
       out2.push(io::bzip2_compressor());
     out2.push(boost::ref(out), 0, 0);
+    //out2.push(boost::ref(std::cout), 0, 0); DEBUG
     out2 << r.get_data();
     out2.pop();
   }
