@@ -84,6 +84,9 @@ void server::serve() {
   if (listenfd == -1)
     throw std::runtime_error("could not start server (socket)"); //sollte errno auswerten!
 
+  int x = 1;
+  setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
+
   sockaddr_in servaddr;
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
@@ -235,7 +238,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
 
     if (version == "HTTP/1.0") {
       flags.set(HTTP_1_0_COMPAT);
-      // TODO HTTP/1.0 compat modus (set connection header to close)
+      open_ = false;
     } else if(version != "HTTP/1.1")
       return 505; // HTTP Version not Supported
 
@@ -264,7 +267,15 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     header_fields::iterator host_header = fields.find("host");
     if(host_header == fields.end())
       return 400;
-    hosts_cont_t::const_iterator it = hosts.find(host_header->second);
+    std::string::const_iterator begin = host_header->second.begin();
+    std::string::const_iterator end = host_header->second.end();
+    std::string::const_iterator delim = std::find(begin, end, ':');
+    std::string the_host(begin, delim);
+
+    std::cout << "THE HOST: " << the_host << std::endl;
+
+    hosts_cont_t::const_iterator it = hosts.find(the_host);
+    // TODO: strip subdomains until found
     if (it == hosts.end())
       return 404; // or whatever to indicate that this is no good host
 
@@ -413,7 +424,7 @@ void http_connection::send(response const &r) {
   out << "\r\n";
 
   // Entity
-  if (flags.test(NO_ENTITY)) {
+  if (!r.get_data().empty() && !flags.test(NO_ENTITY)) {
     io::filtering_ostream out2;
     out2.set_auto_close(false);
     if (flags.test(ACCEPT_GZIP))
