@@ -37,6 +37,13 @@ namespace det = rest::detail;
 namespace io = boost::iostreams;
 namespace algo = boost::algorithm;
 
+/*
+ * Big TODO:
+ *
+ * - actually notice if the socket is closed
+ * - see below for more
+ */
+
 #define REST_SERVER_ID "Musikdings.rest/0.1"
 
 typedef
