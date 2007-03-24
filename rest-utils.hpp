@@ -210,13 +210,13 @@ private:
 enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
 
 #define REST_LOG(prio, data) \
-    ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, (data))
+  ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, (data))
 
 #define REST_LOG_E(prio, data) \
-  { \
+  do { \
     ::std::stringstream sstr; sstr << data;                               \
     ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, sstr.str()); \
-  } (void*)0
+  } while (0)
 
 std::string current_date_time();
 

@@ -489,3 +489,76 @@ void http_connection::send(response const &r) {
   }
   out.pop();
 }
+
+//---------------
+// TESTS
+
+#include <testsoon.hpp>
+
+XTEST((values, (std::string)("ab")("\r\n"))) {
+  std::stringstream x(value);
+  Equals(expect(x, value[0]), true);
+  Equals(x.get(), value[1]);
+}
+
+XTEST((values, (std::string)("ab")("\r\n"))) {
+  std::stringstream x(value);
+  Not_equals(value[0], value[1]);
+  Equals(expect(x, value[1]), false);
+  Equals(x.get(), value[0]);
+}
+
+XTEST((values, (char)(' ')('\t'))) {
+  Check(isspht(value));
+}
+
+XTEST((values, (char)('\n')('\v')('\a')('a'))) {
+  Check(!isspht(value));
+}
+
+TEST() {
+  char const *value[] = { "foo", "bar, kotz=\"haHA;\"" };
+
+  std::string header(value[0]);
+  header += ":         ";
+  header += value[1];
+  std::stringstream x(header);
+  header_fields fields;
+  std::pair<header_fields::iterator, bool> field = get_header_field(x, fields);
+  Check(field.second);
+  Equals(field.first->first, value[0]);
+  Equals(field.first->second, value[1]);
+}
+
+XTEST((values, (std::string)("   x")("\t\ny")(" z "))) {
+  std::stringstream x(value);
+  int r = remove_spaces(x);
+  int t = x.get();
+  Equals(r, t);
+  Check(!isspht(t));
+}
+
+//XXX: does not compile
+#if 0 
+TEST() {
+  std::string line = "GET /foo/?bar&k=kk HTTP/1.1\r\n";
+  std::stringstream x(line);
+  request_line req = get_request_line(x);
+  Equals(req.get<REQUEST_METHOD>(), "GET");
+  Equals(req.get<REQUEST_URI>(), "/foo/?bar&k=kk");
+  Equals(req.get<REQUEST_HTTP_VERSION>(), "HTTP/1.1");
+}
+#endif
+
+TEST_GROUP(aux) {
+  XTEST((values, (char)('a')('1')('F'))) {
+    std::stringstream s;
+    s << value;
+    int x;
+    s >> std::hex >> x;
+    boost::tuple<bool, int> t = utils::hex2int(value);
+    Check(t.get<0>());
+    Equals(t.get<1>(), x);
+  }
+}
+
