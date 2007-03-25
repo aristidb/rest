@@ -220,9 +220,8 @@ enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
 
 std::string current_date_time();
 
-typedef void (*timeout)(int);
-void killer(int);
-void settimer(long sec, long usec, timeout t);
+struct timeout {};
+void settimer(long sec, long usec);
 void freeze_timer();
 void unfreeze_timer();
 }}

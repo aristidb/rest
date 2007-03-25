@@ -153,8 +153,12 @@ void server::serve() {
               response r = conn.handle_request(p->hosts);
               conn.send(r);
             }
-          } catch (remote_close&) {
+          }
+          catch(remote_close&) {
             std::cout << "%% remote" << std::endl;
+          }
+          catch(utils::timeout&) {
+            std::cout << "timeout" << std::endl;
           }
           std::cout << "%% CLOSING" << std::endl; // DEBUG
         }
