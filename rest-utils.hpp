@@ -41,6 +41,20 @@ inline boost::tuple<bool,int> hex2int(int ascii) {
     return boost::make_tuple(false, 0);
 }
 
+struct socket_device {
+  typedef char char_type;
+  typedef boost::iostreams::bidirectional_device_tag category;
+
+  socket_device(int fd, long timeout);
+  ~socket_device();
+
+  std::streamsize read(char *, std::streamsize);
+  std::streamsize write(char const *, std::streamsize);
+
+private:
+  int fd;
+};
+
 class boundary_filter : public boost::iostreams::multichar_input_filter {
 public:
   boundary_filter(std::string const &boundary)
