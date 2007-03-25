@@ -323,6 +323,10 @@ namespace {
     std::cout << "THE HOST: " << the_host << std::endl; //DEBUG
     return it->get_pointer();
   }
+
+  void assure_relative_uri(std::string &uri) {
+    //TODO
+  }
 }
 
 response http_connection::handle_request(hosts_cont_t const &hosts) {
@@ -380,6 +384,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     det::any_path path_id;
     det::responder_base *responder;
     context *local;
+    assure_relative_uri(uri);
     global.find_responder(uri, path_id, responder, local, kw);
 
     if (!responder)
