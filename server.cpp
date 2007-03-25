@@ -156,7 +156,6 @@ void server::serve() {
             std::cout << "%% remote" << std::endl;
           }
           std::cout << "%% CLOSING" << std::endl; // DEBUG
-          buf.close(); //kommt der hier hin? passiert das nicht automatisch?
         }
         catch(std::exception &e) {
           std::cerr << "ERROR: unexpected exception `" << e.what() << "'\n";
@@ -290,8 +289,8 @@ namespace {
     return ret;
   }
 
-  host const *find_host(header_fields const &fields,
-                        hosts_cont_t const &hosts)
+  hosts_cont_t::const_iterator find_host(
+      header_fields const &fields, hosts_cont_t const &hosts)
   {
     header_fields::const_iterator host_header = fields.find("host");
     if(host_header == fields.end())
@@ -318,10 +317,7 @@ namespace {
 
       it = hosts.find(the_host);
     }
-    if (it == hosts.end())
-      return 0x0;
-    std::cout << "THE HOST: " << the_host << std::endl; //DEBUG
-    return it->get_pointer();
+    return it;
   }
 }
 
@@ -364,10 +360,10 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
         break;
     }
 
-    host const *host = find_host(fields, hosts);
-    if(!host)
+    hosts_cont_t::const_iterator host = find_host(fields, hosts);
+    if (host == hosts.end())
       return 404;
-    context &global = host->get_context();
+    context &global = host->get().get_context();
 
     if(!flags.test(HTTP_1_0_COMPAT)) {
       header_fields::iterator connect_header = fields.find("connection");
