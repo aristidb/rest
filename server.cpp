@@ -122,7 +122,7 @@ void server::serve() {
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
   servaddr.sin_port = htons(p->port);
-  if (::bind(listenfd, reinterpret_cast<sockaddr const*>(&servaddr), sizeof(servaddr)) == -1)
+  if (::bind(listenfd, (sockaddr *) &servaddr, sizeof(servaddr)) == -1)
     throw std::runtime_error("could not start server (bind)");
   if(::listen(listenfd, impl::LISTENQ) == -1)
     throw std::runtime_error("could not start server (listen)");
@@ -130,10 +130,12 @@ void server::serve() {
   for(;;) {
     sockaddr_in cliaddr;
     socklen_t clilen = sizeof(cliaddr);
-    int connfd = ::accept(listenfd, reinterpret_cast<sockaddr *>(&cliaddr), &clilen);
-    if(connfd == -1)
+    int connfd = ::accept(listenfd, (sockaddr *) &cliaddr, &clilen);
+    if(connfd == -1) {
       REST_LOG_E(utils::CRITICAL, "accept failed: `"
                  << std::strerror(errno) << "'");
+      continue;
+    }
 
     std::cout << "%% ACCEPTED" << std::endl;
 
@@ -144,6 +146,11 @@ void server::serve() {
       ::close(listenfd);
       int status = 0;
       {
+        struct timeval timeout;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+        setsockopt(connfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+        setsockopt(connfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
         try {
           io::stream_buffer<io::file_descriptor> buf(connfd);
           http_connection conn(buf);
