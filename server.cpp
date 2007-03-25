@@ -24,10 +24,11 @@
 #include <bitset>
 #include <map>
 
+#include <signal.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-//#include <netdb.h>
 
 #include <iostream>//DEBUG
 
@@ -36,6 +37,13 @@ using namespace boost::multi_index;
 namespace det = rest::detail;
 namespace io = boost::iostreams;
 namespace algo = boost::algorithm;
+
+/*
+ * Big TODO:
+ *
+ * - actually notice if the socket is closed - DONE
+ * - see below for more
+ */
 
 #define REST_SERVER_ID "Musikdings.rest/0.1"
 
@@ -46,6 +54,10 @@ typedef
       hashed_unique<const_mem_fun<host, std::string, &host::get_host> > > >
   hosts_cont_t;
 
+namespace {
+  struct remote_close {};
+}
+
 class server::impl {
 public:
   short port;
@@ -55,6 +67,11 @@ public:
   static const int LISTENQ = 5; // TODO: configurable
 
   impl(short port) : port(port) {}
+
+  static void sigchld_handler(int) {
+    while (::waitpid(-1, 0, WNOHANG) > 0)
+      ;
+  }
 };
 
 server::server(short port) : p(new impl(port)) {}
@@ -92,6 +109,8 @@ namespace {
 }
 
 void server::serve() {
+  void (*oldhandler)(int) = ::signal(SIGCHLD, &impl::sigchld_handler);
+
   int listenfd = ::socket(AF_INET, SOCK_STREAM, 0); // TODO AF_INET6
   if (listenfd == -1)
     throw std::runtime_error("could not start server (socket)"); //sollte errno auswerten!
@@ -128,10 +147,14 @@ void server::serve() {
         try {
           io::stream_buffer<io::file_descriptor> buf(connfd);
           http_connection conn(buf);
-          while (conn.open()) {
-            conn.reset_flags();
-            response r = conn.handle_request(p->hosts);
-            conn.send(r);
+          try {
+            while (conn.open()) {
+              conn.reset_flags();
+              response r = conn.handle_request(p->hosts);
+              conn.send(r);
+            }
+          } catch (remote_close&) {
+            std::cout << "%% remote" << std::endl;
           }
           std::cout << "%% CLOSING" << std::endl; // DEBUG
           buf.close(); //kommt der hier hin? passiert das nicht automatisch?
@@ -150,6 +173,8 @@ void server::serve() {
     else
       ::close(connfd);
   }
+
+  ::signal(SIGCHLD, oldhandler);
 }
 
 namespace {
@@ -161,7 +186,7 @@ namespace {
     if(t == c)
       return true;
     else if(t == Source::traits_type::eof())
-      throw bad_format();
+      throw remote_close();
 
     io::putback(in, t);
     return false;
@@ -204,7 +229,7 @@ namespace {
       if(t == '\n' || t == '\r')
         throw bad_format();
       else if(t == Source::traits_type::eof())
-        break;
+        throw remote_close();
       else if(t == ':') {
         remove_spaces(in);
         break;
@@ -228,7 +253,7 @@ namespace {
           break;
         }
       } else if(t == Source::traits_type::eof())
-        break;
+        throw remote_close();
       else
         value += t;
     }
@@ -245,17 +270,17 @@ namespace {
     int t;
     while( (t = io::get(in)) != ' ') {
       if(t == Source::traits_type::eof())
-        throw bad_format();
+        throw remote_close();
       boost::get<REQUEST_METHOD>(ret) += t;
     }
     while( (t = io::get(in)) != ' ') {
       if(t == Source::traits_type::eof())
-        throw bad_format();
+        throw remote_close();
       boost::get<REQUEST_URI>(ret) += t;
     }
     while( (t = io::get(in)) != '\r') {
       if(t == Source::traits_type::eof())
-        throw bad_format();
+        throw remote_close();
       boost::get<REQUEST_HTTP_VERSION>(ret) += t;
     }
     if(!expect(in, '\n'))
@@ -307,20 +332,27 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     std::string::const_iterator begin = host_header->second.begin();
     std::string::const_iterator end = host_header->second.end();
     std::string::const_iterator delim = std::find(begin, end, ':');
+
     std::string the_host(begin, delim);
 
     hosts_cont_t::const_iterator it = hosts.find(the_host);
-    while(it == hosts.end())
-      {
-        std::string::const_iterator begin = the_host.begin();
-        std::string::const_iterator end = the_host.end();
-        std::string::const_iterator delim = std::find(begin, end, '.');
-        if(delim == end)
-          return 404;
+    while (it == hosts.end() && !the_host.empty()) {
+      std::cout << "-> " << the_host << std::endl; //DEBUG
 
-        the_host = the_host.substr((delim-begin)+1);
-        it = hosts.find(the_host);
-      }
+      std::string::const_iterator begin = the_host.begin();
+      std::string::const_iterator end = the_host.end();
+      std::string::const_iterator delim = std::find(begin, end, '.');
+
+      if (delim == end)
+        the_host = std::string();
+      else
+        the_host.assign(++delim, end);
+
+      it = hosts.find(the_host);
+    }
+    if (it == hosts.end())
+      return 404;
+
     std::cout << "THE HOST: " << the_host << std::endl; //DEBUG
 
     host const &host = *it;

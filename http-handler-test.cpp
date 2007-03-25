@@ -37,7 +37,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 };
 
 int main() {
-  rest::host h("localhost");
+  rest::host h("");
   tester t;
   h.get_context().bind("/", t);
   rest::server s(8080);

@@ -51,6 +51,13 @@ public:
   data_t data;
 
   boost::scoped_ptr<std::istream> entity;
+
+  data_t::iterator find(std::string const &keyword, int index) {
+    data_t::iterator it = data.find(boost::make_tuple(keyword, index));
+    if (it == data.end())
+      throw std::logic_error("invalid keyword");
+    return it;
+  }
 };
 
 keywords::keywords() : p(new impl) {
@@ -65,9 +72,7 @@ bool keywords::exists(std::string const &keyword, int index) const {
 }
 
 std::string &keywords::access(std::string const &keyword, int index) {
-  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
-  if (it == p->data.end())
-    throw std::logic_error("invalid keyword");
+  impl::data_t::iterator it = p->find(keyword, index);
   it->read();
   return it->data;
 }
@@ -92,23 +97,17 @@ void keywords::set_stream(
 void keywords::set_name(
     std::string const &keyword, int index, std::string const &name)
 {
-  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
-  if (it == p->data.end())
-    throw std::logic_error("invalid keyword");
+  impl::data_t::iterator it = p->find(keyword, index);
   it->name = name;
 }
 
 std::string keywords::get_name(std::string const &keyword, int index) const {
-  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
-  if (it == p->data.end())
-    throw std::logic_error("invalid keyword");
+  impl::data_t::iterator it = p->find(keyword, index);
   return it->name;
 }
 
 std::istream &keywords::read(std::string const &keyword, int index) {
-  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
-  if (it == p->data.end())
-    throw std::logic_error("invalid keyword");
+  impl::data_t::iterator it = p->find(keyword, index);
   if (!it->stream)
     it->stream.reset(new std::istringstream(it->data));
   return *it->stream;
@@ -121,9 +120,7 @@ void keywords::set_entity(std::istream *entity) {
 void keywords::set_output(
     std::string const &keyword, int index, std::ostream *stream)
 {
-  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
-  if (it == p->data.end())
-    throw std::logic_error("invalid keyword");
+  impl::data_t::iterator it = p->find(keyword, index);
   it->output.reset(stream);
 }
 
