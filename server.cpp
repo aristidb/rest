@@ -107,6 +107,19 @@ namespace {
     response handle_request(hosts_cont_t const &hosts);
     void handle_entity(keywords &kw);
     void send(response const &r);
+
+    typedef std::map<std::string, std::string> header_fields;
+
+    header_fields read_headers();
+
+    static
+    hosts_cont_t::const_iterator find_host(
+      header_fields const &fields, hosts_cont_t const &hosts);
+    
+    template<class Source>
+    static
+    std::pair<header_fields::iterator, bool> 
+    get_header_field(Source &in, header_fields &fields);
   };
 }
 
@@ -214,62 +227,6 @@ namespace {
     return c;
   }
 
-  typedef std::map<std::string, std::string> header_fields;
-
-  // reads a header field from `in' and adds it to `fields'
-  // see RFC 2616 chapter 4.2
-  // Warning: Field names are converted to all lower-case!
-  template<class Source>
-  std::pair<header_fields::iterator, bool> get_header_field(
-      Source &in, header_fields &fields)
-  {
-    /*
-== TODO
-   Multiple message-header fields with the same field-name MAY be
-   present in a message if and only if the entire field-value for that
-   header field is defined as a comma-separated list [i.e., #(values)].
-     */
-    std::string name;
-    int t = 0;
-    for(;;) {
-      t = io::get(in);
-      if(t == '\n' || t == '\r')
-        throw bad_format();
-      else if(t == Source::traits_type::eof())
-        throw remote_close();
-      else if(t == ':') {
-        remove_spaces(in);
-        break;
-      }
-      else
-        name += std::tolower(t);
-    }
-    std::string value;
-    for(;;) {
-      t = io::get(in);
-      if(t == '\n' || t == '\r') {
-        // Newlines in header fields are allowed when followed
-        // by an SP (space or horizontal tab)
-        if(t == '\r')
-          expect(in, '\n');
-        t = io::get(in);
-        if(isspht(t)) {
-          remove_spaces(in);
-        value += ' ';
-        }
-        else {
-          io::putback(in, t);
-          break;
-        }
-      }
-      else if(t == Source::traits_type::eof())
-        throw remote_close();
-      else
-        value += t;
-    }
-    return fields.insert(std::make_pair(name, value));
-  }
-
   typedef boost::tuple<std::string, std::string, std::string>
   request_line;
     enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
@@ -298,37 +255,6 @@ namespace {
     return ret;
   }
 
-  hosts_cont_t::const_iterator find_host(
-      header_fields const &fields, hosts_cont_t const &hosts)
-  {
-    header_fields::const_iterator host_header = fields.find("host");
-    if(host_header == fields.end())
-      throw bad_format();
-
-    std::string::const_iterator begin = host_header->second.begin();
-    std::string::const_iterator end = host_header->second.end();
-    std::string::const_iterator delim = std::find(begin, end, ':');
-
-    std::string the_host(begin, delim);
-
-    hosts_cont_t::const_iterator it = hosts.find(the_host);
-    while(it == hosts.end() &&
-          !the_host.empty())
-    {
-      std::string::const_iterator begin = the_host.begin();
-      std::string::const_iterator end = the_host.end();
-      std::string::const_iterator delim = std::find(begin, end, '.');
-
-      if (delim == end)
-        the_host.clear();
-      else
-        the_host.assign(++delim, end);
-
-      it = hosts.find(the_host);
-    }
-    return it;
-  }
-
   void assure_relative_uri(std::string &uri) {
     typedef boost::iterator_range<std::string::iterator> spart;
     spart scheme = algo::find_first(uri, "://");
@@ -354,28 +280,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     else if(version != "HTTP/1.1")
       return 505; // HTTP Version not Supported
 
-    header_fields fields;
-    for (;;) {
-      std::pair<header_fields::iterator, bool> ret =
-        get_header_field(conn, fields);
-
-      if (ret.second)
-        if (ret.first->first == "accept-encoding") {
-          flags.set(ACCEPT_GZIP, algo::ifind_first(ret.first->second, "gzip"));
-          flags.set(ACCEPT_BZIP2, algo::ifind_first(ret.first->second,
-                                                    "bzip2"));
-        }
-
-      // DEBUG
-      if(ret.second)
-        std::cerr << ret.first->first << ": "
-                  << ret.first->second << "\n";
-      else
-        std::cerr << "field not added!\n";
-
-      if(expect(conn, '\r') && expect(conn, '\n'))
-        break;
-    }
+    header_fields fields = read_headers();
 
     hosts_cont_t::const_iterator host = find_host(fields, hosts);
     if (host == hosts.end())
@@ -460,6 +365,117 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
   return 200;
 }
 
+http_connection::header_fields http_connection::read_headers() {
+  header_fields fields;
+  for (;;) {
+    std::pair<header_fields::iterator, bool> ret =
+      get_header_field(conn, fields);
+
+    if (ret.second)
+      if (ret.first->first == "accept-encoding") {
+        flags.set(ACCEPT_GZIP, algo::ifind_first(ret.first->second, "gzip"));
+        flags.set(ACCEPT_BZIP2, algo::ifind_first(ret.first->second, "bzip2"));
+      }
+
+    // DEBUG
+    if(ret.second)
+      std::cerr << ret.first->first << ": "
+                << ret.first->second << "\n";
+    else
+      std::cerr << "field not added!\n";
+
+    if(expect(conn, '\r') && expect(conn, '\n'))
+      break;
+  }
+  return fields;
+}
+
+  // reads a header field from `in' and adds it to `fields'
+  // see RFC 2616 chapter 4.2
+  // Warning: Field names are converted to all lower-case!
+template<class Source>
+std::pair<http_connection::header_fields::iterator, bool> 
+http_connection::get_header_field(Source &in, header_fields &fields)
+{
+  /*
+== TODO
+ Multiple message-header fields with the same field-name MAY be
+ present in a message if and only if the entire field-value for that
+ header field is defined as a comma-separated list [i.e., #(values)].
+   */
+  std::string name;
+  int t = 0;
+  for(;;) {
+    t = io::get(in);
+    if(t == '\n' || t == '\r')
+      throw bad_format();
+    else if(t == Source::traits_type::eof())
+      throw remote_close();
+    else if(t == ':') {
+      remove_spaces(in);
+      break;
+    }
+    else
+      name += std::tolower(t);
+  }
+  std::string value;
+  for(;;) {
+    t = io::get(in);
+    if(t == '\n' || t == '\r') {
+      // Newlines in header fields are allowed when followed
+      // by an SP (space or horizontal tab)
+      if(t == '\r')
+        expect(in, '\n');
+      t = io::get(in);
+      if(isspht(t)) {
+        remove_spaces(in);
+        value += ' ';
+      }
+      else {
+        io::putback(in, t);
+        break;
+      }
+    }
+    else if(t == Source::traits_type::eof())
+      throw remote_close();
+    else
+      value += t;
+  }
+  return fields.insert(std::make_pair(name, value));
+}
+
+hosts_cont_t::const_iterator 
+http_connection::find_host(
+    header_fields const &fields, hosts_cont_t const &hosts)
+{
+  header_fields::const_iterator host_header = fields.find("host");
+  if(host_header == fields.end())
+    throw bad_format();
+
+  std::string::const_iterator begin = host_header->second.begin();
+  std::string::const_iterator end = host_header->second.end();
+  std::string::const_iterator delim = std::find(begin, end, ':');
+
+  std::string the_host(begin, delim);
+
+  hosts_cont_t::const_iterator it = hosts.find(the_host);
+  while(it == hosts.end() &&
+        !the_host.empty())
+  {
+    std::string::const_iterator begin = the_host.begin();
+    std::string::const_iterator end = the_host.end();
+    std::string::const_iterator delim = std::find(begin, end, '.');
+
+    if (delim == end)
+      the_host.clear();
+    else
+      the_host.assign(++delim, end);
+
+    it = hosts.find(the_host);
+  }
+  return it;
+}
+
 void http_connection::handle_entity(keywords &kw) {
   // TODO
 }
@@ -541,8 +557,12 @@ TEST() {
   header += ":         ";
   header += value[1];
   std::stringstream x(header);
+
+  typedef http_connection::header_fields header_fields;
   header_fields fields;
-  std::pair<header_fields::iterator, bool> field = get_header_field(x, fields);
+  std::pair<header_fields::iterator, bool> field = 
+    http_connection::get_header_field(x, fields);
+
   Check(field.second);
   Equals(field.first->first, value[0]);
   Equals(field.first->second, value[1]);
