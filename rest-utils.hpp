@@ -10,6 +10,7 @@
 #include <boost/iostreams/pipeline.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/noncopyable.hpp>
 
@@ -52,7 +53,8 @@ struct socket_device {
   std::streamsize write(char const *, std::streamsize);
 
 private:
-  int fd;
+  class impl;
+  boost::shared_ptr<impl> p;
 };
 
 class boundary_filter : public boost::iostreams::multichar_input_filter {

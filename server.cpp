@@ -81,9 +81,11 @@ void server::add_host(host const &h) {
     throw std::logic_error("cannot serve two hosts with same name");
 }
 
+typedef io::stream_buffer<utils::socket_device> connection_streambuf;
+
 namespace {
   class http_connection {
-    io::stream_buffer<io::file_descriptor> &conn;
+    connection_streambuf &conn;
     bool open_;
     enum {
       NO_ENTITY,
@@ -96,7 +98,7 @@ namespace {
     state_flags flags;
 
   public:
-    http_connection(io::stream_buffer<io::file_descriptor> &conn)
+    http_connection(connection_streambuf &conn)
       : conn(conn), open_(true) {}
 
     bool open() const { return open_; }
@@ -146,13 +148,8 @@ void server::serve() {
       ::close(listenfd);
       int status = 0;
       {
-        struct timeval timeout;
-        timeout.tv_sec = 10;
-        timeout.tv_usec = 0;
-        setsockopt(connfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-        setsockopt(connfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
         try {
-          io::stream_buffer<io::file_descriptor> buf(connfd);
+          connection_streambuf buf(connfd, 10);
           http_connection conn(buf);
           try {
             while (conn.open()) {
