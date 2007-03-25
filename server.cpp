@@ -232,7 +232,8 @@ namespace {
       else if(t == ':') {
         remove_spaces(in);
         break;
-      } else
+      }
+      else
         name += std::tolower(t);
     }
     std::string value;
@@ -247,11 +248,13 @@ namespace {
         if(isspht(t)) {
           remove_spaces(in);
         value += ' ';
-        } else {
+        }
+        else {
           io::putback(in, t);
           break;
         }
-      } else if(t == Source::traits_type::eof())
+      }
+      else if(t == Source::traits_type::eof())
         throw remote_close();
       else
         value += t;
@@ -285,6 +288,40 @@ namespace {
     if(!expect(in, '\n'))
       throw bad_format();
     return ret;
+  }
+
+  host const *find_host(header_fields const &fields,
+                        hosts_cont_t const &hosts)
+  {
+    header_fields::const_iterator host_header = fields.find("host");
+    if(host_header == fields.end())
+      throw bad_format();
+
+    std::string::const_iterator begin = host_header->second.begin();
+    std::string::const_iterator end = host_header->second.end();
+    std::string::const_iterator delim = std::find(begin, end, ':');
+
+    std::string the_host(begin, delim);
+
+    hosts_cont_t::const_iterator it = hosts.find(the_host);
+    while(it == hosts.end() &&
+          !the_host.empty())
+    {
+      std::string::const_iterator begin = the_host.begin();
+      std::string::const_iterator end = the_host.end();
+      std::string::const_iterator delim = std::find(begin, end, '.');
+
+      if (delim == end)
+        the_host.clear();
+      else
+        the_host.assign(++delim, end);
+
+      it = hosts.find(the_host);
+    }
+    if (it == hosts.end())
+      return 0x0;
+    std::cout << "THE HOST: " << the_host << std::endl; //DEBUG
+    return it->get_pointer();
   }
 }
 
@@ -327,37 +364,10 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
         break;
     }
 
-    header_fields::iterator host_header = fields.find("host");
-    if(host_header == fields.end())
-      return 400;
-    std::string::const_iterator begin = host_header->second.begin();
-    std::string::const_iterator end = host_header->second.end();
-    std::string::const_iterator delim = std::find(begin, end, ':');
-
-    std::string the_host(begin, delim);
-
-    hosts_cont_t::const_iterator it = hosts.find(the_host);
-    while (it == hosts.end() && !the_host.empty()) {
-      std::cout << "-> " << the_host << std::endl; //DEBUG
-
-      std::string::const_iterator begin = the_host.begin();
-      std::string::const_iterator end = the_host.end();
-      std::string::const_iterator delim = std::find(begin, end, '.');
-
-      if (delim == end)
-        the_host = std::string();
-      else
-        the_host.assign(++delim, end);
-
-      it = hosts.find(the_host);
-    }
-    if (it == hosts.end())
+    host const *host = find_host(fields, hosts);
+    if(!host)
       return 404;
-
-    std::cout << "THE HOST: " << the_host << std::endl; //DEBUG
-
-    host const &host = *it;
-    context &global = host.get_context();
+    context &global = host->get_context();
 
     if(!flags.test(HTTP_1_0_COMPAT)) {
       header_fields::iterator connect_header = fields.find("connection");
@@ -388,62 +398,19 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
         return 404;
       return getter->x_get(path_id, kw);
     }
-    else if(method == "POST" || method == "PUT") {
-      // bisschen problematisch mit den keywords
-      if(method == "POST") {
-        if (!responder->x_exists(path_id, kw) || !responder->x_poster())
-          return 404;
-      }
-      else if(method == "PUT") {
-        if (!responder->x_putter())
-          return 404;
-      }
+    else if(method == "POST") {
+      if (!responder->x_exists(path_id, kw) || !responder->x_poster())
+        return 404;
 
-      // TODO move entity handling to keyword
-      header_fields::iterator transfer_encoding =
-        fields.find("transfer-encoding");
-      bool has_transfer_encoding = transfer_encoding != fields.end();
+      // TODO handle entity
 
-      io::filtering_istream fin;
-      if(has_transfer_encoding) {
-        std::cout << "TE: " << transfer_encoding->second << std::endl; // DEBUG
-        if(algo::iequals(transfer_encoding->second, "chunked"))
-          fin.push(utils::chunked_filter());
-        else
-          return 501;
-      }
+    }
+    else if(method == "PUT") {
+      if (!responder->x_putter())
+        return 404;
 
-      header_fields::iterator content_length = fields.find("content-length");
-      if(content_length == fields.end() && !has_transfer_encoding)
-        return 411; // Content-length required
-      else {
-        std::size_t length =
-            boost::lexical_cast<std::size_t>(content_length->second);
-        fin.push(utils::length_filter(length));
-      }
-      fin.push(boost::ref(conn), 0, 0);
+      // TODO handle entity
 
-      fin.set_auto_close(false);//FRESH
-
-      header_fields::iterator expect = fields.find("expect");
-      if (expect != fields.end()) {
-        if (!flags.test(HTTP_1_0_COMPAT) &&
-            algo::istarts_with(expect->second, "100-continue"))
-          {
-            flags.set(NO_ENTITY);
-            send(100); // Continue
-            flags.reset(NO_ENTITY);
-          }
-        else
-          return 417; // Expectation Failed
-      }
-
-      //DEBUG
-        //std::cout << "reading: " << length << std::endl;
-        std::cout << "<<" << fin.rdbuf() << ">>" << std::endl;
-      //TODO: an keyword weitergeben
-
-     fin.pop();//FRESH
     }
     else if (method == "DELETE") {
       det::deleter_base *deleter = responder->x_deleter();
