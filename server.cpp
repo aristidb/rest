@@ -460,7 +460,6 @@ void http_connection::send(response const &r) {
   //TODO implement partial-GET, entity data from streams
 
   io::filtering_ostream out(boost::ref(conn), 0, 0);
-  out.set_auto_close(false);
 
   // Status Line
   if (flags.test(HTTP_1_0_COMPAT))
@@ -489,7 +488,6 @@ void http_connection::send(response const &r) {
   // Entity
   if (!r.get_data().empty() && !flags.test(NO_ENTITY)) {
     io::filtering_ostream out2;
-    //out2.set_auto_close(false); // so funktioniert es und es schließt auch nicht die Verbindung
     if (flags.test(ACCEPT_GZIP))
       out2.push(io::gzip_compressor());
     else if (flags.test(ACCEPT_BZIP2))
