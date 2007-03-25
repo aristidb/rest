@@ -103,6 +103,7 @@ namespace {
 
     void reset_flags() { flags.reset(); }
     response handle_request(hosts_cont_t const &hosts);
+    void handle_entity(keywords &kw);
     void send(response const &r);
   };
 }
@@ -405,18 +406,20 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
       return getter->x_get(path_id, kw);
     }
     else if(method == "POST") {
-      if (!responder->x_exists(path_id, kw) || !responder->x_poster())
+      det::poster_base *poster = responder->x_poster();
+      if (!poster || !responder->x_exists(path_id, kw))
         return 404;
 
-      // TODO handle entity
-
+      handle_entity(kw);
+      return poster->x_post(path_id, kw);
     }
     else if(method == "PUT") {
-      if (!responder->x_putter())
+      det::putter_base *putter = responder->x_putter();
+      if (!putter)
         return 404;
 
-      // TODO handle entity
-
+      handle_entity(kw);
+      return putter->x_put(path_id, kw);
     }
     else if (method == "DELETE") {
       det::deleter_base *deleter = responder->x_deleter();
@@ -447,6 +450,10 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     return 400; // Bad Request
   }
   return 200;
+}
+
+void http_connection::handle_entity(keywords &kw) {
+  // TODO
 }
 
 void http_connection::send(response const &r) {
