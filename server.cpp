@@ -41,8 +41,7 @@ namespace algo = boost::algorithm;
 /*
  * Big TODO:
  *
- * - actually notice if the socket is closed - DONE
- * - see below for more
+ * - see below (for more)
  */
 
 #define REST_SERVER_ID "Musikdings.rest/0.1"
@@ -293,6 +292,8 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
   try {
     std::string method, uri, version;
     boost::tie(method, uri, version) = get_request_line(conn);
+
+    // TODO: accept absolute urls, that is, ignore the http://hoststuff
 
     std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 

@@ -1,7 +1,7 @@
 # vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 include_directories(/usr/local/include/boost-1_33_1)
 
-include_directories(boost_asio_0_3_7)
+#include_directories(boost_asio_0_3_7)
 include_directories(testsoon/include)
 
 add_definitions(-Wall -W)
