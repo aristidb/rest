@@ -161,9 +161,6 @@ void server::serve() {
           catch(remote_close&) {
             std::cout << "%% remote" << std::endl;
           }
-          catch(utils::timeout&) {
-            std::cout << "timeout" << std::endl;
-          }
           std::cout << "%% CLOSING" << std::endl; // DEBUG
         }
         catch(std::exception &e) {

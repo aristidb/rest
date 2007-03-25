@@ -19,7 +19,6 @@ add_library(rest SHARED
   server.cpp
   logger.cpp
   datetime.cpp
-  timer.cpp
   socket_device.cpp
 )
 target_link_libraries(rest boost_iostreams boost_thread z bz2)
