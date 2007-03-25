@@ -69,7 +69,8 @@ public:
   impl(short port) : port(port) {}
 
   static void sigchld_handler(int) {
-    ::wait(0);
+    while (::waitpid(-1, 0, WNOHANG) > 0)
+      ;
   }
 };
 
@@ -331,20 +332,27 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     std::string::const_iterator begin = host_header->second.begin();
     std::string::const_iterator end = host_header->second.end();
     std::string::const_iterator delim = std::find(begin, end, ':');
+
     std::string the_host(begin, delim);
 
     hosts_cont_t::const_iterator it = hosts.find(the_host);
-    while(it == hosts.end())
-      {
-        std::string::const_iterator begin = the_host.begin();
-        std::string::const_iterator end = the_host.end();
-        std::string::const_iterator delim = std::find(begin, end, '.');
-        if(delim == end)
-          return 404;
+    while (it == hosts.end() && !the_host.empty()) {
+      std::cout << "-> " << the_host << std::endl; //DEBUG
 
-        the_host = the_host.substr((delim-begin)+1);
-        it = hosts.find(the_host);
-      }
+      std::string::const_iterator begin = the_host.begin();
+      std::string::const_iterator end = the_host.end();
+      std::string::const_iterator delim = std::find(begin, end, '.');
+
+      if (delim == end)
+        the_host = std::string();
+      else
+        the_host.assign(++delim, end);
+
+      it = hosts.find(the_host);
+    }
+    if (it == hosts.end())
+      return 404;
+
     std::cout << "THE HOST: " << the_host << std::endl; //DEBUG
 
     host const &host = *it;
