@@ -321,7 +321,13 @@ namespace {
   }
 
   void assure_relative_uri(std::string &uri) {
-    //TODO
+    typedef boost::iterator_range<std::string::iterator> spart;
+    spart scheme = algo::find_first(uri, "://");
+    if (scheme.empty())
+      return;
+    spart rest(scheme.end(), uri.end());
+    spart abs = algo::find_first(rest, "/");
+    uri.assign(abs.begin(), uri.end());
   }
 }
 
@@ -329,8 +335,6 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
   try {
     std::string method, uri, version;
     boost::tie(method, uri, version) = get_request_line(conn);
-
-    // TODO: accept absolute urls, that is, ignore the http://hoststuff
 
     std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
@@ -381,6 +385,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     det::responder_base *responder;
     context *local;
     assure_relative_uri(uri);
+    std::cout << "?-uri " << uri << std::endl;//DEBUG
     global.find_responder(uri, path_id, responder, local, kw);
 
     if (!responder)
