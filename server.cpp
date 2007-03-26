@@ -226,29 +226,25 @@ namespace {
     return c;
   }
 
-  typedef boost::tuple<std::string, std::string, std::string>
-  request_line;
-    enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
+  typedef boost::tuple<std::string, std::string, std::string> request_line;
+  enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
+
+  template<class Source>
+  void get_until(char end, Source &in, std::string &ret) {
+    int t;
+    while( (t = io::get(in)) != end) {
+      if(t == Source::traits_type::eof())
+        throw remote_close();
+      ret += t;
+    }
+  }
 
   template<class Source>
   request_line get_request_line(Source &in) {
     request_line ret;
-    int t;
-    while( (t = io::get(in)) != ' ') {
-      if(t == Source::traits_type::eof())
-        throw remote_close();
-      boost::get<REQUEST_METHOD>(ret) += t;
-    }
-    while( (t = io::get(in)) != ' ') {
-      if(t == Source::traits_type::eof())
-        throw remote_close();
-      boost::get<REQUEST_URI>(ret) += t;
-    }
-    while( (t = io::get(in)) != '\r') {
-      if(t == Source::traits_type::eof())
-        throw remote_close();
-      boost::get<REQUEST_HTTP_VERSION>(ret) += t;
-    }
+    get_until(' ', in, ret.get<REQUEST_METHOD>());
+    get_until(' ', in, ret.get<REQUEST_URI>());
+    get_until('\r', in, ret.get<REQUEST_HTTP_VERSION>());
     if(!expect(in, '\n'))
       throw bad_format();
     return ret;
@@ -347,7 +343,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
            i != fields.end();
            ++i)
         data += i->first + ": " + i->second + "\r\n";
-      data += "\r\nEntity-Data not included!\r\n"; //TODO include entity data
+      data += "\r\nEntity-Data not included!\r\n";
       ret.set_data(data);
       return ret;
 #else
@@ -393,10 +389,9 @@ namespace {
   enum { CSV_HEADERS=4 };
   char const * const csv_header[CSV_HEADERS] = {
     "accept", "accept-charset", "accept-encoding",
-    "accept-language"
+    "accept-language"   // TODO ...
   };
   char const * const * csv_header_end = csv_header + CSV_HEADERS;
-  // TODO ...
 }
 
   // reads a header field from `in' and adds it to `fields'
@@ -538,9 +533,11 @@ void http_connection::send(response const &r) {
 
 #include <testsoon.hpp>
 
+#if 0
 TEST_GROUP(http) {
 
 }
+#endif
 
 TEST_GROUP(aux) {
   XTEST((values, (std::string)("ab")("\r\n"))) {
@@ -570,6 +567,7 @@ TEST_GROUP(aux) {
     std::string header(value[0]);
     header += ":         ";
     header += value[1];
+    header += "\r\n";
     std::stringstream x(header);
 
     typedef http_connection::header_fields header_fields;
