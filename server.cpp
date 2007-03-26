@@ -270,7 +270,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
 
     std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
-    if (version == "HTTP/1.0") {
+    if(version == "HTTP/1.0") {
       flags.set(HTTP_1_0_COMPAT);
       open_ = false;
     }
@@ -284,12 +284,6 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
       return 404;
     context &global = host->get().get_context();
 
-    if(!flags.test(HTTP_1_0_COMPAT)) {
-      header_fields::iterator connect_header = fields.find("connection");
-      if(connect_header != fields.end() && connect_header->second == "close")
-        open_ = false;
-    }
-
     keywords kw;
 
     det::any_path path_id;
@@ -301,6 +295,12 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
 
     if (!responder)
       return 404;
+
+    if(!flags.test(HTTP_1_0_COMPAT)) {
+      header_fields::iterator connect_header = fields.find("connection");
+      if(connect_header != fields.end() && connect_header->second == "close")
+        open_ = false;
+    }
 
     if (method == "GET") {
       det::getter_base *getter = responder->x_getter();
@@ -387,19 +387,22 @@ http_connection::header_fields http_connection::read_headers() {
   return fields;
 }
 
+namespace {
+  enum { CSV_HEADERS=4 };
+  char const * const csv_header[CSV_HEADERS] = {
+    "accept", "accept-charset", "accept-encoding",
+    "accept-language"
+  };
+  char const * const * csv_header_end = csv_header + CSV_HEADERS;
+  // TODO ...
+}
+
   // reads a header field from `in' and adds it to `fields'
   // see RFC 2616 chapter 4.2
   // Warning: Field names are converted to all lower-case!
 template<class Source>
 std::pair<http_connection::header_fields::iterator, bool> 
-http_connection::get_header_field(Source &in, header_fields &fields)
-{
-  /*
-== TODO
- Multiple message-header fields with the same field-name MAY be
- present in a message if and only if the entire field-value for that
- header field is defined as a comma-separated list [i.e., #(values)].
-   */
+http_connection::get_header_field(Source &in, header_fields &fields) {
   std::string name;
   int t = 0;
   for(;;) {
@@ -438,7 +441,15 @@ http_connection::get_header_field(Source &in, header_fields &fields)
     else
       value += t;
   }
-  return fields.insert(std::make_pair(name, value));
+  std::pair<http_connection::header_fields::iterator, bool> ret =
+    fields.insert(std::make_pair(name, value));
+  if(!ret.second &&
+     std::find(csv_header, csv_header_end, name) != csv_header_end)
+  {
+    fields[name] += std::string(", ") + value;
+    std::cout << "field " << name << " value: " << fields[name] << "\n"; //DEBUG
+  }
+  return ret;
 }
 
 hosts_cont_t::const_iterator 
@@ -514,7 +525,6 @@ void http_connection::send(response const &r) {
     else if (flags.test(ACCEPT_BZIP2))
       out2.push(io::bzip2_compressor());
     out2.push(boost::ref(out), 0, 0);
-    //out2.push(boost::ref(std::cout), 0, 0); DEBUG
     out2 << r.get_data();
     out2.pop();
   }
