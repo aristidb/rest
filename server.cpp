@@ -147,16 +147,16 @@ void server::serve() {
     socklen_t clilen = sizeof(cliaddr);
     int connfd = ::accept(listenfd, (sockaddr *) &cliaddr, &clilen);
     if(connfd == -1) {
-      REST_LOG_E(utils::CRITICAL, "accept failed: `"
-                 << std::strerror(errno) << "'");
+      REST_LOG_ERRNO(utils::CRITICAL, "accept failed");
       continue;
     }
 
-    std::cout << "%% ACCEPTED" << std::endl;
+    std::cout << "%% ACCEPTED" << std::endl; // DEBUG
 
     pid_t pid = ::fork();
-    if(pid == -1)
-      ; //was ?
+    if(pid == -1) {
+      REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
+    }
     else if(pid == 0) {
       ::close(listenfd);
       int status = 0;
@@ -172,16 +172,18 @@ void server::serve() {
             }
           }
           catch(remote_close&) {
-            std::cout << "%% remote" << std::endl;
+            std::cout << "%% remote" << std::endl; // DEBUG
           }
           std::cout << "%% CLOSING" << std::endl; // DEBUG
         }
         catch(std::exception &e) {
-          std::cerr << "ERROR: unexpected exception `" << e.what() << "'\n";
+          REST_LOG_E(utils::CRITICAL,
+                     "ERROR: unexpected exception `" << e.what() << "'");
           status = 1;
         }
         catch(...) {
-          std::cerr << "ERROR: unexpected exception\n";
+          REST_LOG_E(utils::CRITICAL,
+                     "ERROR: unexpected exception (unkown type)");
           status = 1;
         }
       }
@@ -536,63 +538,67 @@ void http_connection::send(response const &r) {
 
 #include <testsoon.hpp>
 
-XTEST((values, (std::string)("ab")("\r\n"))) {
-  std::stringstream x(value);
-  Equals(expect(x, value[0]), true);
-  Equals(x.get(), value[1]);
-}
+TEST_GROUP(http) {
 
-XTEST((values, (std::string)("ab")("\r\n"))) {
-  std::stringstream x(value);
-  Not_equals(value[0], value[1]);
-  Equals(expect(x, value[1]), false);
-  Equals(x.get(), value[0]);
-}
-
-XTEST((values, (char)(' ')('\t'))) {
-  Check(isspht(value));
-}
-
-XTEST((values, (char)('\n')('\v')('\a')('a'))) {
-  Check(!isspht(value));
-}
-
-TEST() {
-  char const *value[] = { "foo", "bar, kotz=\"haHA;\"" };
-
-  std::string header(value[0]);
-  header += ":         ";
-  header += value[1];
-  std::stringstream x(header);
-
-  typedef http_connection::header_fields header_fields;
-  header_fields fields;
-  std::pair<header_fields::iterator, bool> field = 
-    http_connection::get_header_field(x, fields);
-
-  Check(field.second);
-  Equals(field.first->first, value[0]);
-  Equals(field.first->second, value[1]);
-}
-
-XTEST((values, (std::string)("   x")("\t\ny")(" z "))) {
-  std::stringstream x(value);
-  int r = remove_spaces(x);
-  int t = x.get();
-  Equals(r, t);
-  Check(!isspht(t));
-}
-
-TEST() {
-  std::string line = "GET /foo/?bar&k=kk HTTP/1.1\r\n";
-  std::stringstream x(line);
-  request_line req = get_request_line(x);
-  Equals(req.get<REQUEST_METHOD>(), "GET");
-  Equals(req.get<REQUEST_URI>(), "/foo/?bar&k=kk");
-  Equals(req.get<REQUEST_HTTP_VERSION>(), "HTTP/1.1");
 }
 
 TEST_GROUP(aux) {
+  XTEST((values, (std::string)("ab")("\r\n"))) {
+    std::stringstream x(value);
+    Equals(expect(x, value[0]), true);
+    Equals(x.get(), value[1]);
+  }
+
+  XTEST((values, (std::string)("ab")("\r\n"))) {
+    std::stringstream x(value);
+    Not_equals(value[0], value[1]);
+    Equals(expect(x, value[1]), false);
+    Equals(x.get(), value[0]);
+  }
+
+  XTEST((values, (char)(' ')('\t'))) {
+    Check(isspht(value));
+  }
+
+  XTEST((values, (char)('\n')('\v')('\a')('a'))) {
+    Check(!isspht(value));
+  }
+
+  TEST() {
+    char const *value[] = { "foo", "bar, kotz=\"haHA;\"" };
+
+    std::string header(value[0]);
+    header += ":         ";
+    header += value[1];
+    std::stringstream x(header);
+
+    typedef http_connection::header_fields header_fields;
+    header_fields fields;
+    std::pair<header_fields::iterator, bool> field = 
+      http_connection::get_header_field(x, fields);
+
+    Check(field.second);
+    Equals(field.first->first, value[0]);
+    Equals(field.first->second, value[1]);
+  }
+
+  XTEST((values, (std::string)("   x")("\t\ny")(" z "))) {
+    std::stringstream x(value);
+    int r = remove_spaces(x);
+    int t = x.get();
+    Equals(r, t);
+    Check(!isspht(t));
+  }
+
+  TEST() {
+    std::string line = "GET /foo/?bar&k=kk HTTP/1.1\r\n";
+    std::stringstream x(line);
+    request_line req = get_request_line(x);
+    Equals(req.get<REQUEST_METHOD>(), "GET");
+    Equals(req.get<REQUEST_URI>(), "/foo/?bar&k=kk");
+    Equals(req.get<REQUEST_HTTP_VERSION>(), "HTTP/1.1");
+  }
+
   XTEST((values, (char)('a')('1')('F'))) {
     std::stringstream s;
     s << value;

@@ -234,6 +234,13 @@ enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
     ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, sstr.str()); \
   } while (0)
 
+#define REST_LOG_ERRNO(prio, data) \
+  do { \
+   ::std::stringstream sstr;                 \
+   sstr << data << ": `" << ::std::strerror(errno) << '\''; \
+   ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, sstr.str()); \
+  } while (0)
+
 std::string current_date_time();
 }}
 
