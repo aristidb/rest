@@ -10,7 +10,12 @@ using namespace rest::utils;
 class socket_device::impl {
 public:
   impl(int fd) : fd(fd) {}
-  ~impl() { close(fd); }
+  ~impl() { close(); }
+
+  void close() {
+    ::close(fd);
+    fd = -1;
+  }
 
   int fd;
 };
@@ -29,11 +34,23 @@ socket_device::~socket_device() {
 }
 
 std::streamsize socket_device::read(char *buf, std::streamsize length) {
+  if (p->fd < 0)
+    return -1;
   std::streamsize n = ::read(p->fd, buf, size_t(length));
+  if (n < 0) {
+    p->close();
+    return -1;
+  }
   return n ? n : -1;
 }
 
 std::streamsize socket_device::write(char const *buf, std::streamsize length) {
+  if (p->fd < 0)
+    return -1;
   std::streamsize n = ::write(p->fd, buf, size_t(length));
+  if (n < 0) {
+    p->close();
+    return -1;
+  }
   return n ? n : -1;
 }
