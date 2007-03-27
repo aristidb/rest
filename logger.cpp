@@ -1,7 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest-utils.hpp"
 #include <boost/thread/once.hpp>
-#include <testsoon.hpp>
 #include <signal.h> // for sig_atomic_t
 
 #ifndef REST_LOGPIPE
@@ -48,6 +47,9 @@ void logger::log(
   (void) file; (void) line; (void) data; // TODO
 }
 
+#ifndef NDEBUG
+#include <testsoon.hpp>
+
 TEST() {
   Not_equals(&logger::get(), (logger*) 0);
 }
@@ -57,4 +59,5 @@ TEST() {
   logger *l2 = &logger::get();
   Equals(l1, l2);
 }
+#endif
 
