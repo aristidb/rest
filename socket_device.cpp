@@ -10,7 +10,7 @@ using namespace rest::utils;
 class socket_device::impl {
 public:
   impl(int fd) : fd(fd) {}
-  ~impl() { close(); }
+  ~impl() { if (fd >= 0) close(); }
 
   void close() {
     ::close(fd);
