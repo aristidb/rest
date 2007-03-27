@@ -528,6 +528,7 @@ void http_connection::send(response const &r) {
   out.pop();
 }
 
+#ifndef NDEBUG
 //---------------
 // TESTS
 
@@ -607,4 +608,5 @@ TEST_GROUP(aux) {
     Equals(t.get<1>(), x);
   }
 }
+#endif
 
