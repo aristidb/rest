@@ -288,7 +288,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     det::responder_base *responder;
     context *local;
     assure_relative_uri(uri);
-    std::cout << "?-uri " << uri << std::endl;//DEBUG
+    std::cout << "?-uri " << uri << '\n';//DEBUG
     global.find_responder(uri, path_id, responder, local, kw);
 
     if (!responder)
@@ -374,10 +374,10 @@ http_connection::header_fields http_connection::read_headers() {
 
     // DEBUG
     if(ret.second)
-      std::cerr << ret.first->first << ": "
+      std::cout << ret.first->first << ": "
                 << ret.first->second << "\n";
     else
-      std::cerr << "field not added!\n";
+      std::cout << "field not added!\n";
 
     if(expect(conn, '\r') && expect(conn, '\n'))
       break;
