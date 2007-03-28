@@ -1,7 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest-utils.hpp"
-
-#ifndef NDEBUG
 #include <testsoon.hpp>
 #include <sstream>
 #include <boost/ref.hpp>
@@ -174,4 +172,3 @@ TEST() {
 }
 
 }
-#endif

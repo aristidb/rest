@@ -47,17 +47,3 @@ void logger::log(
   (void) file; (void) line; (void) data; // TODO
 }
 
-#ifndef NDEBUG
-#include <testsoon.hpp>
-
-TEST() {
-  Not_equals(&logger::get(), (logger*) 0);
-}
-
-TEST() {
-  logger *l1 = &logger::get();
-  logger *l2 = &logger::get();
-  Equals(l1, l2);
-}
-#endif
-

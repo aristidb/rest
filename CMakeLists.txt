@@ -9,12 +9,10 @@ add_definitions(-Wall -W)
 
 add_library(rest SHARED
   rest_test.cpp
-#  http-handler.cpp
   context.cpp
   keywords.cpp
   response.cpp
   uri.cpp
-  boundary_reader.cpp
   host.cpp
   server.cpp
   logger.cpp
@@ -31,5 +29,9 @@ target_link_libraries(http-handler-test rest)
 
 add_executable(pipedump pipedump.cpp)
 
-add_executable(unit unit.cpp) #add what you test
+add_executable(unit
+  unit.cpp
+  filter_tests.cpp
+  logger_tests.cpp
+)
 target_link_libraries(unit rest)
