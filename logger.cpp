@@ -21,14 +21,16 @@ logger::logger() : p(new impl) {
 }
 
 static logger *instance;
-static boost::once_flag once = BOOST_ONCE_INIT;
+//static boost::once_flag once = BOOST_ONCE_INIT;
 
 void logger::init() {
+  if (!instance)
     instance = new logger;
 }
 
 logger &logger::get() {
-  boost::call_once(&init, once);
+  //boost::call_once(&init, once);
+  init();
   return *instance;
 }
 
