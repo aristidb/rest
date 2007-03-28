@@ -7,7 +7,7 @@ include_directories(testsoon/include)
 add_definitions(-Wall -W)
 #add_definitions(-fvisibility=hidden) #TODO
 
-add_library(rest SHARED
+add_library(rest
   rest_test.cpp
   context.cpp
   keywords.cpp
