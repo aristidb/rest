@@ -2,6 +2,8 @@
 #include <testsoon.hpp>
 #include <iostream>
 
+TEST_REGISTRY
+
 int main() {
   testsoon::default_reporter rep(std::cout);
   testsoon::tests().run(rep);

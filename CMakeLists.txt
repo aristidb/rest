@@ -9,7 +9,6 @@ add_definitions(-Wall -W)
 set(CMAKE_EXE_LINKER_FLAGS "-static" CACHE STRING "Linker flags" FORCE)
 
 add_library(rest
-  rest_test.cpp
   context.cpp
   keywords.cpp
   response.cpp
