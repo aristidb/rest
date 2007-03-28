@@ -5,7 +5,8 @@ include_directories(/usr/local/include/boost-1_33_1)
 include_directories(testsoon/include)
 
 add_definitions(-Wall -W)
-#add_definitions(-fvisibility=hidden) #TODO
+
+set(CMAKE_EXE_LINKER_FLAGS "-static" CACHE STRING "Linker flags" FORCE)
 
 add_library(rest
   rest_test.cpp
