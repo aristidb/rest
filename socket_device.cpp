@@ -3,7 +3,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <iostream>
+#include <errno.h>
 
 using namespace rest::utils;
 
@@ -36,7 +36,10 @@ socket_device::~socket_device() {
 std::streamsize socket_device::read(char *buf, std::streamsize length) {
   if (p->fd < 0)
     return -1;
-  std::streamsize n = ::read(p->fd, buf, size_t(length));
+  std::streamsize n;
+  do {
+    n = ::read(p->fd, buf, size_t(length));
+  } while (n < 0 && errno == EINTR);
   if (n <= 0) {
     p->close();
     return -1;
@@ -47,7 +50,10 @@ std::streamsize socket_device::read(char *buf, std::streamsize length) {
 std::streamsize socket_device::write(char const *buf, std::streamsize length) {
   if (p->fd < 0)
     return -1;
-  std::streamsize n = ::write(p->fd, buf, size_t(length));
+  std::streamsize n;
+  do {
+    n = ::write(p->fd, buf, size_t(length));
+  } while (n < 0 && errno == EINTR);
   if (n <= 0) {
     p->close();
     return -1;
