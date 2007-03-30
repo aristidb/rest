@@ -6,9 +6,9 @@ include_directories(testsoon/include)
 
 add_definitions(-Wall -W)
 
-set(CMAKE_EXE_LINKER_FLAGS "-static" CACHE STRING "Linker flags" FORCE)
+set(ext_src   bzip2.cpp zlib.cpp mapped_file.cpp) 
 
-add_library(rest
+set(rest_src
   context.cpp
   keywords.cpp
   response.cpp
@@ -18,12 +18,15 @@ add_library(rest
   logger.cpp
   datetime.cpp
   socket_device.cpp
-
-  # Boost.Iostreams
-  bzip2.cpp
-  zlib.cpp
-  mapped_file.cpp
 )
+
+if (APPLE)
+  add_library(rest SHARED ${rest_src} ${ext_src})
+else (APPLE)
+  set(CMAKE_EXE_LINKER_FLAGS "-static" CACHE STRING "Linker flags" FORCE)
+  add_library(rest STATIC ${rest_src} ${ext_src})
+endif (APPLE)
+
 target_link_libraries(rest z bz2)
 
 add_executable(test1 test1.cpp)
