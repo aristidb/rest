@@ -21,7 +21,7 @@ set(rest_src
 )
 
 if (APPLE)
-  add_library(rest SHARED ${rest_src} ${ext_src})
+  add_library(rest SHARED ${rest_src} ${ext_src} unit.cpp)
 else (APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "-static" CACHE STRING "Linker flags" FORCE)
   add_library(rest STATIC ${rest_src} ${ext_src})
