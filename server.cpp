@@ -500,7 +500,7 @@ namespace {
   public:
     typedef io::filtering_streambuf<io::input> buf_t;
 
-    explicit pop_filt_stream(buf_t *buf = new buf_t) {
+    explicit pop_filt_stream(buf_t *buf = new buf_t) : buf(buf) {
       rdbuf(buf);
     }
 
