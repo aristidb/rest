@@ -614,7 +614,7 @@ void http_connection::send(response const &r, bool entity) {
   out.pop();
 }
 
-#ifndef NDEBUG
+#if 0
 //---------------
 // TESTS
 
@@ -695,4 +695,5 @@ TEST_GROUP(aux) {
   }
 }
 #endif
+
 
