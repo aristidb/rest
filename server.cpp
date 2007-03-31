@@ -13,6 +13,7 @@
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/operations.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
@@ -20,10 +21,11 @@
 #include <boost/ref.hpp>
 
 #include <cstring>
-#include <cerrno>
 #include <bitset>
 #include <map>
+#include <limits>
 
+#include <errno.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -103,14 +105,18 @@ namespace {
 
     bool open() const { return open_; }
 
+    typedef std::map<std::string, std::string> header_fields;
+    header_fields read_headers();
+
     void reset_flags() { flags.reset(); }
     response handle_request(hosts_cont_t const &hosts);
-    void handle_entity(keywords &kw);
-    void send(response const &r);
+    int handle_entity(keywords &kw, header_fields &fields);
 
-    typedef std::map<std::string, std::string> header_fields;
+    void send(response const &r, bool entity);
+    void send(response const &r) {
+      send(r, !flags.test(NO_ENTITY));
+    }
 
-    header_fields read_headers();
 
     static
     hosts_cont_t::const_iterator find_host(
@@ -318,7 +324,10 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
       if (!poster || !responder->x_exists(path_id, kw))
         return 404;
 
-      handle_entity(kw);
+      int ret = handle_entity(kw, fields);
+      if(ret != 0)
+        return ret;
+
       return poster->x_post(path_id, kw);
     }
     else if(method == "PUT") {
@@ -326,7 +335,10 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
       if (!putter)
         return 404;
 
-      handle_entity(kw);
+      int ret = handle_entity(kw, fields);
+      if(ret != 0)
+        return ret;
+
       return putter->x_put(path_id, kw);
     }
     else if (method == "DELETE") {
@@ -386,7 +398,9 @@ http_connection::header_fields http_connection::read_headers() {
 }
 
 namespace {
-  enum { CSV_HEADERS=4 };
+  enum {
+    CSV_HEADERS=4
+  };
   char const * const csv_header[CSV_HEADERS] = {
     "accept", "accept-charset", "accept-encoding",
     "accept-language"   // TODO ...
@@ -394,9 +408,9 @@ namespace {
   char const * const * csv_header_end = csv_header + CSV_HEADERS;
 }
 
-  // reads a header field from `in' and adds it to `fields'
-  // see RFC 2616 chapter 4.2
-  // Warning: Field names are converted to all lower-case!
+// reads a header field from `in' and adds it to `fields'
+// see RFC 2616 chapter 4.2
+// Warning: Field names are converted to all lower-case!
 template<class Source>
 std::pair<http_connection::header_fields::iterator, bool> 
 http_connection::get_header_field(Source &in, header_fields &fields) {
@@ -481,11 +495,75 @@ http_connection::find_host(
   return it;
 }
 
-void http_connection::handle_entity(keywords &kw) {
-  // TODO
+namespace {
+  class pop_filt_stream : public std::istream {
+  public:
+    typedef io::filtering_streambuf<io::input> buf_t;
+
+    explicit pop_filt_stream(buf_t *buf = new buf_t) {
+      rdbuf(buf);
+    }
+
+    ~pop_filt_stream() {
+      if (buf) {
+        ignore(std::numeric_limits<int>::max());
+        buf->pop();
+        delete buf;
+      }
+    }
+
+    buf_t &filt() { return *buf; }
+
+    buf_t *reset() {
+      buf_t *ptr = buf;
+      buf = 0;
+      return ptr;
+    }
+
+  private:
+    buf_t *buf;
+  };
 }
 
-void http_connection::send(response const &r) {
+int http_connection::handle_entity(keywords &kw, header_fields &fields) {
+  header_fields::iterator transfer_encoding =
+    fields.find("transfer-encoding");
+  bool has_transfer_encoding = transfer_encoding != fields.end();
+ 
+  pop_filt_stream fin;
+  if(has_transfer_encoding) {
+    std::cout << "TE: " << transfer_encoding->second << std::endl; // DEBUG
+    if(algo::iequals(transfer_encoding->second, "chunked"))
+      fin.filt().push(utils::chunked_filter());
+    else
+      return 501;
+  }
+ 
+  header_fields::iterator content_length = fields.find("content-length");
+  if(content_length == fields.end() && !has_transfer_encoding)
+    return 411; // Content-length required
+  else {
+    std::size_t length =
+      boost::lexical_cast<std::size_t>(content_length->second);
+    fin.filt().push(utils::length_filter(length));
+  }
+  fin.filt().push(boost::ref(conn), 0, 0);
+
+  if(!flags.test(HTTP_1_0_COMPAT)) {
+    header_fields::iterator expect = fields.find("expect");
+    if (expect != fields.end()) {
+      if (!algo::iequals(expect->second, "100-continue"))
+        return 417;
+      send(100, false);
+    }
+  }
+
+  kw.set_entity(new pop_filt_stream(fin.reset()));
+
+  return 0;
+}
+
+void http_connection::send(response const &r, bool entity) {
   //TODO implement partial-GET, entity data from streams
 
   io::filtering_ostream out(boost::ref(conn), 0, 0);
@@ -515,7 +593,7 @@ void http_connection::send(response const &r) {
   out << "\r\n";
 
   // Entity
-  if (!r.get_data().empty() && !flags.test(NO_ENTITY)) {
+  if (!r.get_data().empty() && entity) {
     io::filtering_ostream out2;
     if (flags.test(ACCEPT_GZIP))
       out2.push(io::gzip_compressor());
