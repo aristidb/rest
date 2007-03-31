@@ -538,12 +538,20 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
     else
       return 501;
   }
+
+  header_fields::iterator content_encoding = fields.find("content-encoding");
+  if(content_encoding != fields.end()) {
+    if(algo::iequals(content_encoding->second, "gzip"))
+      fin.filt().push(io::gzip_decompressor());
+    else if(algo::iequals(content_encoding->second, "bzip2"))
+      fin.filt().push(io::bzip2_decompressor());
+  }
  
   header_fields::iterator content_length = fields.find("content-length");
   if(content_length == fields.end() && !has_transfer_encoding)
     return 411; // Content-length required
   else {
-    std::size_t length =
+    std::size_t const length =
       boost::lexical_cast<std::size_t>(content_length->second);
     fin.filt().push(utils::length_filter(length));
   }
