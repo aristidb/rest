@@ -511,12 +511,9 @@ namespace {
     }
 
     ~pop_filt_stream() {
-      if (buf) {
-        std::cout << "deletering" << std::endl;
+      if (buf && buf->is_complete()) {
         ignore(std::numeric_limits<int>::max());
-        std::cout << "pop conn" << std::endl;
         buf->pop();
-        std::cout << "~buf" << std::endl;
         delete buf;
       }
     }
@@ -535,56 +532,37 @@ namespace {
 }
 
 int http_connection::handle_entity(keywords &kw, header_fields &fields) {
-  std::cout << "handling entity" << std::endl;
-
   header_fields::iterator transfer_encoding =
     fields.find("transfer-encoding");
   bool has_transfer_encoding = transfer_encoding != fields.end();
 
-  std::cout << "te.. " << has_transfer_encoding << std::endl;
-
   pop_filt_stream fin;
 
-  std::cout << "got past 'tor" << std::endl;
-
   if(has_transfer_encoding) {
-    std::cout << "TE: " << transfer_encoding->second << std::endl; // DEBUG
     if(algo::iequals(transfer_encoding->second, "chunked"))
       fin.filt().push(utils::chunked_filter());
     else
       return 501;
   }
 
-  std::cout << "check ce" << std::endl;
-
   header_fields::iterator content_encoding = fields.find("content-encoding");
   if(content_encoding != fields.end()) {
-    std::cout << "  .. " << content_encoding->second << std::endl;
     if(algo::iequals(content_encoding->second, "gzip"))
       fin.filt().push(io::gzip_decompressor());
     else if(algo::iequals(content_encoding->second, "bzip2"))
       fin.filt().push(io::bzip2_decompressor());
   }
 
-  std::cout << "check the cle" << std::endl;
- 
   header_fields::iterator content_length = fields.find("content-length");
   if(content_length == fields.end() && !has_transfer_encoding)
     return 411; // Content-length required
   else {
-    std::cout << "feat the cle" << std::endl;
     std::size_t const length =
       boost::lexical_cast<std::size_t>(content_length->second);
-    std::cout << "length: " << length << std::endl;
     fin.filt().push(utils::length_filter(length)); // Problem: BLOCKT!!
-    std::cout << "yep." << std::endl;
   }
 
-  std::cout << "FEAT ALL FILT" << std::endl;
-
   fin.filt().push(boost::ref(conn), 0, 0);
-
-  std::cout << "this the connref place" << std::endl;
 
   if(!flags.test(HTTP_1_0_COMPAT)) {
     header_fields::iterator expect = fields.find("expect");
@@ -594,8 +572,6 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
       send(100, false);
     }
   }
-
-  std::cout << "set entity" << std::endl;
 
   kw.set_entity(new pop_filt_stream(fin.reset()));
 
