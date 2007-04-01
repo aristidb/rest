@@ -34,6 +34,10 @@
 
 #include <iostream>//DEBUG
 
+#ifndef NDEBUG //whatever
+#define NO_FORK_LOOP
+#endif
+
 using namespace rest;
 using namespace boost::multi_index;
 namespace det = rest::detail;
@@ -117,7 +121,6 @@ namespace {
       send(r, !flags.test(NO_ENTITY));
     }
 
-
     static
     hosts_cont_t::const_iterator find_host(
       header_fields const &fields, hosts_cont_t const &hosts);
@@ -158,13 +161,14 @@ void server::serve() {
     }
 
     std::cout << "%% ACCEPTED" << std::endl; // DEBUG
-
+#ifndef NO_FORK_LOOP
     pid_t pid = ::fork();
     if(pid == -1) {
       REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
     }
     else if(pid == 0) {
       ::close(listenfd);
+#endif
       int status = 0;
       {
         try {
@@ -193,10 +197,12 @@ void server::serve() {
           status = 1;
         }
       }
+#ifndef NO_FORK_LOOP
       ::exit(status);
     }
     else
       ::close(connfd);
+#endif
   }
 
   ::signal(SIGCHLD, oldhandler);
