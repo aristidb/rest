@@ -386,8 +386,8 @@ http_connection::header_fields http_connection::read_headers() {
 
     if (ret.second)
       if (ret.first->first == "accept-encoding") {
-        flags.set(ACCEPT_GZIP, algo::ifind_first(ret.first->second, "gzip"));
-        flags.set(ACCEPT_BZIP2, algo::ifind_first(ret.first->second, "bzip2"));
+        flags.set(ACCEPT_GZIP, algo::iequals(ret.first->second, "gzip"));
+        flags.set(ACCEPT_BZIP2, algo::iequals(ret.first->second, "bzip2"));
       }
 
     // DEBUG
