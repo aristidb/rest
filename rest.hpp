@@ -87,7 +87,7 @@ public:
   }
   void set_name(std::string const &, int, std::string const &);
 
-  void set_entity(std::istream *);
+  void set_entity(std::istream *, std::string const &);
 
   void set_output(std::string const &key, std::ostream *stream) {
     set_output(key, 0, stream);

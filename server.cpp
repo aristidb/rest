@@ -573,7 +573,14 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
     }
   }
 
-  kw.set_entity(new pop_filt_stream(fin.reset()));
+  header_fields::iterator content_type = fields.find("content-type");
+
+  kw.set_entity(
+      new pop_filt_stream(fin.reset()),
+      content_type == fields.end() ?
+        "application/octet-stream" :
+        content_type->second
+  );
 
   return 0;
 }

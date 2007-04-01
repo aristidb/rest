@@ -113,7 +113,9 @@ std::istream &keywords::read(std::string const &keyword, int index) {
   return *it->stream;
 }
 
-void keywords::set_entity(std::istream *entity) {
+void keywords::set_entity(
+    std::istream *entity, std::string const &content_type)
+{
   p->entity.reset(entity);
 }
 
