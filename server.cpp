@@ -562,8 +562,6 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
     fin.filt().push(utils::length_filter(length)); // Problem: BLOCKT!!
   }
 
-  fin.filt().push(boost::ref(conn), 0, 0);
-
   if(!flags.test(HTTP_1_0_COMPAT)) {
     header_fields::iterator expect = fields.find("expect");
     if (expect != fields.end()) {
@@ -572,6 +570,8 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
       send(100, false);
     }
   }
+
+  fin.filt().push(boost::ref(conn), 0, 0);
 
   header_fields::iterator content_type = fields.find("content-type");
 
