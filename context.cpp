@@ -148,7 +148,7 @@ void context::prepare_keywords(keywords &kw) const {
   for (keyword_info_set::iterator it = p->predeclared_keywords.begin();
       it != p->predeclared_keywords.end();
       ++it)
-    kw.set(it->keyword, std::string());
+    kw.declare(it->keyword, it->type);
 }
 
 void context::do_bind(
@@ -206,7 +206,7 @@ void context::find_responder(
     for (tokenizer::iterator it = pairs.begin(); it != pairs.end(); ++it) {
       iterator split = std::find(it->begin(), it->end(), '=');
       std::string key = uri::unescape(it->begin(), split, true);
-      if (get_keyword_type(key) == FORM_PARAMETER) {
+      if (out_keywords.get_declared_type(key) == FORM_PARAMETER) {
         if (split != it->end())
           ++split;
         std::string value = uri::unescape(split, it->end(), true);
