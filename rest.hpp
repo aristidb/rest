@@ -57,42 +57,42 @@ public:
   keywords();
   ~keywords();
 
-  bool exists(std::string const &, int = 0) const;
+  bool exists(std::string const &key, int index = 0) const;
 
   std::string const &get(std::string const &keyword, int index = 0) const {
     return const_cast<keywords *>(this)->access(keyword, index);
   }
 
-  std::string &access(std::string const &, int = 0);
+  std::string &access(std::string const &key, int index = 0);
 
   std::string &operator[](std::string const &key) {
     return access(key);
   }
 
-  std::istream &read(std::string const &, int = 0);
-  std::string get_name(std::string const &, int = 0) const;
+  std::istream &read(std::string const &key, int index = 0);
+  std::string get_name(std::string const &key, int index = 0) const;
 
   void set(std::string const &key, std::string const &value) {
     return set(key, 0, value);
   }
-  void set(std::string const &, int, std::string const &);
+  void set(std::string const &key, int index, std::string const &value);
 
   void set_stream(std::string const &key, std::istream *value) {
     return set_stream(key, 0, value);
   }
-  void set_stream(std::string const &, int, std::istream *);
+  void set_stream(std::string const &key, int index, std::istream *stream);
 
   void set_name(std::string const &key, std::string const &value) {
     set_name(key, 0, value);
   }
-  void set_name(std::string const &, int, std::string const &);
+  void set_name(std::string const &key, int index, std::string const &name);
 
-  void set_entity(std::istream *, std::string const &);
+  void set_entity(std::istream *entity, std::string const &type);
 
   void set_output(std::string const &key, std::ostream *stream) {
     set_output(key, 0, stream);
   }
-  void set_output(std::string const &, int, std::ostream *);
+  void set_output(std::string const &key, int index, std::ostream *output);
 
   void flush();
 
