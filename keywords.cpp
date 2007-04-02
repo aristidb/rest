@@ -13,9 +13,11 @@ using namespace boost::multi_index;
 class keywords::impl {
 public:
   struct entry {
-    entry(std::string const &keyword, int index)
-    : keyword(keyword), index(index), pending_read(false) {}
-    entry(entry const &o) : keyword(o.keyword), index(o.index) {} // dirty, yeah
+    entry(std::string const &keyword, int index, keyword_type type = NORMAL)
+    : keyword(keyword), index(index), type(type), pending_read(false) {}
+
+    entry(entry const &o)
+    : keyword(o.keyword), index(o.index), type(o.type), pending_read(false) {}
 
     void read() const {
       if (!pending_read) return;
@@ -27,6 +29,7 @@ public:
 
     std::string keyword;
     int index;
+    keyword_type type;
     mutable bool pending_read;
     mutable std::string name;
     mutable std::string data;
@@ -75,6 +78,24 @@ std::string &keywords::access(std::string const &keyword, int index) {
   impl::data_t::iterator it = p->find(keyword, index);
   it->read();
   return it->data;
+}
+
+void keywords::declare(
+    std::string const &keyword, int index, keyword_type type)
+{
+  impl::data_t::iterator it =
+    p->data.insert(impl::entry(keyword, index, type)).first;
+  if (it->type != type)
+    throw std::logic_error("inconsistent type");
+}
+
+keyword_type keywords::get_declared_type(
+    std::string const &keyword, int index) const
+{
+  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
+  if (it == p->data.end())
+    return NONE;
+  return it->type;
 }
 
 void keywords::set(

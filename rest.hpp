@@ -52,6 +52,13 @@ enum response_type {
   ALL = GET | PUT | POST | DELETE
 };
 
+enum keyword_type {
+  NORMAL,
+  COOKIE,
+  FORM_PARAMETER,
+  NONE = -1,
+};
+
 class keywords {
 public:
   keywords();
@@ -70,21 +77,33 @@ public:
   }
 
   std::istream &read(std::string const &key, int index = 0);
+
   std::string get_name(std::string const &key, int index = 0) const;
+
+  void declare(std::string const &key, int index, keyword_type type);
+
+  void declare(std::string const &key, keyword_type type) {
+    declare(key, 0, type);
+  }
+
+  keyword_type get_declared_type(std::string const &key, int index = 0) const;
 
   void set(std::string const &key, std::string const &value) {
     return set(key, 0, value);
   }
+
   void set(std::string const &key, int index, std::string const &value);
 
   void set_stream(std::string const &key, std::istream *value) {
     return set_stream(key, 0, value);
   }
+
   void set_stream(std::string const &key, int index, std::istream *stream);
 
   void set_name(std::string const &key, std::string const &value) {
     set_name(key, 0, value);
   }
+
   void set_name(std::string const &key, int index, std::string const &name);
 
   void set_entity(std::istream *entity, std::string const &type);
@@ -92,6 +111,7 @@ public:
   void set_output(std::string const &key, std::ostream *stream) {
     set_output(key, 0, stream);
   }
+
   void set_output(std::string const &key, int index, std::ostream *output);
 
   void flush();
@@ -248,12 +268,6 @@ private:
   detail::deleter_base *x_deleter() {
     return (ResponseType & DELETE) ? (detail::deleter_base *) this : 0;
   }
-};
-
-enum keyword_type {
-  COOKIE,
-  FORM_PARAMETER,
-  NONE = -1,
 };
 
 class context : boost::noncopyable {
