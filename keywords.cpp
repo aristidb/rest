@@ -4,11 +4,14 @@
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/algorithm/string.hpp>
 #include <stdexcept>
 #include <sstream>
+#include <iostream>//DEBUG
 
 using namespace rest;
 using namespace boost::multi_index;
+namespace algo = boost::algorithm;
 
 class keywords::impl {
 public:
@@ -137,6 +140,26 @@ std::istream &keywords::read(std::string const &keyword, int index) {
 void keywords::set_entity(
     std::istream *entity, std::string const &content_type)
 {
+  std::cout << "~~ " << content_type << std::endl;
+
+  typedef std::string::const_iterator iterator;
+
+  iterator begin = content_type.begin();
+  iterator end = content_type.end();
+
+  iterator param_left = std::find(begin, end, ';');
+  iterator param_right = param_left;
+  if (param_right != end) {
+    while (++param_right != end)
+      if (*param_right != ' ')
+        break;
+  }
+
+  std::string type(begin, param_left);
+  std::string rest(param_right, end);
+
+  std::cout << "~~ " << type << " ; " << rest << std::endl;
+
   p->entity.reset(entity);
 }
 
