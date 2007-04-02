@@ -551,7 +551,7 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
   if(content_encoding != fields.end()) {
     if(algo::iequals(content_encoding->second, "gzip") ||
        (flags.test(HTTP_1_0_COMPAT) &&
-        algo::iequals(content_encoding->second, "x-gzip"))
+        algo::iequals(content_encoding->second, "x-gzip")))
       fin.filt().push(io::gzip_decompressor());
     else if(algo::iequals(content_encoding->second, "bzip2"))
       fin.filt().push(io::bzip2_decompressor());
