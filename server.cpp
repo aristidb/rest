@@ -511,9 +511,11 @@ namespace {
     }
 
     ~pop_filt_stream() {
-      if (buf && buf->is_complete()) {
-        ignore(std::numeric_limits<int>::max());
-        buf->pop();
+      if (buf) {
+        if (buf->is_complete()) {
+          ignore(std::numeric_limits<int>::max());
+          buf->pop();
+        }
         delete buf;
       }
     }
