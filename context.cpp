@@ -235,10 +235,12 @@ void context::do_find_responder(
     current = current->child(text);
     if (!current)
       return;
-    if (current->type == path_resolver_node::closure)
+    if (current->type == path_resolver_node::closure) {
+      out_keywords.declare(current->data, NORMAL);
       out_keywords.set(current->data, text);
-    else
+    } else {
       last = text;
+    }
   }
 
   if (!current->associated_path_id.empty())
