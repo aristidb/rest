@@ -4,6 +4,7 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <stdexcept>
 #include <sstream>
@@ -11,6 +12,7 @@
 
 using namespace rest;
 using namespace boost::multi_index;
+namespace io = boost::iostreams;
 
 class keywords::impl {
 public:
@@ -149,7 +151,33 @@ void keywords::set_entity(
   utils::parse_content_type(content_type, type, pset, params);
   std::cout << "~~ " << type << " ; " << params["boundary"] << std::endl;
 
-  std::cout << "<<" << entity->rdbuf() << ">>" << std::endl;
+  std::string boundary = "\r\n--" + params["boundary"];
+
+  while (*entity) {
+    io::filtering_istream filt;
+    filt.push(utils::boundary_filter(boundary));
+    filt.push(boost::ref(*entity), 0, 0);
+
+    std::cout << "<<\n";
+    char ch;
+    while (filt.get(ch))
+      if (ch)
+        std::cout << ch;
+      else
+        std::cout << "\0";
+    std::cout << "\n>>\n" << std::flush;
+
+    filt.pop();
+
+    std::cout << "[[\n";
+    while (entity->get(ch))
+      if (ch)
+        std::cout << ch;
+      else
+        std::cout << "\0";
+
+    std::cout << "]]\n" << std::flush;
+  }
 
   p->entity.reset(entity);
 }
