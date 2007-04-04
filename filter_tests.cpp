@@ -169,6 +169,14 @@ TEST() {
   Equals("-" + y.str(), "-");
 }
 
+TEST() {
+  std::istringstream x("a\r\nb\r\nc\r\nboundary");
+  filtering_istream s(boundary_filter("\r\nboundary") | boost::ref(x));
+  std::ostringstream y;
+  y << s.rdbuf();
+  Equals("--" + y.str(), "--a\r\nb\r\nc");
+}
+
 }
 
 }
