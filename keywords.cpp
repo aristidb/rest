@@ -1,12 +1,12 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest.hpp"
+#include "rest-utils.hpp"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <stdexcept>
 #include <sstream>
-#include <map>
 #include <iostream>//DEBUG
 
 using namespace rest;
@@ -141,8 +141,15 @@ void keywords::set_entity(
 {
   std::cout << "~~ " << content_type << std::endl;
 
+  std::string type;
+  std::set<std::string> pset;
+  pset.insert("boundary");
+  std::map<std::string, std::string> params;
 
-  //std::cout << "~~ " << type << " ; " << rest << std::endl;
+  utils::parse_content_type(content_type, type, pset, params);
+  std::cout << "~~ " << type << " ; " << params["boundary"] << std::endl;
+
+  std::cout << "<<" << entity->rdbuf() << ">>" << std::endl;
 
   p->entity.reset(entity);
 }
