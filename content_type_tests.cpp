@@ -3,7 +3,7 @@
 #include <testsoon.hpp>
 
 TEST() {
-  std::string in = "application/x-test ; q=0.7; boundary=\"\\\"";
+  std::string in = "application/x-test ; q=0.7; boundary=\"\\\\\"";
   std::string type;
   std::set<std::string> interests;
   interests.insert("q");

@@ -16,13 +16,14 @@ void rest::utils::parse_content_type(
   iterator end = in.end();
 
   iterator param_left = std::find(begin, end, ';');
-  while (param_left != begin) {
-    if (param_left[-1] != ' ')
+  iterator type_end = param_left;
+  while (type_end != begin) {
+    if (type_end[-1] != ' ')
       break;
-    --param_left;
+    --type_end;
   }
 
-  type.assign(begin, param_left);
+  type.assign(begin, type_end);
   algo::to_lower(type);
 
   for (iterator it = param_left; it != end;) {
@@ -42,7 +43,8 @@ void rest::utils::parse_content_type(
       value.reserve(next - delim);
       while (delim != next && *delim != '"') {
         if (*delim == '\\') {
-          if (++delim == next) {
+          ++delim;
+          if (delim == next) {
             if (next == end)
               break;
             next = std::find(next, end, ';');
