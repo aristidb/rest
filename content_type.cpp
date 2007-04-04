@@ -42,18 +42,16 @@ void rest::utils::parse_content_type(
     else {
       ++delim;
       value.reserve(next - delim);
-      while (delim != next && *delim != '"') {
+      while (delim != end && *delim != '"') {
         if (*delim == '\\') {
           ++delim;
-          if (delim == next) {
-            if (next == end)
-              break;
-            next = std::find(next, end, ';');
-          }
+          if (delim == end)
+            break;
         }
         value += *delim;
         ++delim;
       }
+      next = std::find(delim, end, ';');
     }
     if (interesting_parameters.count(key) != 0)
       parameters.insert(std::make_pair(key, value));
