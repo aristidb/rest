@@ -15,10 +15,11 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                   "method=\"post\" enctype=\"multipart/form-data\">"
                   "<input type=\"text\" name=\"user\">"
                   "<input type=\"text\" name=\"bar\">"
+                  "<input type=\"text\" name=\"bar\">"
                   "<input name=\"Datei\" type=\"file\" size=\"50\""
                   "maxlength=\"100000\" accept=\"text/*\">"
                   "<input type=\"submit\" value=\"Submit\">"
-                  "</form></body></html>");
+                  "</form></body></html>\n");
 
     return resp;
   }
