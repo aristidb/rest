@@ -18,6 +18,7 @@ set(rest_src
   logger.cpp
   datetime.cpp
   socket_device.cpp
+  content_type.cpp
 )
 
 if (APPLE)
@@ -41,5 +42,6 @@ add_executable(unit
   unit.cpp
   filter_tests.cpp
   logger_tests.cpp
+  content_type_tests.cpp
 )
 target_link_libraries(unit rest)

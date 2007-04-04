@@ -5,6 +5,8 @@
 #include <iosfwd>
 #include <string>
 #include <sstream>
+#include <map>
+#include <set>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/read.hpp>
 #include <boost/iostreams/pipeline.hpp>
@@ -242,6 +244,13 @@ enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
   } while (0)
 
 std::string current_date_time();
+
+void parse_content_type(
+    std::string const &in,
+    std::string &type,
+    std::set<std::string> const &interesting_parameters,
+    std::map<std::string, std::string> &parameters);
+
 }}
 
 #endif
