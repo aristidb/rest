@@ -8,6 +8,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <stdexcept>
 #include <sstream>
+#include <cstdio>
 #include <iostream>//DEBUG
 
 using namespace rest;
@@ -153,7 +154,7 @@ void keywords::set_entity(
 
   std::string boundary = "\r\n--" + params["boundary"];
 
-  while (*entity) {
+  while (entity->peek() != EOF) {
     io::filtering_istream filt;
     filt.push(utils::boundary_filter(boundary));
     filt.push(boost::ref(*entity), 0, 0);
@@ -168,15 +169,6 @@ void keywords::set_entity(
     std::cout << "\n>>\n" << std::flush;
 
     filt.pop();
-
-    std::cout << "[[\n";
-    while (entity->get(ch))
-      if (ch)
-        std::cout << ch;
-      else
-        std::cout << "\0";
-
-    std::cout << "]]\n" << std::flush;
   }
 
   p->entity.reset(entity);
