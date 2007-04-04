@@ -33,6 +33,7 @@ void rest::utils::parse_content_type(
     iterator next = std::find(it, end, ';');
     iterator delim = std::find(it, next, '=');
     std::string key(it, delim);
+    algo::to_lower(key);
     std::string value;
     if (delim != next)
       ++delim;
