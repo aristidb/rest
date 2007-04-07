@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
+#include <iostream>//DEBUG
 
 using namespace rest::utils;
 
@@ -44,6 +45,9 @@ std::streamsize socket_device::read(char *buf, std::streamsize length) {
     p->close();
     return -1;
   }
+  std::cout << ",read " << n << " (" << length << ") bytes:\n-{{";
+  std::cout.write(buf, n);
+  std::cout << "}}-\n" << std::flush;
   return n;
 }
 
@@ -58,5 +62,8 @@ std::streamsize socket_device::write(char const *buf, std::streamsize length) {
     p->close();
     return -1;
   }
+  std::cout << ",wrote " << n << " (" << length << ") bytes:\n+{{";
+  std::cout.write(buf, n);
+  std::cout << "}}+\n" << std::flush;
   return n;
 }
