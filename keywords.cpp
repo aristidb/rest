@@ -63,6 +63,7 @@ public:
   data_t data;
 
   boost::scoped_ptr<std::istream> entity;
+  std::string boundary;
 
   data_t::iterator find(std::string const &keyword, int index) {
     data_t::iterator it = data.find(boost::make_tuple(keyword, index));
@@ -146,6 +147,8 @@ std::istream &keywords::read(std::string const &keyword, int index) {
 void keywords::set_entity(
     std::istream *entity, std::string const &content_type)
 {
+  p->entity.reset(entity);
+
 /*
 mal die BNF suchen und hier rein schreiben:
 
@@ -233,21 +236,20 @@ bla]
   utils::parse_content_type(content_type, type, pset, params);
   std::cout << "~~ " << type << " ; " << params["boundary"] << std::endl;
 
+  p->boundary = "--" + params["boundary"];
+
   // Strip preamble and first boundary
   {
     io::filtering_istream filt;
-    filt.push(utils::boundary_filter("--" + params["boundary"]));
+    filt.push(utils::boundary_filter(p->boundary));
     filt.push(boost::ref(*entity), 0, 0);
     filt.ignore(std::numeric_limits<int>::max());
     filt.pop();
   }
 
-  // ist das eine passable boundary?
-  std::string boundary = "\r\n--" + params["boundary"];
-
   while (entity->peek() != EOF) {
     io::filtering_istream filt;
-    filt.push(utils::boundary_filter(boundary));
+    filt.push(utils::boundary_filter("\r\n" + p->boundary));
     filt.push(boost::ref(*entity), 0, 0);
 
     std::cout << "<<\n";
@@ -265,8 +267,6 @@ bla]
 
     filt.pop();
   }
-
-  p->entity.reset(entity);
 }
 
 void keywords::set_output(
