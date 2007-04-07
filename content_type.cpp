@@ -1,6 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest-utils.hpp"
 #include <boost/algorithm/string.hpp>
+#include <cctype>
 
 namespace algo = boost::algorithm;
 
@@ -18,7 +19,7 @@ void rest::utils::parse_content_type(
   iterator param_left = std::find(begin, end, ';');
   iterator type_end = param_left;
   while (type_end != begin) {
-    if (type_end[-1] != ' ')
+    if (!std::isspace(type_end[-1]))
       break;
     --type_end;
   }
@@ -28,7 +29,7 @@ void rest::utils::parse_content_type(
 
   for (iterator it = param_left; it != end;) {
     while (++it != end)
-      if (*it != ' ')
+      if (!std::isspace(*it))
         break;
     iterator next = std::find(it, end, ';');
     iterator delim = std::find(it, next, '=');
@@ -37,9 +38,15 @@ void rest::utils::parse_content_type(
     std::string value;
     if (delim != next)
       ++delim;
-    if (delim == next || *delim != '"')
+    if (delim == next || *delim != '"') {
+      iterator qend = next;
+      while (qend != delim) {
+        if (!std::isspace(qend[-1]))
+          break;
+        --qend;
+      }
       value.assign(delim, next);
-    else {
+    } else {
       ++delim;
       value.reserve(next - delim);
       while (delim != end && *delim != '"') {
