@@ -8,9 +8,11 @@
 #include <boost/tuple/tuple.hpp>
 #include <stdexcept>
 #include <sstream>
-#include <cstdio>
 #include <map>
 #include <set>
+#include <limits>
+#include <cstdio>
+#include <cctype>
 #include <iostream>//DEBUG
 
 using namespace rest;
@@ -230,6 +232,15 @@ bla]
 
   utils::parse_content_type(content_type, type, pset, params);
   std::cout << "~~ " << type << " ; " << params["boundary"] << std::endl;
+
+  // Strip preamble and first boundary
+  {
+    io::filtering_istream filt;
+    filt.push(utils::boundary_filter("--" + params["boundary"]));
+    filt.push(boost::ref(*entity), 0, 0);
+    filt.ignore(std::numeric_limits<int>::max());
+    filt.pop();
+  }
 
   // ist das eine passable boundary?
   std::string boundary = "\r\n--" + params["boundary"];

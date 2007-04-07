@@ -71,6 +71,8 @@ public:
 
   template<typename Source>
   std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+    if (eof)
+      return -1;
     std::streamsize i = 0;
     while (i < n && !eof) {
       std::size_t len = boundary.size() - pos;
@@ -107,8 +109,39 @@ public:
       }
       outbuf[i++] = buf[pos++];
     }
+    if (eof)
+      skip_transport_padding(source);
     return i ? i : -1;
-}
+  }
+
+  template<typename Source>
+  void skip_transport_padding(Source &source) {
+    int ch;
+    // skip LWS
+    while ((ch = boost::iostreams::get(source)) == ' ' && ch == '\t')
+      ;
+    if (ch == EOF)
+      return;
+    // "--" indicates end-of-streams
+    if (ch == '-' && boost::iostreams::get(source) == '-') {
+      // soak up all the content, it is to be ignored
+      while (boost::iostreams::get(source) != EOF)
+        ;
+      return;
+    }
+    // expect CRLF
+    boost::iostreams::putback(source, ch);
+    if ((ch = boost::iostreams::get(source)) != '\r') {
+      if (ch == EOF)
+        return;
+      boost::iostreams::putback(source, ch);
+    }
+    if ((ch = boost::iostreams::get(source)) != '\n') {
+      if (ch == EOF)
+        return;
+      boost::iostreams::putback(source, ch);
+    }
+  }
 
 private:
   std::string boundary;
