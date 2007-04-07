@@ -386,6 +386,7 @@ http_connection::header_fields http_connection::read_headers() {
 
     if (ret.second)
       if (ret.first->first == "accept-encoding") {
+        // TODO: check damn list. you know, it's comma-separated...
         flags.set(ACCEPT_GZIP, algo::iequals(ret.first->second, "gzip"));
         flags.set(ACCEPT_BZIP2, algo::iequals(ret.first->second, "bzip2"));
       }
