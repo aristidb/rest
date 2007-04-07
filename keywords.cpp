@@ -242,7 +242,7 @@ bla]
     std::cout << "<<\n";
     char ch;
     while (filt.get(ch))
-      if (ch== 0)
+      if (ch == 0)
         std::cout << "\\0";
       else if (ch == '\r')
         std::cout << "\\r";
