@@ -7,6 +7,7 @@
 #include <sstream>
 #include <map>
 #include <set>
+#include <vector>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/read.hpp>
 #include <boost/iostreams/pipeline.hpp>
@@ -284,6 +285,8 @@ namespace http {
       std::string &element,
       std::set<std::string> const &interesting_parameters,
       std::map<std::string, std::string> &parameters);
+
+  void parse_list(std::string const &in, std::vector<std::string> &out);
 }
 
 }}

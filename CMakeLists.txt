@@ -42,6 +42,6 @@ add_executable(unit
   unit.cpp
   filter_tests.cpp
   logger_tests.cpp
-  content_type_tests.cpp
+  http_headers_tests.cpp
 )
 target_link_libraries(unit rest)
