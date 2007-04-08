@@ -6,6 +6,7 @@
 namespace algo = boost::algorithm;
 
 namespace {
+
 template<class It>
 void skip_ws_fwd(It &it, It end) {
   for (; it != end && std::isspace(*it); ++it)
@@ -17,6 +18,7 @@ void skip_ws_bwd(It &it, It begin) {
   for (; it != begin && std::isspace(it[-1]); --it)
     ;
 }
+
 }
 
 void rest::utils::http::parse_parametrised(
@@ -91,6 +93,37 @@ void rest::utils::http::parse_list(
     if (it != end)
       ++it;
     skip_ws_fwd(it, end);
+  }
+}
+
+int rest::utils::http::parse_qvalue(std::string const &in) {
+  if (in.empty())
+    return -1;
+  int x = 1000;
+  int v = 0;
+  for (std::string::const_iterator it = in.begin(); it != in.end(); ++it) {
+    if (*it >= '0' && *it <= '9') {
+      v += (*it - '0') * x;
+      x /= 10;
+    }
+  }
+  return v;
+}
+
+void rest::utils::http::parse_qlist(
+    std::string const &in, std::multimap<int, std::string> &out)
+{
+  std::vector<std::string> tmp;
+  parse_list(in, tmp);
+
+  std::set<std::string> q;
+  q.insert("q");
+
+  for (std::vector<std::string>::iterator it=tmp.begin(); it!=tmp.end(); ++it) {
+    std::string self;
+    std::map<std::string, std::string> param;
+    parse_parametrised(*it, self, q, param);
+    out.insert(std::make_pair(parse_qvalue(param["q"]), self));
   }
 }
 

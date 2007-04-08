@@ -287,6 +287,10 @@ namespace http {
       std::map<std::string, std::string> &parameters);
 
   void parse_list(std::string const &in, std::vector<std::string> &out);
+
+  void parse_qlist(std::string const &in, std::multimap<int, std::string> &out);
+
+  int parse_qvalue(std::string const &in);
 }
 
 }}

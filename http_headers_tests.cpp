@@ -28,3 +28,8 @@ TEST(parse_list) {
   Equals(elems[3], "d456");
   Equals(elems[4], "e");
 }
+
+TEST(qvalue) {
+  Equals(parse_qvalue("0.71"), 710);
+}
+
