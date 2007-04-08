@@ -18,7 +18,7 @@ set(rest_src
   logger.cpp
   datetime.cpp
   socket_device.cpp
-  content_type.cpp
+  http_headers.cpp
 )
 
 if (APPLE)

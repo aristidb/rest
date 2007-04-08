@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <ctime>
 
-std::string rest::utils::current_date_time() {
+std::string rest::utils::http::current_date_time() {
   time_t time_buf;
   time(&time_buf);
   tm gmtime;

@@ -9,7 +9,7 @@ TEST() {
   interests.insert("q");
   interests.insert("boundary");
   std::map<std::string, std::string> parameters;
-  rest::utils::parse_content_type(in, type, interests, parameters);
+  rest::utils::http::parse_parametrised(in, type, interests, parameters);
   Equals(type, "application/x-test");
   Equals(parameters.size(), 2U);
   Equals(parameters["q"], "0.7");

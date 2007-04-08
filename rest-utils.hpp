@@ -276,13 +276,15 @@ enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
    ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, sstr.str()); \
   } while (0)
 
-std::string current_date_time();
+namespace http {
+  std::string current_date_time();
 
-void parse_content_type(
-    std::string const &in,
-    std::string &type,
-    std::set<std::string> const &interesting_parameters,
-    std::map<std::string, std::string> &parameters);
+  void parse_parametrised(
+      std::string const &in,
+      std::string &element,
+      std::set<std::string> const &interesting_parameters,
+      std::map<std::string, std::string> &parameters);
+}
 
 }}
 

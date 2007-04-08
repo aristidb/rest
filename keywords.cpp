@@ -233,7 +233,7 @@ bla]
   pset.insert("boundary");
   std::map<std::string, std::string> params;
 
-  utils::parse_content_type(content_type, type, pset, params);
+  utils::http::parse_parametrised(content_type, type, pset, params);
   std::cout << "~~ " << type << " ; " << params["boundary"] << std::endl;
 
   p->boundary = "--" + params["boundary"];

@@ -5,7 +5,7 @@
 
 namespace algo = boost::algorithm;
 
-void rest::utils::parse_content_type(
+void rest::utils::http::parse_parametrised(
     std::string const &in,
     std::string &type,
     std::set<std::string> const &interesting_parameters,
