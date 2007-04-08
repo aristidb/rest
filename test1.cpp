@@ -34,7 +34,7 @@ struct displayer : rest::responder<rest::GET | rest::PUT> {
   }
 };
 
-enum mode { COOKIE, KEYWORD };
+enum mode { COOKIE, KEYWORD, KEYWORD_NOT };
 
 struct searcher : rest::responder<rest::GET, mode> {
   rest::response get(mode path, rest::keywords &) {
@@ -61,6 +61,7 @@ int main() {
   searcher search_obj;
   search.bind("/cookie", search_obj, COOKIE);
   search.bind("/keyword/{keyword}", search_obj, KEYWORD);
+  search.bind("/keyword/not={keyword}", search_obj, KEYWORD_NOT);
   context.bind("/search/...", search);
 
   rest::keywords kw;

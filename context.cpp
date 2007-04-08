@@ -81,7 +81,7 @@ namespace {
       case closure: std::cout << "<C> "; break;
       case literal: std::cout << "<L> "; break;
       };
-      std::cout << data << (ellipsis ? "...\n" : "\n");
+      std::cout << '"' << data << '"' << (ellipsis ? "...\n" : "\n");
       for (int i = 0; i < level; ++i)
         std::cout << "  ";
       std::cout << ' ' << responder_ << '/' << context_ << '\n';
@@ -189,11 +189,15 @@ void context::find_responder(
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
 
   {
-    boost::char_separator<char> sep("/=");
+    boost::char_separator<char> sep("/", "=", boost::keep_empty_tokens);
     tokenizer tokens(start, middle, sep);
 
+    tokenizer::iterator start = tokens.begin();
+    while (start != tokens.end() && start->empty())
+      ++start;
+
     do_find_responder(
-      tokens.begin(), tokens.end(),
+      start, tokens.end(),
       path_id, out_responder, out_context, out_keywords);
   }
 
@@ -260,10 +264,14 @@ path_resolver_node *context::impl::make_bindable(std::string const &path) {
   path_resolver_node *current = &root;
 
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-  boost::char_separator<char> sep("/=");
+  boost::char_separator<char> sep("/", "=", boost::keep_empty_tokens);
   tokenizer tokens(path, sep);
 
-  for (tokenizer::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+  tokenizer::iterator it = tokens.begin();
+  while (it != tokens.end() && it->empty())
+    ++it;
+
+  for (; it != tokens.end(); ++it) {
     if (*it == "...") { // ellipsis
       if (++it != tokens.end())
         throw std::logic_error("ellipsis (...) not at the end");
