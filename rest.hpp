@@ -356,12 +356,30 @@ public:
 
   class socket_param {
   public:
+    enum socket_type_t { ip4, ip6 };
+
+    socket_param(short port, socket_type_t type);
+    socket_param(socket_param const &);
+    ~socket_param();
+
+    socket_param &operator=(socket_param o) {
+      o.swap(*this);
+      return *this;
+    }
+
+    void swap(socket_param &o) {
+      p.swap(o.p);
+    }
+
     short port() const;
 
-    enum socket_type_t { ip4, ip6 };
     socket_type_t socket_type() const;
 
     void add_host(host const &);
+
+  private:
+    class impl;
+    boost::scoped_ptr<impl> p;
   };
 
   typedef std::vector<socket_param>::iterator sockets_iterator;

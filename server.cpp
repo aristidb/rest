@@ -27,6 +27,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <sys/un.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -59,15 +60,46 @@ typedef
       hashed_unique<const_mem_fun<host, std::string, &host::get_host> > > >
   hosts_cont_t;
 
+class server::socket_param::impl {
+public:
+  impl(short port, socket_type_t type)
+    : port(port), socket_type(type)
+  {}
+
+  short port;
+  socket_type_t socket_type;
+  hosts_cont_t hosts;
+};
+
+server::socket_param::socket_param(short port, socket_type_t type)
+  : p(new impl(port, type))
+{ }
+
+short server::socket_param::port() const {
+  return p->port;
+}
+
+server::socket_param::socket_type_t
+server::socket_param::socket_type() const {
+  return p->socket_type;
+}
+
+void server::socket_param::add_host(host const &h) {
+  if (!p->hosts.insert(boost::ref(h)).second)
+    throw std::logic_error("cannot serve two hosts with same name");
+}
+
 class server::impl {
 public:
-  short port;
+  std::vector<socket_param> socket_params;
+  int config_socket;
 
   hosts_cont_t hosts;
 
-  static const int LISTENQ = 5; // TODO: configurable
+  static const int DEFAULT_LISTENQ = 5;
+  int listenq;
 
-  impl() : port(8080) {}
+  impl() : config_socket(-1), listenq(DEFAULT_LISTENQ) { }
 
   static void sigchld_handler(int) {
     while (::waitpid(-1, 0, WNOHANG) > 0)
@@ -75,16 +107,48 @@ public:
   }
 };
 
+server::sockets_iterator server::sockets_begin() {
+  return p->socket_params.begin();
+}
+server::sockets_iterator server::sockets_end() {
+  return p->socket_params.end();
+}
+server::sockets_const_iterator server::sockets_begin() const {
+  return p->socket_params.begin();
+}
+server::sockets_const_iterator server::sockets_end() const {
+  return p->socket_params.end();
+}
+
+void server::sockets_erase(sockets_iterator i) {
+  p->socket_params.erase(i);
+}
+void server::sockets_erase(sockets_iterator begin, sockets_iterator end) {
+  p->socket_params.erase(begin, end);
+}
+
+void server::set_listen_q(int no) {
+  p->listenq = no;
+}
+
+void server::set_config_socket(char const *file) {
+  // TODO
+/*
+  if(config_socket != -1)
+    close(config_socket);
+
+  config_socket = ::socket(AF_LOCAL, SOCK_STREAM, 0);
+  if(config_socket == -1)
+    throw std::runtime_error("could not create config socket");
+
+  sockaddr_un sock;
+  sock.sun_family = AF_LOCAL;
+  sock.sun_path = file;
+*/
+}
+
 server::server() : p(new impl) {}
 server::~server() {}
-
-//TODO
-#if 0
-void server::add_host(host const &h) {
-  if (!p->hosts.insert(boost::ref(h)).second)
-    throw std::logic_error("cannot serve two hosts with same name");
-}
-#endif
 
 typedef io::stream_buffer<utils::socket_device> connection_streambuf;
 
@@ -140,10 +204,10 @@ void server::serve() {
   sockaddr_in servaddr;
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
-  servaddr.sin_port = htons(p->port);
+  servaddr.sin_port = htons(8080); // TODO
   if (::bind(listenfd, (sockaddr *) &servaddr, sizeof(servaddr)) == -1)
     throw std::runtime_error("could not start server (bind)");
-  if(::listen(listenfd, impl::LISTENQ) == -1)
+  if(::listen(listenfd, p->listenq) == -1)
     throw std::runtime_error("could not start server (listen)");
 
   for(;;) {
