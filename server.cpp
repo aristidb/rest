@@ -493,12 +493,6 @@ void http_connection::send(response const &r, bool entity) {
 
 #include <testsoon.hpp>
 
-#if 0
-TEST_GROUP(http) {
-
-}
-#endif
-
 TEST_GROUP(aux) {
   XTEST((values, (std::string)("ab")("\r\n"))) {
     std::stringstream x(value);
