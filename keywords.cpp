@@ -30,9 +30,9 @@ public:
 
     void read() const {
       if (!pending_read) return;
-      std::ostringstream out;
-      out << stream->rdbuf();
-      data = out.str();
+      data.assign(
+        std::istreambuf_iterator<char>(stream->rdbuf()),
+        std::istreambuf_iterator<char>());
       pending_read = false;
     }
 
