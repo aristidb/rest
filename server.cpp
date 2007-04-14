@@ -112,6 +112,8 @@ namespace {
     typedef std::map<std::string, std::string> header_fields;
     header_fields read_headers();
 
+    void set_header_options(header_fields &fields);
+
     void reset_flags() { flags.reset(); }
     response handle_request(hosts_cont_t const &hosts);
     int handle_entity(keywords &kw, header_fields &fields);
@@ -289,6 +291,8 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
 
     header_fields fields = read_headers();
 
+    set_header_options(fields);
+
     hosts_cont_t::const_iterator host = find_host(fields, hosts);
     if (host == hosts.end())
       return 404;
@@ -378,18 +382,18 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
   return 200;
 }
 
+void http_connection::set_header_options(header_fields &fields) {
+  std::string &accept_encoding = fields["accept-encoding"];
+  // TODO: properly handle accept-encoding list
+  flags.set(ACCEPT_GZIP, algo::iequals(accept_encoding, "gzip"));
+  flags.set(ACCEPT_BZIP2, algo::iequals(accept_encoding, "bzip2"));
+}
+
 http_connection::header_fields http_connection::read_headers() {
   header_fields fields;
-  for (;;) {
+  do {
     std::pair<header_fields::iterator, bool> ret =
       get_header_field(conn, fields);
-
-    if (ret.second)
-      if (ret.first->first == "accept-encoding") {
-        // TODO: check damn list. you know, it's comma-separated...
-        flags.set(ACCEPT_GZIP, algo::iequals(ret.first->second, "gzip"));
-        flags.set(ACCEPT_BZIP2, algo::iequals(ret.first->second, "bzip2"));
-      }
 
     // DEBUG
     if(ret.second)
@@ -397,10 +401,7 @@ http_connection::header_fields http_connection::read_headers() {
                 << ret.first->second << "\n";
     else
       std::cout << "field not added!\n";
-
-    if(expect(conn, '\r') && expect(conn, '\n'))
-      break;
-  }
+  } while (!(expect(conn, '\r') && expect(conn, '\n')));
   return fields;
 }
 
