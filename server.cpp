@@ -33,6 +33,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <sys/epoll.h>
+
 #include <iostream>//DEBUG
 
 #ifndef NDEBUG //whatever
@@ -63,17 +65,28 @@ typedef
 class server::socket_param::impl {
 public:
   impl(short port, socket_type_t type)
-    : port(port), socket_type(type)
+    : port(port), socket_type(type), fd(-1)
   {}
 
   short port;
   socket_type_t socket_type;
   hosts_cont_t hosts;
+  
+  int fd;
 };
 
 server::socket_param::socket_param(short port, socket_type_t type)
   : p(new impl(port, type))
 { }
+
+server::socket_param::~socket_param() {}
+
+int server::socket_param::fd() const{
+  return p->fd;
+}
+void server::socket_param::fd(int f) {
+  p->fd = f;
+} 
 
 short server::socket_param::port() const {
   return p->port;
@@ -94,7 +107,7 @@ public:
   std::vector<socket_param> socket_params;
   int config_socket;
 
-  hosts_cont_t hosts;
+  //hosts_cont_t hosts;
 
   static const int DEFAULT_LISTENQ = 5;
   int listenq;
@@ -106,6 +119,11 @@ public:
       ;
   }
 };
+
+server::sockets_iterator server::add_socket(socket_param const &s) {
+  p->socket_params.push_back(s);
+  return --p->socket_params.end();
+}
 
 server::sockets_iterator server::sockets_begin() {
   return p->socket_params.begin();
@@ -132,19 +150,22 @@ void server::set_listen_q(int no) {
 }
 
 void server::set_config_socket(char const *file) {
-  // TODO
-/*
-  if(config_socket != -1)
-    close(config_socket);
+  if(p->config_socket != -1)
+    ::close(p->config_socket);
 
-  config_socket = ::socket(AF_LOCAL, SOCK_STREAM, 0);
-  if(config_socket == -1)
+  p->config_socket = ::socket(AF_LOCAL, SOCK_STREAM, 0);
+  if(p->config_socket == -1)
     throw std::runtime_error("could not create config socket");
+
+  ::unlink(file);
 
   sockaddr_un sock;
   sock.sun_family = AF_LOCAL;
-  sock.sun_path = file;
-*/
+  socklen_t len = std::max(sizeof(sock.sun_path), std::strlen(file));
+  std::memcpy(sock.sun_path, file, len);
+  len += sizeof(sock.sun_family);
+  if(bind(p->config_socket, (sockaddr*)&sock, len) == -1)
+    throw std::runtime_error("could not start config socket (bind)");
 }
 
 server::server() : p(new impl) {}
@@ -194,72 +215,111 @@ namespace {
 void server::serve() {
   void (*oldhandler)(int) = ::signal(SIGCHLD, &impl::sigchld_handler);
 
-  int listenfd = ::socket(AF_INET, SOCK_STREAM, 0); // TODO AF_INET6
-  if (listenfd == -1)
-    throw std::runtime_error("could not start server (socket)"); //sollte errno auswerten!
+  int epoll = ::epoll_create(p->socket_params.size() + 1); // vielleicht sollten wir hier ich meine eine Klasse nehmen, die close(epoll) aufruft. du weißt schon
+  // wozu? wird doch eh nie geschlossen :D
+  // bzw. in den clients natürlich schon! geht um einen fehlerfall
+  // nee wird doch beim exit eh geschlossen :DD
+  if(epoll == -1)
+    throw std::runtime_error("could not start server (epoll_create)");
 
-  int x = 1;
-  setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
+  epoll_event epolle;
+  epolle.events = EPOLLIN|EPOLLERR;
 
-  sockaddr_in servaddr;
-  servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
-  servaddr.sin_port = htons(8080); // TODO
-  if (::bind(listenfd, (sockaddr *) &servaddr, sizeof(servaddr)) == -1)
-    throw std::runtime_error("could not start server (bind)");
-  if(::listen(listenfd, p->listenq) == -1)
-    throw std::runtime_error("could not start server (listen)");
+  for(sockets_iterator i = sockets_begin();
+      i != sockets_end();
+      ++i)
+  {
+    int listenfd = ::socket(AF_INET, SOCK_STREAM, 0); // TODO AF_INET6
+    if(listenfd == -1)
+      throw std::runtime_error("could not start server (socket)"); //sollte errno auswerten!
+
+    int x = 1;
+    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
+
+    sockaddr_in servaddr;
+    if(i->socket_type() == socket_param::ip4)
+      servaddr.sin_family = AF_INET;
+    else if(i->socket_type() == socket_param::ip6)
+      servaddr.sin_family = AF_INET6;
+    else
+      throw std::runtime_error("could not start server (unkown socket type)");
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
+    servaddr.sin_port = htons(i->port());
+    if(::bind(listenfd, (sockaddr *) &servaddr, sizeof(servaddr)) == -1)
+      throw std::runtime_error("could not start server (bind)");
+    if(::listen(listenfd, p->listenq) == -1)
+      throw std::runtime_error("could not start server (listen)");
+
+    i->fd(listenfd);
+
+    epolle.data.ptr = &*i;
+    if(epoll_ctl(epoll, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
+      throw std::runtime_error("could not start server (epoll_ctl)");
+  }
+
+  int const EVENTS_N = 100;
 
   for(;;) {
-    sockaddr_in cliaddr;
-    socklen_t clilen = sizeof(cliaddr);
-    int connfd = ::accept(listenfd, (sockaddr *) &cliaddr, &clilen);
-    if(connfd == -1) {
-      REST_LOG_ERRNO(utils::CRITICAL, "accept failed");
-      continue;
-    }
+    epoll_event events[EVENTS_N];
+    int nfds = epoll_wait(epoll, events, EVENTS_N, -1);
+    if(nfds == -1)
+      throw std::runtime_error("could not run server (epoll_wait)");
 
-    std::cout << "%% ACCEPTED" << std::endl; // DEBUG
+    for(int i = 0; i < nfds; ++i) {
+      socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
+      assert(ptr);
+    
+      sockaddr_in cliaddr;
+      socklen_t clilen = sizeof(cliaddr);
+      int connfd = ::accept(ptr->fd(), (sockaddr *) &cliaddr, &clilen);
+      if(connfd == -1) {
+        REST_LOG_ERRNO(utils::CRITICAL, "accept failed");
+        continue;
+      }
+
+      std::cout << "%% ACCEPTED" << std::endl; // DEBUG
 #ifndef NO_FORK_LOOP
-    pid_t pid = ::fork();
-    if(pid == -1) {
-      REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
-    }
-    else if(pid == 0) {
-      ::close(listenfd);
+      pid_t pid = ::fork();
+      if(pid == -1) {
+        REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
+      }
+      else if(pid == 0) {
+        ::close(ptr->fd());
+        ::close(epoll);
 #endif
-      int status = 0;
-      try {
-        connection_streambuf buf(connfd, 10);
-        http_connection conn(buf);
+        int status = 0;
         try {
-          while (conn.open()) {
-            conn.reset_flags();
-            response r = conn.handle_request(p->hosts);
-            conn.send(r);
+          connection_streambuf buf(connfd, 10);
+          http_connection conn(buf);
+          try {
+            while (conn.open()) {
+              conn.reset_flags();
+              response r = conn.handle_request(ptr->hosts);
+              conn.send(r);
+            }
           }
+          catch (utils::http::remote_close&) {
+            std::cout << "%% remote or timeout" << std::endl; // DEBUG
+          }
+          std::cout << "%% CLOSING" << std::endl; // DEBUG
         }
-        catch (utils::http::remote_close&) {
-          std::cout << "%% remote or timeout" << std::endl; // DEBUG
+        catch(std::exception &e) {
+          REST_LOG_E(utils::CRITICAL,
+                     "ERROR: unexpected exception `" << e.what() << "'");
+          status = 1;
         }
-        std::cout << "%% CLOSING" << std::endl; // DEBUG
-      }
-      catch(std::exception &e) {
-        REST_LOG_E(utils::CRITICAL,
-                   "ERROR: unexpected exception `" << e.what() << "'");
-        status = 1;
-      }
-      catch(...) {
-        REST_LOG_E(utils::CRITICAL,
-                   "ERROR: unexpected exception (unkown type)");
-        status = 1;
-      }
+        catch(...) {
+          REST_LOG_E(utils::CRITICAL,
+                     "ERROR: unexpected exception (unkown type)");
+          status = 1;
+        }
 #ifndef NO_FORK_LOOP
-      ::exit(status);
-    }
-    else
-      ::close(connfd);
+        ::exit(status);
+      }
+      else
+        ::close(connfd);
 #endif
+    }
   }
 
   ::signal(SIGCHLD, oldhandler);
@@ -485,7 +545,7 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
   else {
     std::size_t const length =
       boost::lexical_cast<std::size_t>(content_length->second);
-    fin.filt().push(utils::length_filter(length)); // Problem: BLOCKT!!
+    fin.filt().push(utils::length_filter(length));
   }
 
   if(!flags.test(HTTP_1_0_COMPAT)) {

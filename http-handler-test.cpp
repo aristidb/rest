@@ -41,7 +41,7 @@ int main() {
   rest::host h("");
   tester t;
   h.get_context().bind("/", t);
-  rest::server s(8080);
-  s.add_host(h);
+  rest::server s;
+  s.add_socket(rest::server::socket_param(8080, rest::server::socket_param::ip4))->add_host(h);
   s.serve();
 }

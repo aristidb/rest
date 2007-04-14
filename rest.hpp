@@ -10,6 +10,7 @@
 #include <boost/type_traits/is_scalar.hpp>
 #include <boost/any.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
 
@@ -359,7 +360,7 @@ public:
     enum socket_type_t { ip4, ip6 };
 
     socket_param(short port, socket_type_t type);
-    socket_param(socket_param const &);
+    //socket_param(socket_param const &);
     ~socket_param();
 
     socket_param &operator=(socket_param o) {
@@ -372,14 +373,18 @@ public:
     }
 
     short port() const;
-
     socket_type_t socket_type() const;
 
     void add_host(host const &);
+    host const *get_host(std::string const &name);
 
+  public: // internal
+    int fd() const;
+    void fd(int f);
+    
   private:
     class impl;
-    boost::scoped_ptr<impl> p;
+    boost::shared_ptr<impl> p;
   };
 
   typedef std::vector<socket_param>::iterator sockets_iterator;
