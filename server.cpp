@@ -59,10 +59,6 @@ typedef
       hashed_unique<const_mem_fun<host, std::string, &host::get_host> > > >
   hosts_cont_t;
 
-namespace {
-  struct remote_close {};
-}
-
 class server::impl {
 public:
   short port;
@@ -109,8 +105,7 @@ namespace {
 
     bool open() const { return open_; }
 
-    typedef std::map<std::string, std::string> header_fields;
-    header_fields read_headers();
+    typedef utils::http::header_fields header_fields;
 
     void set_header_options(header_fields &fields);
 
@@ -126,11 +121,6 @@ namespace {
     static
     hosts_cont_t::const_iterator find_host(
       header_fields const &fields, hosts_cont_t const &hosts);
-    
-    template<class Source>
-    static
-    std::pair<header_fields::iterator, bool> 
-    get_header_field(Source &in, header_fields &fields);
   };
 }
 
@@ -172,32 +162,30 @@ void server::serve() {
       ::close(listenfd);
 #endif
       int status = 0;
-      {
+      try {
+        connection_streambuf buf(connfd, 10);
+        http_connection conn(buf);
         try {
-          connection_streambuf buf(connfd, 10);
-          http_connection conn(buf);
-          try {
-            while (conn.open()) {
-              conn.reset_flags();
-              response r = conn.handle_request(p->hosts);
-              conn.send(r);
-            }
+          while (conn.open()) {
+            conn.reset_flags();
+            response r = conn.handle_request(p->hosts);
+            conn.send(r);
           }
-          catch(remote_close&) {
-            std::cout << "%% remote" << std::endl; // DEBUG
-          }
-          std::cout << "%% CLOSING" << std::endl; // DEBUG
         }
-        catch(std::exception &e) {
-          REST_LOG_E(utils::CRITICAL,
-                     "ERROR: unexpected exception `" << e.what() << "'");
-          status = 1;
+        catch (utils::http::remote_close&) {
+          std::cout << "%% remote or timeout" << std::endl; // DEBUG
         }
-        catch(...) {
-          REST_LOG_E(utils::CRITICAL,
-                     "ERROR: unexpected exception (unkown type)");
-          status = 1;
-        }
+        std::cout << "%% CLOSING" << std::endl; // DEBUG
+      }
+      catch(std::exception &e) {
+        REST_LOG_E(utils::CRITICAL,
+                   "ERROR: unexpected exception `" << e.what() << "'");
+        status = 1;
+      }
+      catch(...) {
+        REST_LOG_E(utils::CRITICAL,
+                   "ERROR: unexpected exception (unkown type)");
+        status = 1;
       }
 #ifndef NO_FORK_LOOP
       ::exit(status);
@@ -211,59 +199,6 @@ void server::serve() {
 }
 
 namespace {
-  struct bad_format { };
-
-  template<class Source, typename Char>
-  bool expect(Source &in, Char c) {
-    int t = io::get(in);
-    if(t == c)
-      return true;
-    else if(t == Source::traits_type::eof())
-      throw remote_close();
-
-    io::putback(in, t);
-    return false;
-  }
-
-  // checks if `c' is a space or a h-tab (see RFC 2616 chapter 2.2)
-  bool isspht(char c) {
-    return c == ' ' || c == '\t';
-  }
-
-  template<class Source>
-  int remove_spaces(Source &in) {
-    int c;
-    do {
-      c = io::get(in);
-    } while(isspht(c));
-    io::putback(in, c);
-    return c;
-  }
-
-  typedef boost::tuple<std::string, std::string, std::string> request_line;
-  enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
-
-  template<class Source>
-  void get_until(char end, Source &in, std::string &ret) {
-    int t;
-    while( (t = io::get(in)) != end) {
-      if(t == Source::traits_type::eof())
-        throw remote_close();
-      ret += t;
-    }
-  }
-
-  template<class Source>
-  request_line get_request_line(Source &in) {
-    request_line ret;
-    get_until(' ', in, ret.get<REQUEST_METHOD>());
-    get_until(' ', in, ret.get<REQUEST_URI>());
-    get_until('\r', in, ret.get<REQUEST_HTTP_VERSION>());
-    if(!expect(in, '\n'))
-      throw bad_format();
-    return ret;
-  }
-
   void assure_relative_uri(std::string &uri) {
     typedef boost::iterator_range<std::string::iterator> spart;
     spart scheme = algo::find_first(uri, "://");
@@ -278,7 +213,7 @@ namespace {
 response http_connection::handle_request(hosts_cont_t const &hosts) {
   try {
     std::string method, uri, version;
-    boost::tie(method, uri, version) = get_request_line(conn);
+    boost::tie(method, uri, version) = utils::http::get_request_line(conn);
 
     std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
@@ -289,7 +224,7 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     else if(version != "HTTP/1.1")
       return 505; // HTTP Version not Supported
 
-    header_fields fields = read_headers();
+    header_fields fields = utils::http::read_headers(conn);
 
     set_header_options(fields);
 
@@ -375,8 +310,8 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
     else if (method == "CONNECT" || method == "OPTIONS")
       return 501; // Not Supported
     else
-      throw bad_format();
-  } catch (bad_format &e) {
+      return 400; // Bad Request
+  } catch (utils::http::bad_format &) {
     return 400; // Bad Request
   }
   return 200;
@@ -389,95 +324,13 @@ void http_connection::set_header_options(header_fields &fields) {
   flags.set(ACCEPT_BZIP2, algo::iequals(accept_encoding, "bzip2"));
 }
 
-http_connection::header_fields http_connection::read_headers() {
-  header_fields fields;
-  do {
-    std::pair<header_fields::iterator, bool> ret =
-      get_header_field(conn, fields);
-
-    // DEBUG
-    if(ret.second)
-      std::cout << ret.first->first << ": "
-                << ret.first->second << "\n";
-    else
-      std::cout << "field not added!\n";
-  } while (!(expect(conn, '\r') && expect(conn, '\n')));
-  return fields;
-}
-
-namespace {
-  enum {
-    CSV_HEADERS=4
-  };
-  char const * const csv_header[CSV_HEADERS] = {
-    "accept", "accept-charset", "accept-encoding",
-    "accept-language"   // TODO ...
-  };
-  char const * const * csv_header_end = csv_header + CSV_HEADERS;
-}
-
-// reads a header field from `in' and adds it to `fields'
-// see RFC 2616 chapter 4.2
-// Warning: Field names are converted to all lower-case!
-template<class Source>
-std::pair<http_connection::header_fields::iterator, bool> 
-http_connection::get_header_field(Source &in, header_fields &fields) {
-  std::string name;
-  int t = 0;
-  for(;;) {
-    t = io::get(in);
-    if(t == '\n' || t == '\r')
-      throw bad_format();
-    else if(t == Source::traits_type::eof())
-      throw remote_close();
-    else if(t == ':') {
-      remove_spaces(in);
-      break;
-    }
-    else
-      name += std::tolower(t);
-  }
-  std::string value;
-  for(;;) {
-    t = io::get(in);
-    if(t == '\n' || t == '\r') {
-      // Newlines in header fields are allowed when followed
-      // by an SP (space or horizontal tab)
-      if(t == '\r')
-        expect(in, '\n');
-      t = io::get(in);
-      if(isspht(t)) {
-        remove_spaces(in);
-        value += ' ';
-      }
-      else {
-        io::putback(in, t);
-        break;
-      }
-    }
-    else if(t == Source::traits_type::eof())
-      throw remote_close();
-    else
-      value += t;
-  }
-  std::pair<http_connection::header_fields::iterator, bool> ret =
-    fields.insert(std::make_pair(name, value));
-  if(!ret.second &&
-     std::find(csv_header, csv_header_end, name) != csv_header_end)
-  {
-    fields[name] += std::string(", ") + value;
-    std::cout << "field " << name << " value: " << fields[name] << "\n"; //DEBUG
-  }
-  return ret;
-}
-
 hosts_cont_t::const_iterator 
 http_connection::find_host(
     header_fields const &fields, hosts_cont_t const &hosts)
 {
   header_fields::const_iterator host_header = fields.find("host");
   if(host_header == fields.end())
-    throw bad_format();
+    throw utils::http::bad_format();
 
   std::string::const_iterator begin = host_header->second.begin();
   std::string::const_iterator end = host_header->second.end();

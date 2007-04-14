@@ -278,7 +278,135 @@ enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
   } while (0)
 
 namespace http {
+  struct remote_close {};
+  struct bad_format {};
+
   std::string current_date_time();
+
+  // checks if `c' is a space or a h-tab (see RFC 2616 chapter 2.2)
+  inline bool isspht(char c) {
+    return c == ' ' || c == '\t';
+  }
+
+  template<class Source, typename Char>
+  bool expect(Source &in, Char c) {
+    int t = boost::iostreams::get(in);
+    if(t == c)
+      return true;
+    else if(t == EOF)
+      throw remote_close();
+
+    boost::iostreams::putback(in, t);
+    return false;
+  }
+
+  template<class Source>
+  int remove_spaces(Source &in) {
+    int c;
+    do {
+      c = boost::iostreams::get(in);
+    } while(isspht(c));
+    boost::iostreams::putback(in, c);
+    return c;
+  }
+
+  typedef boost::tuple<std::string, std::string, std::string> request_line;
+  enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
+
+  template<class Source>
+  void get_until(char end, Source &in, std::string &ret) {
+    int t;
+    while ((t = boost::iostreams::get(in)) != end) {
+      if(t == EOF)
+        throw remote_close();
+      ret += t;
+    }
+  }
+
+  template<class Source>
+  request_line get_request_line(Source &in) {
+    request_line ret;
+    get_until(' ', in, ret.get<REQUEST_METHOD>());
+    get_until(' ', in, ret.get<REQUEST_URI>());
+    get_until('\r', in, ret.get<REQUEST_HTTP_VERSION>());
+    if(!expect(in, '\n'))
+      throw bad_format();
+    return ret;
+  }
+
+  typedef std::map<std::string, std::string> header_fields;
+
+  namespace detail {
+    enum {
+      CSV_HEADERS=4
+    };
+    static char const * const csv_header[CSV_HEADERS] = {
+      "accept", "accept-charset", "accept-encoding",
+      "accept-language"   // TODO ...
+    };
+    static char const * const * const csv_header_end = csv_header + CSV_HEADERS;
+  }
+
+  // reads a header field from `in' and adds it to `fields'
+  // see RFC 2616 chapter 4.2
+  // Warning: Field names are converted to all lower-case!
+  template<class Source>
+  std::pair<header_fields::iterator, bool> 
+  get_header_field(Source &in, header_fields &fields) {
+    namespace io = boost::iostreams;
+    std::string name;
+    int t = 0;
+    for (;;) {
+      t = io::get(in);
+      if (t == '\n' || t == '\r')
+        throw bad_format();
+      else if (t == EOF)
+        throw remote_close();
+      else if (t == ':') {
+        remove_spaces(in);
+        break;
+      }
+      else
+        name += std::tolower(t);
+    }
+    std::string value;
+    for(;;) {
+      t = io::get(in);
+      if(t == '\n' || t == '\r') {
+        // Newlines in header fields are allowed when followed
+        // by an SP (space or horizontal tab)
+        if(t == '\r')
+          expect(in, '\n');
+        t = io::get(in);
+        if (!isspht(t)) {
+          io::putback(in, t);
+          break;
+        }
+        remove_spaces(in);
+        value += ' ';
+      }
+      else if (t == EOF)
+        throw remote_close();
+      else
+        value += t;
+    }
+    std::pair<header_fields::iterator, bool> ret =
+      fields.insert(std::make_pair(name, value));
+    if (!ret.second && 
+        std::find(detail::csv_header, detail::csv_header_end, name)
+          != detail::csv_header_end)
+      fields[name] += std::string(", ") + value;
+    return ret;
+  }
+
+  template<class Source>
+  header_fields read_headers(Source &source) {
+    header_fields fields;
+    do {
+      get_header_field(source, fields);
+    } while (!(expect(source, '\r') && expect(source, '\n')));
+    return fields;
+  }
 
   void parse_parametrised(
       std::string const &in,
