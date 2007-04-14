@@ -3,6 +3,7 @@
 #define REST_HPP
 
 #include <string>
+#include <vector>
 #include <iosfwd>
 #include <boost/mpl/void.hpp>
 #include <boost/mpl/if.hpp>
@@ -348,15 +349,36 @@ private:
 
 class server : boost::noncopyable {
 public:
-  server(short port);
+  server();
   ~server();
 
-  void set_port(short);
-  short get_port() const;
-
-  void add_host(host const &);
-
   void serve();
+
+  class socket_param {
+  public:
+    short port() const;
+
+    enum socket_type_t { ip4, ip6 };
+    socket_type_t socket_type() const;
+
+    void add_host(host const &);
+  };
+
+  typedef std::vector<socket_param>::iterator sockets_iterator;
+  typedef std::vector<socket_param>::const_iterator sockets_const_iterator;
+
+  sockets_iterator add_socket(socket_param const &);
+
+  sockets_iterator sockets_begin();
+  sockets_iterator sockets_end();
+  sockets_const_iterator sockets_begin() const;
+  sockets_const_iterator sockets_end() const;
+
+  void sockets_erase(sockets_iterator);
+  void sockets_erase(sockets_iterator, sockets_iterator);
+
+  void set_listen_q(int no);
+  void set_config_socket(char const *file);
 
 private:
   class impl;

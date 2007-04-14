@@ -67,7 +67,7 @@ public:
 
   static const int LISTENQ = 5; // TODO: configurable
 
-  impl(short port) : port(port) {}
+  impl() : port(8080) {}
 
   static void sigchld_handler(int) {
     while (::waitpid(-1, 0, WNOHANG) > 0)
@@ -75,13 +75,16 @@ public:
   }
 };
 
-server::server(short port) : p(new impl(port)) {}
+server::server() : p(new impl) {}
 server::~server() {}
 
+//TODO
+#if 0
 void server::add_host(host const &h) {
   if (!p->hosts.insert(boost::ref(h)).second)
     throw std::logic_error("cannot serve two hosts with same name");
 }
+#endif
 
 typedef io::stream_buffer<utils::socket_device> connection_streambuf;
 
