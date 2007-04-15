@@ -225,6 +225,19 @@ void server::serve() {
   epoll_event epolle;
   epolle.events = EPOLLIN|EPOLLERR;
 
+  if(p->config_socket == -1) {
+    // ACHTUNG: tmpnam kann Sicherheits Probleme verursachen, wenn 
+    //          TMPDIR auf ein für alle Nutzer beschreibbares Verzeichnis zeigt!
+    char const *file = std::tmpnam(0x0);
+    if(!file)
+      throw std::runtime_error("could not start server (tmpnam)");
+    set_config_socket(file);
+  }
+
+  short const IS_CONF_SOCKET = -1;
+  socket_param conf_param(IS_CONF_SOCKET, IS_CONF_SOCKET);
+  conf_param.fd(p->config_socket);
+
   for(sockets_iterator i = sockets_begin();
       i != sockets_end();
       ++i)
@@ -287,34 +300,39 @@ void server::serve() {
         ::close(ptr->fd());
         ::close(epoll);
 #endif
-        int status = 0;
-        try {
-          connection_streambuf buf(connfd, 10);
-          http_connection conn(buf);
+        if(ptr->port() == IS_CONF_SOCKET) {
+          // TODO (oh, sollte glaube ich vor dem fork liegen. Nur wie...
+        }
+        else {
+          int status = 0;
           try {
-            while (conn.open()) {
-              conn.reset_flags();
-              response r = conn.handle_request(ptr->hosts);
-              conn.send(r);
+            connection_streambuf buf(connfd, 10);
+            http_connection conn(buf);
+            try {
+              while (conn.open()) {
+                conn.reset_flags();
+                response r = conn.handle_request(ptr->hosts);
+                conn.send(r);
+              }
             }
+            catch (utils::http::remote_close&) {
+              std::cout << "%% remote or timeout" << std::endl; // DEBUG
+            }
+            std::cout << "%% CLOSING" << std::endl; // DEBUG
           }
-          catch (utils::http::remote_close&) {
-            std::cout << "%% remote or timeout" << std::endl; // DEBUG
+          catch(std::exception &e) {
+            REST_LOG_E(utils::CRITICAL,
+                       "ERROR: unexpected exception `" << e.what() << "'");
+            status = 1;
           }
-          std::cout << "%% CLOSING" << std::endl; // DEBUG
-        }
-        catch(std::exception &e) {
-          REST_LOG_E(utils::CRITICAL,
-                     "ERROR: unexpected exception `" << e.what() << "'");
-          status = 1;
-        }
-        catch(...) {
-          REST_LOG_E(utils::CRITICAL,
-                     "ERROR: unexpected exception (unkown type)");
-          status = 1;
-        }
+          catch(...) {
+            REST_LOG_E(utils::CRITICAL,
+                       "ERROR: unexpected exception (unkown type)");
+            status = 1;
+          }
 #ifndef NO_FORK_LOOP
-        ::exit(status);
+          ::exit(status);
+        }
       }
       else
         ::close(connfd);
