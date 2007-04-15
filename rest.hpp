@@ -400,8 +400,6 @@ public:
   void sockets_erase(sockets_iterator, sockets_iterator);
 
   void set_listen_q(int no);
-  void set_config_socket(char const *file);
-
 private:
   class impl;
   boost::scoped_ptr<impl> p;

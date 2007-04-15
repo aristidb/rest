@@ -180,29 +180,6 @@ void server::set_listen_q(int no) {
   p->listenq = no;
 }
 
-void server::set_config_socket(char const *file) {
-  if(p->config_socket != -1)
-    ::close(p->config_socket);
-
-  p->config_socket = ::socket(AF_LOCAL, SOCK_STREAM, 0);
-  if(p->config_socket == -1)
-    throw std::runtime_error("could not create config socket");
-
-  ::unlink(file);
-
-  sockaddr_un sock;
-  sock.sun_family = AF_LOCAL;
-  socklen_t len = std::max(sizeof(sock.sun_path) - 1, std::strlen(file) + 1);
-  std::memcpy(sock.sun_path, file, len);
-  sock.sun_path[sizeof(sock.sun_path) - 1] = 0;
-  len += sizeof(sock.sun_family);
-  if(bind(p->config_socket, (sockaddr*)&sock, len) == -1)
-    throw std::runtime_error("could not start config socket (bind)");
-
-  REST_LOG_E(utils::INFO,
-             "Config UNIX-Socket: `" << sock.sun_path << '\'');
-}
-
 server::server() : p(new impl) {}
 server::~server() {}
 
@@ -259,24 +236,6 @@ void server::serve() {
 
   epoll_event epolle;
   epolle.events = EPOLLIN|EPOLLERR;
-
-  if(p->config_socket == -1) {
-    // ACHTUNG: tmpnam kann Sicherheits Probleme verursachen, wenn 
-    //          TMPDIR auf ein für alle Nutzer beschreibbares Verzeichnis zeigt!
-    char const *file = std::tmpnam(0x0);
-    if(!file)
-      throw std::runtime_error("could not start server (tmpnam)");
-    set_config_socket(file);
-  }
-
-  short const IS_CONF_SOCKET = -1;
-  socket_param conf_param(IS_CONF_SOCKET, 
-                          static_cast<socket_param::socket_type_t>
-                          (IS_CONF_SOCKET));
-  conf_param.fd(p->config_socket);
-  epolle.data.ptr = &conf_param;
-  if(::epoll_ctl(epoll, EPOLL_CTL_ADD, p->config_socket, &epolle) == -1)
-      throw std::runtime_error("could not start server (epoll_ctl)");
 
   for(sockets_iterator i = sockets_begin();
       i != sockets_end();
@@ -343,41 +302,34 @@ void server::serve() {
         ::close(ptr->fd());
         ::close(epoll);
 #endif
-        if(ptr->port() == IS_CONF_SOCKET) {
-          // TODO (oh, sollte glaube ich vor dem fork liegen. Nur wie...
-        }
-        else {
-          int status = 0;
+        int status = 0;
+        try {
+          connection_streambuf buf(connfd, 10);
+          http_connection conn(buf);
           try {
-            connection_streambuf buf(connfd, 10);
-            http_connection conn(buf);
-            try {
-              while (conn.open()) {
-                conn.reset_flags();
-                response r = conn.handle_request(*ptr);
-                conn.send(r);
-              }
+            while (conn.open()) {
+              conn.reset_flags();
+              response r = conn.handle_request(*ptr);
+              conn.send(r);
             }
-            catch (utils::http::remote_close&) {
-              std::cout << "%% remote or timeout" << std::endl; // DEBUG
-            }
-            std::cout << "%% CLOSING" << std::endl; // DEBUG
           }
-          catch(std::exception &e) {
-            REST_LOG_E(utils::CRITICAL,
-                       "ERROR: unexpected exception `" << e.what() << "'");
-            status = 1;
+          catch (utils::http::remote_close&) {
+            std::cout << "%% remote or timeout" << std::endl; // DEBUG
           }
-          catch(...) {
-            REST_LOG_E(utils::CRITICAL,
-                       "ERROR: unexpected exception (unkown type)");
-            status = 1;
-          }
-#ifndef NO_FORK_LOOP
-          ::exit(status);
-#endif
+          std::cout << "%% CLOSING" << std::endl; // DEBUG
+        }
+        catch(std::exception &e) {
+          REST_LOG_E(utils::CRITICAL,
+                     "ERROR: unexpected exception `" << e.what() << "'");
+          status = 1;
+        }
+        catch(...) {
+          REST_LOG_E(utils::CRITICAL,
+                     "ERROR: unexpected exception (unkown type)");
+          status = 1;
         }
 #ifndef NO_FORK_LOOP
+        ::exit(status);
       }
       else
         ::close(connfd);
