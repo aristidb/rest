@@ -237,6 +237,9 @@ void server::serve() {
   short const IS_CONF_SOCKET = -1;
   socket_param conf_param(IS_CONF_SOCKET, IS_CONF_SOCKET);
   conf_param.fd(p->config_socket);
+  epolle.data.ptr = &conf_param;
+  if(::epoll_ctl(epoll, EPOLL_CTL_ADD, p->config_socket, &epolle) == -1)
+      throw std::runtime_error("could not start server (epoll_ctl)");
 
   for(sockets_iterator i = sockets_begin();
       i != sockets_end();
@@ -266,7 +269,7 @@ void server::serve() {
     i->fd(listenfd);
 
     epolle.data.ptr = &*i;
-    if(epoll_ctl(epoll, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
+    if(::epoll_ctl(epoll, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
       throw std::runtime_error("could not start server (epoll_ctl)");
   }
 
@@ -274,7 +277,7 @@ void server::serve() {
 
   for(;;) {
     epoll_event events[EVENTS_N];
-    int nfds = epoll_wait(epoll, events, EVENTS_N, -1);
+    int nfds = ::epoll_wait(epoll, events, EVENTS_N, -1);
     if(nfds == -1)
       throw std::runtime_error("could not run server (epoll_wait)");
 
