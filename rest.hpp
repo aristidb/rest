@@ -376,8 +376,7 @@ public:
     socket_type_t socket_type() const;
 
     void add_host(host const &);
-    host const *get_host(std::string const &name);
-
+    host const *get_host(std::string const &name) const;
   public: // internal
     int fd() const;
     void fd(int f);

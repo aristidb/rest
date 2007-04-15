@@ -106,6 +106,33 @@ void server::socket_param::add_host(host const &h) {
     throw std::logic_error("cannot serve two hosts with same name");
 }
 
+host const *server::socket_param::get_host(std::string const &name) const {
+  std::string::const_iterator begin = name.begin();
+  std::string::const_iterator end = name.end();
+  std::string::const_iterator delim = std::find(begin, end, ':');
+
+  std::string the_host(begin, delim);
+
+  hosts_cont_t::const_iterator it = p->hosts.find(the_host);
+  while(it == p->hosts.end() &&
+        !the_host.empty())
+  {
+    std::string::const_iterator begin = the_host.begin();
+    std::string::const_iterator end = the_host.end();
+    std::string::const_iterator delim = std::find(begin, end, '.');
+
+    if (delim == end)
+      the_host.clear();
+    else
+      the_host.assign(++delim, end);
+
+    it = p->hosts.find(the_host);
+  }
+  if(it == p->hosts.end())
+    return 0x0;
+  return it->get_pointer();
+}
+
 class server::impl {
 public:
   std::vector<socket_param> socket_params;
@@ -206,7 +233,7 @@ namespace {
     void set_header_options(header_fields &fields);
 
     void reset_flags() { flags.reset(); }
-    response handle_request(hosts_cont_t const &hosts);
+    response handle_request(server::socket_param const &hosts);
     int handle_entity(keywords &kw, header_fields &fields);
 
     void send(response const &r, bool entity);
@@ -255,7 +282,15 @@ void server::serve() {
       i != sockets_end();
       ++i)
   {
-    int listenfd = ::socket(AF_INET, SOCK_STREAM, 0); // TODO AF_INET6
+    int type;
+    if(i->socket_type() == socket_param::ip4)
+      type = AF_INET;
+    else if(i->socket_type() == socket_param::ip6)
+      type = AF_INET6;
+    else
+      throw std::runtime_error("could not start server (unkown socket type)");
+
+    int listenfd = ::socket(type, SOCK_STREAM, 0); // TODO AF_INET6
     if(listenfd == -1)
       throw std::runtime_error("could not start server (socket)"); //sollte errno auswerten!
 
@@ -263,12 +298,7 @@ void server::serve() {
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
 
     sockaddr_in servaddr;
-    if(i->socket_type() == socket_param::ip4)
-      servaddr.sin_family = AF_INET;
-    else if(i->socket_type() == socket_param::ip6)
-      servaddr.sin_family = AF_INET6;
-    else
-      throw std::runtime_error("could not start server (unkown socket type)");
+    servaddr.sin_family = type;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
     servaddr.sin_port = htons(i->port());
     if(::bind(listenfd, (sockaddr *) &servaddr, sizeof(servaddr)) == -1)
@@ -324,8 +354,8 @@ void server::serve() {
             try {
               while (conn.open()) {
                 conn.reset_flags();
-                //response r = conn.handle_request(ptr->hosts);
-                //conn.send(r);
+                response r = conn.handle_request(*ptr);
+                conn.send(r);
               }
             }
             catch (utils::http::remote_close&) {
@@ -370,7 +400,7 @@ namespace {
   }
 }
 
-response http_connection::handle_request(hosts_cont_t const &hosts) {
+response http_connection::handle_request(server::socket_param const &sock) {
   try {
     std::string method, uri, version;
     boost::tie(method, uri, version) = utils::http::get_request_line(conn);
@@ -388,10 +418,14 @@ response http_connection::handle_request(hosts_cont_t const &hosts) {
 
     set_header_options(fields);
 
-    hosts_cont_t::const_iterator host = find_host(fields, hosts);
-    if (host == hosts.end())
+    header_fields::const_iterator host_header = fields.find("host");
+    if(host_header == fields.end())
+      throw utils::http::bad_format();
+
+    host const *h = sock.get_host(host_header->second);
+    if(!h)
       return 404;
-    context &global = host->get().get_context();
+    context &global = h->get_context();
 
     keywords kw;
 
@@ -482,38 +516,6 @@ void http_connection::set_header_options(header_fields &fields) {
   // TODO: properly handle accept-encoding list
   flags.set(ACCEPT_GZIP, algo::iequals(accept_encoding, "gzip"));
   flags.set(ACCEPT_BZIP2, algo::iequals(accept_encoding, "bzip2"));
-}
-
-hosts_cont_t::const_iterator 
-http_connection::find_host(
-    header_fields const &fields, hosts_cont_t const &hosts)
-{
-  header_fields::const_iterator host_header = fields.find("host");
-  if(host_header == fields.end())
-    throw utils::http::bad_format();
-
-  std::string::const_iterator begin = host_header->second.begin();
-  std::string::const_iterator end = host_header->second.end();
-  std::string::const_iterator delim = std::find(begin, end, ':');
-
-  std::string the_host(begin, delim);
-
-  hosts_cont_t::const_iterator it = hosts.find(the_host);
-  while(it == hosts.end() &&
-        !the_host.empty())
-  {
-    std::string::const_iterator begin = the_host.begin();
-    std::string::const_iterator end = the_host.end();
-    std::string::const_iterator delim = std::find(begin, end, '.');
-
-    if (delim == end)
-      the_host.clear();
-    else
-      the_host.assign(++delim, end);
-
-    it = hosts.find(the_host);
-  }
-  return it;
 }
 
 namespace {
