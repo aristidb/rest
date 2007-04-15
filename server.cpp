@@ -33,7 +33,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#ifdef APPLE
+#include "epoll.h"
+#else
 #include <sys/epoll.h>
+#endif
 
 #include <iostream>//DEBUG
 
@@ -161,11 +165,15 @@ void server::set_config_socket(char const *file) {
 
   sockaddr_un sock;
   sock.sun_family = AF_LOCAL;
-  socklen_t len = std::max(sizeof(sock.sun_path), std::strlen(file));
+  socklen_t len = std::max(sizeof(sock.sun_path) - 1, std::strlen(file) + 1);
   std::memcpy(sock.sun_path, file, len);
+  sock.sun_path[sizeof(sock.sun_path) - 1] = 0;
   len += sizeof(sock.sun_family);
   if(bind(p->config_socket, (sockaddr*)&sock, len) == -1)
     throw std::runtime_error("could not start config socket (bind)");
+
+  REST_LOG_E(utils::INFO,
+             "Config UNIX-Socket: `" << sock.sun_path << '\'');
 }
 
 server::server() : p(new impl) {}
@@ -235,7 +243,9 @@ void server::serve() {
   }
 
   short const IS_CONF_SOCKET = -1;
-  socket_param conf_param(IS_CONF_SOCKET, IS_CONF_SOCKET);
+  socket_param conf_param(IS_CONF_SOCKET, 
+                          static_cast<socket_param::socket_type_t>
+                          (IS_CONF_SOCKET));
   conf_param.fd(p->config_socket);
   epolle.data.ptr = &conf_param;
   if(::epoll_ctl(epoll, EPOLL_CTL_ADD, p->config_socket, &epolle) == -1)
@@ -314,8 +324,8 @@ void server::serve() {
             try {
               while (conn.open()) {
                 conn.reset_flags();
-                response r = conn.handle_request(ptr->hosts);
-                conn.send(r);
+                //response r = conn.handle_request(ptr->hosts);
+                //conn.send(r);
               }
             }
             catch (utils::http::remote_close&) {
@@ -335,7 +345,9 @@ void server::serve() {
           }
 #ifndef NO_FORK_LOOP
           ::exit(status);
+#endif
         }
+#ifndef NO_FORK_LOOP
       }
       else
         ::close(connfd);

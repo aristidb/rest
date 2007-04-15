@@ -22,7 +22,10 @@ set(rest_src
 )
 
 if (APPLE)
-  add_library(rest SHARED ${rest_src} ${ext_src} unit.cpp)
+  add_definitions(-DAPPLE)
+  set(CMAKE_C_FLAGS "-std=c99 ")
+#  add_library(epoll STATIC epoll.c)
+  add_library(rest SHARED ${rest_src} ${ext_src} unit.cpp epoll.c)
 else (APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "-static" CACHE STRING "Linker flags" FORCE)
   add_library(rest STATIC ${rest_src} ${ext_src})
