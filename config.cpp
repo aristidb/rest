@@ -28,37 +28,25 @@ namespace utils {
 
     class data_handler {
     public:
-      explicit data_handler(fs::path const &file)
-        : data_(file)
-      { }
+      explicit data_handler(fs::path const &file) {
+        fs::fstream in(file);
+        data_.assign(
+            std::istreambuf_iterator<char>(in.rdbuf()),
+            std::istreambuf_iterator<char>());
+      }
+
       explicit data_handler(std::string const &data)
         : data_(data)
-      { }
+      {}
 
       std::string const &data() const {
-        std::string const *data;
-        if( (data = boost::get<std::string>(&data_)) )
-          return *data;
-        else {
-          read_data();
-          return boost::get<std::string>(data_);
-        }
+        return data_;
       }
+
     private:
-      void read_data() const {
-        fs::path const &file = boost::get<fs::path>(data_);
-
-        fs::ifstream in(file);
-
-        data_ = std::string();
-
-      	boost::get<std::string>(data_).assign(
-      		std::istreambuf_iterator<char>(in.rdbuf()),
-          std::istreambuf_iterator<char>());
-      }
-
-      mutable boost::variant<fs::path, std::string> data_;
+      std::string data_;
     } const data_;
+
   public:
     property(std::string const &name,
              fs::path const &file)
@@ -201,7 +189,7 @@ namespace utils {
 using namespace rest::utils;
 
 void print_tree(property_tree const &ref, unsigned depth = 0) {
-  std::string align(' ', depth * 2);
+  std::string align(depth * 2, ' ');
   std::cout << align << "{ " << ref.name() << "\n";
   for(property_tree::property_iterator i = ref.property_begin();
       i != ref.property_end();
