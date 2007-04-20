@@ -1,6 +1,8 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include <string>
 #include <cassert>
 #include <algorithm>
+#include <iterator>
 #include <boost/ref.hpp>
 #include <boost/variant.hpp>
 #include <boost/filesystem/path.hpp>
@@ -45,14 +47,14 @@ namespace utils {
     private:
       void read_data() const {
         fs::path const &file = boost::get<fs::path>(data_);
-        std::string data;
 
         fs::ifstream in(file);
-        std::copy(std::istream_iterator<char>(in),
-                  std::istream_iterator<char>(),
-                  std::back_inserter(data));
 
-        data_ = boost::variant<fs::path, std::string>(data);
+        data_ = std::string();
+
+      	boost::get<std::string>(data_).assign(
+      		std::istreambuf_iterator<char>(in.rdbuf()),
+          std::istreambuf_iterator<char>());
       }
 
       mutable boost::variant<fs::path, std::string> data_;
