@@ -97,9 +97,16 @@ namespace utils {
 
   class property_tree {
   public:
+    property_tree() {}
+
+    explicit property_tree(std::string const &name)
+      : name_(name)
+    { }
+
     std::string const &name() const {
       return name_;
     }
+
   private:
     typedef boost::multi_index_container<
     property_tree*,
@@ -123,9 +130,6 @@ namespace utils {
     property_t properties;
     std::string const name_;
 
-    explicit property_tree(std::string const &name)
-      : name_(name)
-    { }
 
     void add_child(property_tree *child) {
       assert(child);
@@ -136,7 +140,7 @@ namespace utils {
       properties.insert(p);
     }
 
-    friend property_tree read_config(fs::path const &path);
+    friend void read_config(fs::path const &path, property_tree &);
   public:
     typedef property_t::const_iterator property_iterator;
     property_iterator property_begin() const {
@@ -166,21 +170,24 @@ namespace utils {
           ++i)
         delete *i;
     }
+
+  private:
+    property_tree(property_tree const &);
+    void operator=(property_tree const &);
   };
 
-  property_tree read_config(fs::path const &path) {
-    property_tree root(path.leaf());
+  void read_config(fs::path const &path, property_tree &root) {
     fs::directory_iterator end_iter;
     for(fs::directory_iterator iter(path);
         iter != end_iter;
         ++iter)
-    {
-      if(fs::is_directory(*iter))
-        root.add_child(new property_tree(read_config(*iter)));
-      else
+      if(fs::is_directory(*iter)) {
+        property_tree *child = new property_tree;
+        read_config(*iter, *child);
+        root.add_child(child);
+      } else {
         root.add_property(property(iter->leaf(), *iter));
-    }
-    return root;
+      }
   }
 }}
 
@@ -204,7 +211,8 @@ void print_tree(property_tree const &ref, unsigned depth = 0) {
 }
 
 int main() {
-  property_tree t = read_config("/tmp/example");
+  property_tree t("the_example");
+  read_config("/tmp/example", t);
   print_tree(t);
 }
 #endif
