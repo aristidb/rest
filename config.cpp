@@ -32,20 +32,23 @@ namespace utils {
           if( (data = boost::get<std::string>(&data_)) )
             return *data;
           else {
-            fs::path const &file = boost::get<fs::path>(data_);
-            std::string data;
-
-            fs::ifstream in(file);
-            std::copy(std::istream_iterator<char>(in),
-                      std::istream_iterator<char>(),
-                      std::back_inserter(data));
-
-            data_ = boost::variant<fs::path, std::string>(data);
-
+            read_data();
             return boost::get<std::string>(data_);
           }
         }
       private:
+        void read_data() const {
+          fs::path const &file = boost::get<fs::path>(data_);
+          std::string data;
+
+          fs::ifstream in(file);
+          std::copy(std::istream_iterator<char>(in),
+                    std::istream_iterator<char>(),
+                    std::back_inserter(data));
+
+          data_ = boost::variant<fs::path, std::string>(data);
+        }
+
         mutable boost::variant<fs::path, std::string> data_;
       } const data_;
     public:
@@ -77,31 +80,50 @@ namespace utils {
       std::string const &name() const {
         return name_;
       }
-
     private:
       typedef boost::multi_index_container<
-      property_tree*,
-      indexed_by<
-        hashed_unique<
-          CONST_REF_MEM_FUN(property_tree, std::string, name)
+        property_tree*,
+        indexed_by<
+          hashed_unique<
+            CONST_REF_MEM_FUN(property_tree, std::string, name)
+            >
           >
-        >
-      > children_t;
+         > children_t;
 
-  typedef boost::multi_index_container<
-    property,
-    indexed_by<
-      hashed_unique<
-        CONST_REF_MEM_FUN(property, std::string, name)
-        >
-      >
-    > data_t;
+      typedef boost::multi_index_container<
+        property,
+        indexed_by<
+          hashed_unique<
+            CONST_REF_MEM_FUN(property, std::string, name)
+            >
+          >
+         > property_t;
 
       children_t children;
-      data_t data;
+      property_t properties;
       std::string name_;
-
     public:
+      typedef property_t::const_iterator property_iterator;
+      property_iterator property_begin() const {
+        return properties.begin();
+      }
+      property_iterator property_end() const {
+        return properties.end();
+      }
+      property_iterator find_property(std::string const &name) const {
+        return properties.find(name);
+      }
+
+      typedef children_t::const_iterator children_iterator;
+      children_iterator children_begin() const {
+        return children.begin();
+      }
+      children_iterator children_end() const {
+        return children.end();
+      }
+      children_iterator find_children(std::string const &name) const {
+        return children.find(name);
+      }
     };
   }
 }}
