@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <iterator>
 #include <boost/ref.hpp>
-#include <boost/variant.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
