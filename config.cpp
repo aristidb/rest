@@ -70,10 +70,37 @@ namespace utils {
       }
     };
 
-    // TODO aus Effizienz Gründen lieber ein eigener Extractor um Kopien zu verhindern
-#define CONST_REF_MEM_FUN(Class, Type, MemberFunName) \
-    ::boost::multi_index::const_mem_fun_explicit< \
-      Class, Type, Type const &(Class::*)()const, &Class::MemberFunName>
+    namespace utils {
+      template<class Class,typename Type,
+               Type const &(Class::*PtrToMemberFunction)() const>
+      struct ref_const_mem_fun_const {
+        typedef typename boost::remove_reference<Type>::type result_type;
+
+        template<typename ChainedPtr>
+        Type const &operator()(ChainedPtr const& x) const {
+          return operator()(*x);
+        }
+
+        Type const &operator()(Class const& x) const {
+          return (x.*PtrToMemberFunction)();
+        }
+
+        Type const &operator()
+          (boost::reference_wrapper<Class const> const& x) const
+        { 
+          return operator()(x.get());
+        }
+
+        Type const &operator()
+          (boost::reference_wrapper<Class> const& x,int=0) const
+        { 
+          return operator()(x.get());
+        }
+      };
+
+#define REF_CONST_MEM_FUN_CONST(Class, Type, MemberFunName)   \
+      utils::ref_const_mem_fun_const<Class, Type, &Class::MemberFunName>
+    }
 
     class property_tree {
     public:
@@ -85,7 +112,7 @@ namespace utils {
         property_tree*,
         indexed_by<
           hashed_unique<
-            CONST_REF_MEM_FUN(property_tree, std::string, name)
+            REF_CONST_MEM_FUN_CONST(property_tree, std::string, name)
             >
           >
          > children_t;
@@ -94,7 +121,7 @@ namespace utils {
         property,
         indexed_by<
           hashed_unique<
-            CONST_REF_MEM_FUN(property, std::string, name)
+            REF_CONST_MEM_FUN_CONST(property, std::string, name)
             >
           >
          > property_t;
