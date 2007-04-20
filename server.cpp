@@ -577,18 +577,20 @@ void http_connection::send(response const &r, bool entity) {
   out << "Server: " << REST_SERVER_ID << "\r\n";
   if (!r.get_type().empty())
     out << "Content-Type: " << r.get_type() << "\r\n";
-  if (!r.get_data().empty()) {
+  if (entity) {
     // TODO send length of encoded data if content-encoded! (?)
     out << "Content-Length: " << r.get_data().size() << "\r\n";
-    if (flags.test(ACCEPT_GZIP))
-      out << "Content-Encoding: gzip\r\n";
-    else if (flags.test(ACCEPT_BZIP2))
-      out << "Content-Encoding: bzip2\r\n";
+    if (!r.get_data().empty()) {
+      if (flags.test(ACCEPT_GZIP))
+        out << "Content-Encoding: gzip\r\n";
+      else if (flags.test(ACCEPT_BZIP2))
+        out << "Content-Encoding: bzip2\r\n";
+    }
   }
   out << "\r\n";
 
   // Entity
-  if (!r.get_data().empty() && entity) {
+  if (entity && !r.get_data().empty()) {
     io::filtering_ostream out2;
     if (flags.test(ACCEPT_GZIP))
       out2.push(io::gzip_compressor());
