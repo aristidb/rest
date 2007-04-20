@@ -39,6 +39,8 @@
 #include <sys/epoll.h>
 #endif
 
+#include <stdio.h>//perror
+
 #include <iostream>//DEBUG
 
 #ifndef NDEBUG //whatever
@@ -54,6 +56,7 @@ namespace algo = boost::algorithm;
 /*
  * Big TODO:
  *
+ * - EINTR (!)
  * - see below (for more)
  */
 
@@ -277,8 +280,10 @@ void server::serve() {
   for(;;) {
     epoll_event events[EVENTS_N];
     int nfds = ::epoll_wait(epoll, events, EVENTS_N, -1);
-    if(nfds == -1)
+    if(nfds == -1) {
+      perror("epoll_wait");
       throw std::runtime_error("could not run server (epoll_wait)");
+    }
 
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
