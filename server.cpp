@@ -39,8 +39,6 @@
 #include <sys/epoll.h>
 #endif
 
-#include <stdio.h>//perror
-
 #include <iostream>//DEBUG
 
 #ifndef NDEBUG //whatever
@@ -56,7 +54,6 @@ namespace algo = boost::algorithm;
 /*
  * Big TODO:
  *
- * - EINTR (!)
  * - see below (for more)
  */
 
@@ -229,6 +226,7 @@ namespace {
 
 void server::serve() {
   void (*oldhandler)(int) = ::signal(SIGCHLD, &impl::sigchld_handler);
+  ::siginterrupt(SIGCHLD, 0);
 
   int epoll = ::epoll_create(p->socket_params.size() + 1); // vielleicht sollten wir hier ich meine eine Klasse nehmen, die close(epoll) aufruft. du weißt schon
   // wozu? wird doch eh nie geschlossen :D
@@ -281,7 +279,8 @@ void server::serve() {
     epoll_event events[EVENTS_N];
     int nfds = ::epoll_wait(epoll, events, EVENTS_N, -1);
     if(nfds == -1) {
-      perror("epoll_wait");
+      if (errno == EINTR)
+        continue;
       throw std::runtime_error("could not run server (epoll_wait)");
     }
 
