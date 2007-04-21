@@ -275,7 +275,7 @@ enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
 #define REST_LOG_ERRNO(prio, data) \
   do { \
    ::std::stringstream sstr;                 \
-   sstr << data << ": `" << ::std::strerror(errno) << '\''; \
+   sstr << data << ": `" << ::strerror(errno) << '\''; \
    ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, sstr.str()); \
   } while (0)
 
@@ -428,7 +428,7 @@ namespace http {
     {
     public:
       errno_error(std::string const &s)
-        : std::runtime_error(s + ": `" +  std::strerror(errno) + "'")
+        : std::runtime_error(s + ": `" +  ::strerror(errno) + "'")
       { }
     };
 
