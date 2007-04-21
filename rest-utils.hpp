@@ -2,12 +2,14 @@
 #ifndef REST_UTILS
 #define REST_UTILS
 
+#include <map>
+#include <set>
+#include <cerrno>
+#include <vector>
 #include <iosfwd>
 #include <string>
 #include <sstream>
-#include <map>
-#include <set>
-#include <vector>
+#include <stdexcept>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/read.hpp>
 #include <boost/iostreams/pipeline.hpp>
@@ -420,6 +422,15 @@ namespace http {
 
   int parse_qvalue(std::string const &in);
 }
+
+    class errno_error
+      : public std::runtime_error
+    {
+    public:
+      errno_error(std::string const &s)
+        : std::runtime_error(s + ": `" +  std::strerror(errno) + "'")
+      { }
+    };
 
 }}
 

@@ -228,12 +228,9 @@ void server::serve() {
   void (*oldhandler)(int) = ::signal(SIGCHLD, &impl::sigchld_handler);
   ::siginterrupt(SIGCHLD, 0);
 
-  int epoll = ::epoll_create(p->socket_params.size() + 1); // vielleicht sollten wir hier ich meine eine Klasse nehmen, die close(epoll) aufruft. du weißt schon
-  // wozu? wird doch eh nie geschlossen :D
-  // bzw. in den clients natürlich schon! geht um einen fehlerfall
-  // nee wird doch beim exit eh geschlossen :DD
+  int epoll = ::epoll_create(p->socket_params.size() + 1);
   if(epoll == -1)
-    throw std::runtime_error("could not start server (epoll_create)");
+    throw utils::errno_error("could not start server (epoll_create)");
 
   epoll_event epolle;
   epolle.events = EPOLLIN|EPOLLERR;
@@ -248,11 +245,11 @@ void server::serve() {
     else if(i->socket_type() == socket_param::ip6)
       type = AF_INET6;
     else
-      throw std::runtime_error("could not start server (unkown socket type)");
+      throw utils::errno_error("could not start server (unkown socket type)");
 
     int listenfd = ::socket(type, SOCK_STREAM, 0); // TODO AF_INET6
     if(listenfd == -1)
-      throw std::runtime_error("could not start server (socket)"); //sollte errno auswerten!
+      throw utils::errno_error("could not start server (socket)");
 
     int x = 1;
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
@@ -262,15 +259,15 @@ void server::serve() {
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
     servaddr.sin_port = htons(i->port());
     if(::bind(listenfd, (sockaddr *) &servaddr, sizeof(servaddr)) == -1)
-      throw std::runtime_error("could not start server (bind)");
+      throw utils::errno_error("could not start server (bind)");
     if(::listen(listenfd, p->listenq) == -1)
-      throw std::runtime_error("could not start server (listen)");
+      throw utils::errno_error("could not start server (listen)");
 
     i->fd(listenfd);
 
     epolle.data.ptr = &*i;
     if(::epoll_ctl(epoll, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
-      throw std::runtime_error("could not start server (epoll_ctl)");
+      throw utils::errno_error("could not start server (epoll_ctl)");
   }
 
   int const EVENTS_N = 100;
@@ -281,7 +278,7 @@ void server::serve() {
     if(nfds == -1) {
       if (errno == EINTR)
         continue;
-      throw std::runtime_error("could not run server (epoll_wait)");
+      throw utils::errno_error("could not run server (epoll_wait)");
     }
 
     for(int i = 0; i < nfds; ++i) {
