@@ -23,6 +23,7 @@ namespace fs = boost::filesystem;
 namespace rest {
 namespace utils {
   class property {
+    std::string const name_;
     class data_handler {
     public:
       explicit data_handler(fs::path const &file) {
