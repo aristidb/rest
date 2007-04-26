@@ -1,3 +1,4 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #ifndef REST_UTILS_CONFIG_HPP
 #define REST_UTILS_CONFIG_HPP
 
@@ -63,11 +64,11 @@ public:
     std::string const &name() const;
   private:
     typedef boost::multi_index_container<
-    property_tree*,
-    indexed_by<
-      hashed_unique<
-        ref_const_mem_func_const<property_tree, std::string,
-                                 &property_tree::name>
+    	property_tree*,
+      indexed_by<
+        hashed_unique<
+          ref_const_mem_fun_const<property_tree, std::string,
+                                  &property_tree::name>
         >
       >
     > children_t;
@@ -76,11 +77,12 @@ public:
       property,
       indexed_by<
         hashed_unique<
-          ref_const_mem_func_const<property, std::string,
-                                   &property::name>
+          ref_const_mem_fun_const<property, std::string,
+                                   &property::name
           >
         >
-      > property_t;
+      >
+    > property_t;
 
     class impl_;
     boost::scoped_ptr<impl_> impl;
