@@ -350,7 +350,7 @@ private:
 
 class server : boost::noncopyable {
 public:
-  server();
+  server(int argc, char **argv);
   ~server();
 
   void serve();

@@ -180,7 +180,7 @@ void server::set_listen_q(int no) {
   p->listenq = no;
 }
 
-server::server() : p(new impl) { }
+server::server(int argc, char **argv) : p(new impl) { }
 server::~server() {}
 
 typedef io::stream_buffer<utils::socket_device> connection_streambuf;
