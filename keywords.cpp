@@ -62,14 +62,27 @@ public:
 
   data_t data;
 
-  boost::scoped_ptr<std::istream> entity;
-  std::string boundary;
-
   data_t::iterator find(std::string const &keyword, int index) {
     data_t::iterator it = data.find(boost::make_tuple(keyword, index));
     if (it == data.end())
       throw std::logic_error("invalid keyword");
     return it;
+  }
+
+  boost::scoped_ptr<std::istream> entity;
+  std::string boundary;
+  boost::scoped_ptr<io::filtering_istream> element;
+
+  bool start_element() {
+    if (entity->peek() == EOF)
+      return false;
+
+    element.reset(new io::filtering_istream);
+
+    element->push(utils::boundary_filter("\r\n" + boundary));
+    element->push(boost::ref(*entity), 0, 0);
+
+    return true;
   }
 };
 
@@ -247,14 +260,10 @@ bla]
     filt.pop();
   }
 
-  while (entity->peek() != EOF) {
-    io::filtering_istream filt;
-    filt.push(utils::boundary_filter("\r\n" + p->boundary));
-    filt.push(boost::ref(*entity), 0, 0);
-
+  while (p->start_element()) {
     std::cout << "<<\n";
     char ch;
-    while (filt.get(ch))
+    while (p->element->get(ch))
       if (ch == 0)
         std::cout << "\\0";
       else if (ch == '\r')
@@ -264,8 +273,6 @@ bla]
       else
         std::cout << ch;
     std::cout << "\n>>\n" << std::flush;
-
-    filt.pop();
   }
 }
 
