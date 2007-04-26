@@ -1,16 +1,11 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "config.hpp"
+#include "rest-config.hpp"
 
 #include <cassert>
 #include <algorithm>
 #include <iterator>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
-
-#ifdef STANDALONE
-#include <iostream>
-#include <iomanip>
-#endif
 
 using namespace boost::multi_index;
 namespace fs = boost::filesystem;
@@ -127,8 +122,8 @@ namespace utils {
   }
 
   property_tree::~property_tree() {
-    for(children_iterator i = children.begin();
-        i != children.end();
+    for(children_iterator i = impl->children.begin();
+        i != impl->children.end();
         ++i)
       delete *i;
   }
@@ -147,29 +142,3 @@ namespace utils {
       }
   }
 }}
-
-#ifdef STANDALONE
-using namespace rest::utils;
-
-void print_tree(property_tree const &ref, unsigned depth = 0) {
-  std::string align(depth * 2, ' ');
-  std::cout << align << "{ " << ref.name() << "\n";
-  for(property_tree::property_iterator i = ref.property_begin();
-      i != ref.property_end();
-      ++i)
-    std::cout << align << "  " << i->name() << " => `"
-              << i->data() << "'\n";
-  ++depth;
-  for(property_tree::children_iterator i = ref.children_begin();
-      i != ref.children_end();
-      ++i)
-    print_tree(**i, depth);
-  std::cout << align << "}\n";
-}
-
-int main() {
-  property_tree t("the_example");
-  read_config("/tmp/example", t);
-  print_tree(t);
-}
-#endif

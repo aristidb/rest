@@ -19,6 +19,7 @@ set(rest_src
   datetime.cpp
   socket_device.cpp
   http_headers.cpp
+  config.cpp
 )
 
 if (APPLE)
@@ -31,7 +32,7 @@ else (APPLE)
   add_library(rest STATIC ${rest_src} ${ext_src})
 endif (APPLE)
 
-target_link_libraries(rest z bz2)
+target_link_libraries(rest z bz2 boost_filesystem)
 
 add_executable(test1 test1.cpp)
 target_link_libraries(test1 rest)
