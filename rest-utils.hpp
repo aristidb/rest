@@ -18,6 +18,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/ref.hpp>
 
 namespace rest { namespace utils {
 
@@ -423,15 +424,14 @@ namespace http {
   int parse_qvalue(std::string const &in);
 }
 
-    class errno_error
-      : public std::runtime_error
-    {
-    public:
-      errno_error(std::string const &s)
-        : std::runtime_error(s + ": `" +  ::strerror(errno) + "'")
-      { }
-    };
-
+class errno_error
+  : public std::runtime_error
+{
+public:
+  errno_error(std::string const &s)
+    : std::runtime_error(s + ": `" +  ::strerror(errno) + "'")
+  { }
+};
 }}
 
 #endif

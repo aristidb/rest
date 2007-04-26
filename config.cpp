@@ -1,16 +1,11 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include <string>
+#include "config.hpp"
+
 #include <cassert>
 #include <algorithm>
 #include <iterator>
-#include <boost/ref.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/key_extractors.hpp>
 
 #ifdef STANDALONE
 #include <iostream>
@@ -22,8 +17,7 @@ namespace fs = boost::filesystem;
 
 namespace rest {
 namespace utils {
-  class property {
-    std::string const name_;
+  namespace {
     class data_handler {
     public:
       explicit data_handler(fs::path const &file) {
@@ -43,137 +37,101 @@ namespace utils {
 
     private:
       std::string data_;
-    } const data_;
-
-  public:
-    property(std::string const &name,
-             fs::path const &file)
-      : name_(name), data_(file)
-    { }
-
-    property(std::string const &name,
-             std::string const &data)
-      : name_(name), data_(data)
-    { }
-
-    std::string const &name() const {
-      return name_;
-    }
-    std::string const &data() const {
-      return data_.data();
-    }
-  };
-
-  namespace {
-    template<class Class,typename Type,
-             Type const &(Class::*PtrToMemberFunction)() const>
-    struct ref_const_mem_fun_const {
-      typedef typename boost::remove_reference<Type>::type result_type;
-
-      template<typename ChainedPtr>
-      Type const &operator()(ChainedPtr const& x) const {
-        return operator()(*x);
-      }
-
-      Type const &operator()(Class const& x) const {
-        return (x.*PtrToMemberFunction)();
-      }
-
-      Type const &operator()
-        (boost::reference_wrapper<Class const> const& x) const { 
-        return operator()(x.get());
-      }
-
-      Type const &operator()
-        (boost::reference_wrapper<Class> const& x,int=0) const { 
-        return operator()(x.get());
-      }
     };
-
-#define REF_CONST_MEM_FUN_CONST(Class, Type, MemberFunName)             \
-    utils::ref_const_mem_fun_const<Class, Type, &Class::MemberFunName>
   }
 
-  class property_tree {
+  class property::impl {
   public:
-    property_tree() {}
+    std::string name;
+    data_handler data;
 
-    explicit property_tree(std::string const &name)
-      : name_(name)
+    impl(std::string const &name, fs::path const &file)
+      : name(name), data(file)
     { }
 
-    std::string const &name() const {
-      return name_;
-    }
+    impl(std::string const &name, std::string const &data)
+      : name(name), data(data)
+    { }
+  };
 
-  private:
-    typedef boost::multi_index_container<
-    property_tree*,
-    indexed_by<
-      hashed_unique<
-        REF_CONST_MEM_FUN_CONST(property_tree, std::string, name)
-        >
-      >
-    > children_t;
+  property::property(std::string const &name, fs::path const &file)
+    : impl_(new impl(name, file))
+  { }
 
-    typedef boost::multi_index_container<
-      property,
-      indexed_by<
-        hashed_unique<
-          REF_CONST_MEM_FUN_CONST(property, std::string, name)
-          >
-        >
-      > property_t;
+  property::property(std::string const &name,
+                     std::string const &data)
+    : impl_(new impl(name, data))
+  { }
 
+  std::string const &property::name() const {
+    return impl_->name;
+  }
+
+  std::string const &property::data() const {
+    return impl_->data.data();
+  }
+
+  class property_tree::impl_ {
+  public:
     children_t children;
     property_t properties;
-    std::string const name_;
+    std::string const name;
 
-
-    void add_child(property_tree *child) {
-      assert(child);
-      children.insert(child);
-    }
-
-    void add_property(property const &p) {
-      properties.insert(p);
-    }
-
-    friend void read_config(fs::path const &path, property_tree &);
-  public:
-    typedef property_t::const_iterator property_iterator;
-    property_iterator property_begin() const {
-      return properties.begin();
-    }
-    property_iterator property_end() const {
-      return properties.end();
-    }
-    property_iterator find_property(std::string const &name) const {
-      return properties.find(name);
-    }
-    
-    typedef children_t::const_iterator children_iterator;
-    children_iterator children_begin() const {
-      return children.begin();
-    }
-    children_iterator children_end() const {
-      return children.end();
-    }
-    children_iterator find_children(std::string const &name) const {
-      return children.find(name);
-    }
-
-    ~property_tree() {
-      for(children_iterator i = children.begin();
-          i != children.end();
-          ++i)
-        delete *i;
-    }
-
-  private:
-    property_tree(property_tree const &);
-    void operator=(property_tree const &);
+    impl_(std::string const &name)
+      : name(name)
+    { }
+    impl_() { }
   };
+
+  property_tree::property_tree()
+    : impl(new impl_)
+  { }
+
+  property_tree::property_tree(std::string const &name)
+    : impl(new impl_(name))
+  { }
+
+  std::string const &property_tree::name() const {
+    return impl->name;
+  }
+
+  void property_tree::add_child(property_tree *child) {
+    assert(child);
+    impl->children.insert(child);
+  }
+
+  void property_tree::add_property(property const &p) {
+    impl->properties.insert(p);
+  }
+
+  property_tree::property_iterator property_tree::property_begin() const {
+    return impl->properties.begin();
+  }
+  property_tree::property_iterator property_tree::property_end() const {
+    return impl->properties.end();
+  }
+  property_tree::property_iterator
+  property_tree::find_property(std::string const &name) const {
+    return impl->properties.find(name);
+  }
+
+  property_tree::children_iterator property_tree::children_begin() const {
+    return impl->children.begin();
+  }
+  property_tree::children_iterator property_tree::children_end() const {
+    return impl->children.end();
+  }
+  property_tree::children_iterator
+  property_tree::find_children(std::string const &name) const {
+    return impl->children.find(name);
+  }
+
+  property_tree::~property_tree() {
+    for(children_iterator i = children.begin();
+        i != children.end();
+        ++i)
+      delete *i;
+  }
 
   void read_config(fs::path const &path, property_tree &root) {
     fs::directory_iterator end_iter;
