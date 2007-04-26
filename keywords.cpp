@@ -84,6 +84,15 @@ public:
 
     return true;
   }
+
+  void read_headers() {
+    using utils::http::header_fields;
+
+    header_fields headers = utils::http::read_headers(*element);
+
+    for (header_fields::iterator it = headers.begin(); it != headers.end();++it)
+      std::cout << "_ " << it->first << ": " << it->second << std::endl;
+  }
 };
 
 keywords::keywords() : p(new impl) {
@@ -261,6 +270,7 @@ bla]
   }
 
   while (p->start_element()) {
+    p->read_headers();
     std::cout << "<<\n";
     char ch;
     while (p->element->get(ch))
