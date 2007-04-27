@@ -71,10 +71,6 @@ int main(int argc, char **argv) {
         ++i)
       i->add_host(h);
 
-    /*
-s.add_socket(rest::server::socket_param
-                 (8080, rest::server::socket_param::ip4))->add_host(h);
-    */
     s.serve();
   } catch(rest::utils::end &e) {
   }
