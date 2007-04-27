@@ -25,6 +25,7 @@
 #include <bitset>
 #include <map>
 #include <limits>
+#include <fstream>
 
 #include <errno.h>
 #include <signal.h>
@@ -157,7 +158,8 @@ public:
     std::cout << "No Restart for Apple\n";    
   }
 #else
-  static std::vector<char*> getargs(std::string const &path, std::string &data) {
+  static std::vector<char*> getargs(std::string const &path, std::string &data)
+  {
     std::ifstream in(path.c_str());
     data.assign(std::istreambuf_iterator<char>(in.rdbuf()),
                 std::istreambuf_iterator<char>());
@@ -175,21 +177,16 @@ public:
   }
 
   static void restart_handler(int) {
-    REST_LOG(utils::IMPORTANT, "server restart")
-    std::string proc = "/proc/";
-    proc += boost::lexical_cast<std::string>(::getpid());
+    REST_LOG(utils::IMPORTANT, "server restart");
 
-    std::string cmd = proc + "/cmdline";
     std::string cmdbuffer;
-    std::string env = proc + "/environ";
     std::string envbuffer;
 
-    proc += "/exe";
-    if(::execve(proc.c_str(), &getargs(cmd, cmdbuffer)[0],
-                &getargs(env, envbuffer)[0]) == -1)
+    if(::execve("/proc/self/exe", &getargs("/proc/self/cmdline", cmdbuffer)[0],
+                &getargs("/proc/self/environ", envbuffer)[0]) == -1)
       REST_LOG_ERRNO(utils::CRITICAL, "restart failed (execve)");
   }
-#endif
+  #endif
 };
 
 server::sockets_iterator server::add_socket(socket_param const &s) {
@@ -222,7 +219,7 @@ void server::set_listen_q(int no) {
 }
 
 server::server(utils::property_tree const &conf) : p(new impl(conf)) { }
-server::~server() {}
+server::~server() { }
 
 typedef io::stream_buffer<utils::socket_device> connection_streambuf;
 
