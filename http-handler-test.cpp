@@ -3,6 +3,8 @@
 #include "rest.hpp"
 #include "rest-config.hpp"
 #include <iostream>
+#include <sys/types.h>
+#include <unistd.h>
 
 struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                                 rest::POST> {
@@ -39,6 +41,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 };
 
 int main(int argc, char **argv) {
+  std::cout << "STARTING, pid: " << getpid() << std::endl;
   rest::host h("");
   tester t;
   h.get_context().bind("/", t);
