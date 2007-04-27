@@ -220,7 +220,6 @@ void keywords::set_entity(
     filt.push(utils::boundary_filter(p->boundary));
     filt.push(boost::ref(*entity), 0, 0);
     filt.ignore(std::numeric_limits<int>::max());
-    filt.pop();
   }
 
   while (p->start_element()) {
