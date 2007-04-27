@@ -140,13 +140,14 @@ class server::impl {
 public:
   std::vector<socket_param> socket_params;
 
-  static const int DEFAULT_LISTENQ = 5;
+  static int const DEFAULT_LISTENQ;
   int listenq;
 
   utils::property_tree const &config;
 
   impl(utils::property_tree const &config)
-    : listenq(DEFAULT_LISTENQ), config(config)
+    : listenq(utils::get(config, DEFAULT_LISTENQ, "connections", "listenq")),
+      config(config)
   { }
 
   static void sigchld_handler(int) {
@@ -189,6 +190,8 @@ public:
   }
   #endif
 };
+
+int const server::impl::DEFAULT_LISTENQ = 5;
 
 server::sockets_iterator server::add_socket(socket_param const &s) {
   p->socket_params.push_back(s);
@@ -299,7 +302,7 @@ void server::serve() {
     else
       throw utils::errno_error("could not start server (unkown socket type)");
 
-    int listenfd = ::socket(type, SOCK_STREAM, 0); // TODO AF_INET6
+    int listenfd = ::socket(type, SOCK_STREAM, 0);
     if(listenfd == -1)
       throw utils::errno_error("could not start server (socket)");
     close_on_exec(listenfd);

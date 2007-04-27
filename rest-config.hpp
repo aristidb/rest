@@ -8,12 +8,13 @@
 #include <memory>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/preprocessor.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
+#include <boost/preprocessor/punctuation/comma_if.hpp>
+#include <boost/preprocessor/repetition/repeat_from_to.hpp>
 
 namespace rest {
 namespace utils {  
@@ -80,8 +81,8 @@ namespace utils {
     void operator=(property_tree const &);
   };
 
-template<typename T>
-  T get(property_tree const &tree, T const &default_value,
+  template<typename T>
+  inline T get(property_tree const &tree, T const &default_value,
         std::string const &node0)
   {
     property_tree::property_iterator i = tree.find_property(node0);
@@ -95,19 +96,31 @@ template<typename T>
     }
   }
 
+  inline property_tree::children_iterator
+  get(property_tree const &tree,
+      property_tree::children_iterator const &default_value,
+      std::string const &node0)
+  {
+    property_tree::children_iterator i = tree.find_children(node0);
+    if(i == tree.children_end())
+      return default_value;
+    else
+      return i;
+  }
+
 #define ARG_FUN(z, i, _) BOOST_PP_COMMA_IF(i) std::string const &node ## i
 #define ARG_NAME(z, i, _) , node ## i
 
 #define DEF_GET_FUN(z, i, _)                                            \
     template<typename T>                                                \
-    T get(property_tree const &tree, T const &default_value,            \
-          BOOST_PP_REPEAT(i, ARG_FUN, __)) {                            \
+    inline T get(property_tree const &tree, T const &default_value,     \
+                 BOOST_PP_REPEAT(i, ARG_FUN, __)) {                     \
       property_tree::children_iterator j = tree.find_children(node0);   \
       if(j == tree.children_end())                                      \
         return default_value;                                           \
       else                                                              \
-        return get<T>(**j, default_value                                \
-                      BOOST_PP_REPEAT_FROM_TO(1, i, ARG_NAME, ___));    \
+        return get(**j, default_value                                   \
+                   BOOST_PP_REPEAT_FROM_TO(1, i, ARG_NAME, ___));       \
     }
 
   BOOST_PP_REPEAT_FROM_TO(2, 10, DEF_GET_FUN, _)
