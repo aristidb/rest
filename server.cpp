@@ -164,12 +164,13 @@ public:
           short port = utils::get(**j, -1, "port");
           if(port == -1)
             throw std::runtime_error("no port specified!");
-          std::string type = utils::get(**j, std::string("ipv4"), "type");
-          if(algo::istarts_with(type, "ipv4") ||
-             algo::istarts_with(type, "ip4"))
+          std::string type_ = utils::get(**j, std::string("ipv4"), "type");
+          int type;
+          if(algo::istarts_with(type_, "ipv4") ||
+             algo::istarts_with(type_, "ip4"))
             type = socket_param::ip4;
-          else if(algo::istarts_with(type, "ipv6") ||
-                  algo::istarts_with(type, "ip6"))
+          else if(algo::istarts_with(type_, "ipv6") ||
+                  algo::istarts_with(type_, "ip6"))
             type = socket_param::ip6;
           else
             throw std::runtime_error("unkown socket type specified");
