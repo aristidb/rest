@@ -23,23 +23,23 @@ class keywords::impl {
 public:
   struct entry {
     entry(std::string const &keyword, int index, keyword_type type = NORMAL)
-    : keyword(keyword), index(index), type(type), pending_read(false) {}
+    : keyword(keyword), index(index), type(type) {}
 
     entry(entry const &o)
-    : keyword(o.keyword), index(o.index), type(o.type), pending_read(false) {}
+    : keyword(o.keyword), index(o.index), type(o.type) {}
 
     void read() const {
-      if (!pending_read) return;
-      data.assign(
-        std::istreambuf_iterator<char>(stream->rdbuf()),
-        std::istreambuf_iterator<char>());
-      pending_read = false;
+      if (stream) {
+        data.assign(
+          std::istreambuf_iterator<char>(stream->rdbuf()),
+          std::istreambuf_iterator<char>());
+        stream.reset();
+      }
     }
 
     std::string keyword;
     int index;
     keyword_type type;
-    mutable bool pending_read;
     mutable std::string name;
     mutable std::string data;
     mutable boost::scoped_ptr<std::istream> stream;
@@ -162,7 +162,6 @@ void keywords::set(
 {
   impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
   it->data = data;
-  it->pending_read = false;
   it->stream.reset();
 }
 
@@ -170,7 +169,6 @@ void keywords::set_stream(
     std::string const &keyword, int index, std::istream *stream)
 {
   impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
-  it->pending_read = true;
   it->stream.reset(stream);
 }
 
