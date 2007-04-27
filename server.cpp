@@ -151,8 +151,7 @@ public:
   {
     typedef utils::property_tree::children_iterator children_iterator;
     children_iterator end = config.children_end();
-    children_iterator i = utils::get(config, end,
-                                     "connection");
+    children_iterator i = utils::get(config, end, "connections");
     if(i == config.children_end()) {
       std::cerr << "No Connections in Config File\n";
       REST_LOG(utils::INFO, "no connections specified in config-file");
