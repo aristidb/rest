@@ -11,8 +11,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <boost/iostreams/concepts.hpp>
-#include <boost/iostreams/read.hpp>
 #include <boost/iostreams/pipeline.hpp>
+#include <boost/iostreams/read.hpp>
+#include <boost/current_function.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -249,7 +250,8 @@ public: // thread safe
 
   void set_minimum_priority(int priority);
 
-  void log(int priority, char const *file, int line, std::string const &data);
+  void log(int priority, char const *file, char const *func,
+           int line, std::string const &data);
 
 private:
   logger();
@@ -264,20 +266,23 @@ private:
 
 enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
 
-#define REST_LOG(prio, data) \
-  ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, (data))
+#define REST_LOG(prio, data)                           \
+    ::rest::utils::logger::get().log((prio), __FILE__, \
+    BOOST_CURRENT_FUNCTION, __LINE__, (data))
 
-#define REST_LOG_E(prio, data) \
-  do { \
-    ::std::stringstream sstr; sstr << data;                               \
-    ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, sstr.str()); \
+#define REST_LOG_E(prio, data)                                          \
+  do {                                                                  \
+    ::std::stringstream sstr; sstr << data;                             \
+    ::rest::utils::logger::get().log((prio), __FILE__,                  \
+    BOOST_CURRENT_FUNCTION, __LINE__, sstr.str());                      \
   } while (0)
 
-#define REST_LOG_ERRNO(prio, data) \
-  do { \
-   ::std::stringstream sstr;                 \
-   sstr << data << ": `" << ::strerror(errno) << '\''; \
-   ::rest::utils::logger::get().log((prio), __FILE__, __LINE__, sstr.str()); \
+#define REST_LOG_ERRNO(prio, data)                       \
+  do {                                                   \
+   ::std::stringstream sstr;                             \
+   sstr << data << ": `" << ::strerror(errno) << '\'';   \
+   ::rest::utils::logger::get().log((prio), __FILE__,    \
+    BOOST_CURRENT_FUNCTION, __LINE__, sstr.str());       \
   } while (0)
 
 namespace http {

@@ -4,22 +4,26 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <iostream>
+#include <cerrno>
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    std::cerr << argv[0] << ": Need exactly one argument.\n";
+    std::cerr << "usage: " << argv[0] << " <fifo>\n";
     return 1;
   }
   int pipe = open(argv[1], O_RDONLY);
   if (pipe < 0) {
-    std::cerr << argv[0] << ": Could not open pipe " << argv[1] << '\n';
+    std::cerr << argv[0] << ": Could not open pipe " << argv[1]
+              << ": `" << std::strerror(errno) << "'\n";
     return 2;
   }
   char buf[4096];
   ssize_t n;
   for (;;) {
     n = read(pipe, buf, sizeof(buf));
-    if (n < 0) break;
+    if (n < 0) {
+      break;
+    }
     std::cout.write(buf, n);
   }
 }
