@@ -72,6 +72,9 @@ public:
   boost::scoped_ptr<std::istream> entity;
   std::string boundary;
   boost::scoped_ptr<io::filtering_istream> element;
+  std::string next_name;
+  std::string next_filename;
+  std::string next_filetype;
 
   bool start_element() {
     if (entity->peek() == EOF)
@@ -90,8 +93,25 @@ public:
 
     header_fields headers = utils::http::read_headers(*element);
 
+    parse_content_disposition(headers["content-disposition"]);
+
     for (header_fields::iterator it = headers.begin(); it != headers.end();++it)
       std::cout << "_ " << it->first << ": " << it->second << std::endl;
+
+    std::cout << "__ name: " << next_name << std::endl;
+    std::cout << "__ filename: " << next_filename << std::endl;
+  }
+
+  void parse_content_disposition(std::string const &disp) {
+    std::string type;
+    std::set<std::string> interests;
+    interests.insert("name");
+    interests.insert("filename");
+    std::map<std::string, std::string> param;
+    utils::http::parse_parametrised(disp, type, interests, param);
+
+    next_name = param["name"];
+    next_filename = param["filename"];
   }
 };
 
