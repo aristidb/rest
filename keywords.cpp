@@ -13,6 +13,7 @@
 #include <limits>
 #include <cstdio>
 #include <cctype>
+#include <memory>
 #include <iostream>//DEBUG
 
 using namespace rest;
@@ -47,6 +48,7 @@ public:
     int index;
     keyword_type type;
     mutable std::string name;
+    mutable std::string mime;
     mutable std::string data;
     mutable boost::scoped_ptr<std::istream> stream;
     mutable boost::scoped_ptr<std::ostream> output;
@@ -77,10 +79,11 @@ public:
 
   boost::scoped_ptr<std::istream> entity;
   std::string boundary;
-  boost::scoped_ptr<io::filtering_istream> element;
+  std::auto_ptr<io::filtering_istream> element;
   std::string next_name;
   std::string next_filename;
   std::string next_filetype;
+  entry const *next;
 
   bool start_element() {
     if (entity->peek() == EOF)
@@ -101,11 +104,13 @@ public:
 
     parse_content_disposition(headers["content-disposition"]);
 
-    header_fields::iterator it = headers.find("content-type");
-    if (it != headers.end())
-      next_filetype = it->second;
-    else
-      next_filetype = "application/octet-stream";
+    {
+      header_fields::iterator it = headers.find("content-type");
+      if (it != headers.end())
+        next_filetype = it->second;
+      else
+        next_filetype = "application/octet-stream";
+    }
 
     for (header_fields::iterator it = headers.begin(); it != headers.end();++it)
       std::cout << "_ " << it->first << ": " << it->second << std::endl;
@@ -113,6 +118,18 @@ public:
     std::cout << "__ name: " << next_name << std::endl;
     std::cout << "__ filename: " << next_filename << std::endl;
     std::cout << "__ filetype: " << next_filetype << std::endl;
+
+    {
+      data_t::iterator it = data.find(boost::make_tuple(next_name, 0));
+      if (it == data.end()) {
+        next = 0;
+        return;
+      }
+      it->name = next_filename;
+      it->mime = next_filetype;
+      it->stream.reset(element.release());
+      next = &*it;
+    }
   }
 
   void parse_content_disposition(std::string const &disp) {
@@ -126,6 +143,8 @@ public:
     next_name = param["name"];
     next_filename = param["filename"];
   }
+
+  impl() : next(0) {}
 };
 
 keywords::keywords() : p(new impl) {
@@ -247,4 +266,7 @@ void keywords::set_output(
 }
 
 void keywords::flush() {
+  if (!p->entity)
+    return;
+  p->entity.reset();
 }
