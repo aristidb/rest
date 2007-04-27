@@ -30,10 +30,16 @@ public:
 
     void read() const {
       if (stream) {
-        data.assign(
-          std::istreambuf_iterator<char>(stream->rdbuf()),
-          std::istreambuf_iterator<char>());
+        if (output) {
+          *output << stream->rdbuf();
+        } else {
+          data.assign(
+            std::istreambuf_iterator<char>(stream->rdbuf()),
+            std::istreambuf_iterator<char>());
+        }
         stream.reset();
+      } else if (output) {
+        *output << data;
       }
     }
 
