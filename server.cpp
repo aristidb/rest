@@ -302,6 +302,7 @@ void server::serve() {
     int listenfd = ::socket(type, SOCK_STREAM, 0); // TODO AF_INET6
     if(listenfd == -1)
       throw utils::errno_error("could not start server (socket)");
+    close_on_exec(listenfd);
 
     int x = 1;
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
