@@ -165,7 +165,7 @@ public:
           if(port == -1)
             throw std::runtime_error("no port specified!");
           std::string type_ = utils::get(**j, std::string("ipv4"), "type");
-          int type;
+          socket_param::socket_type_t type;
           if(algo::istarts_with(type_, "ipv4") ||
              algo::istarts_with(type_, "ip4"))
             type = socket_param::ip4;
@@ -178,7 +178,7 @@ public:
           std::cout << "SOCKET " << port << ' ' << type << '\n';
           // TODO add bind
           
-          //      socket_params.push_back();
+          socket_params.push_back(socket_param(port, type));
         }
   }
 
