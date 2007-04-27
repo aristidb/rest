@@ -123,7 +123,7 @@ public:
 
     {
       data_t::iterator it = data.find(boost::make_tuple(next_name, 0));
-      if (it == data.end()) {
+      if (it == data.end() || it->type != FORM_PARAMETER) {
         element.reset();
         next = 0;
         return;

@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     tester t;
     h.get_context().bind("/", t);
     h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
-    h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
+    h.get_context().declare_keyword("bar", rest::COOKIE);
     h.get_context().declare_keyword("file", rest::FORM_PARAMETER);
     rest::server s(*rest::config(argc, argv));
     s.add_socket(rest::server::socket_param
