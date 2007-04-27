@@ -408,6 +408,7 @@ void server::serve() {
           }
           std::cout << "%% CLOSING" << std::endl; // DEBUG
         }
+#if 0
         catch(std::exception &e) {
           REST_LOG_E(utils::CRITICAL,
                      "ERROR: unexpected exception `" << e.what() << "'");
@@ -418,6 +419,10 @@ void server::serve() {
                      "ERROR: unexpected exception (unkown type)");
           status = 1;
         }
+#else
+        catch (int) { throw; }
+#endif
+
 #ifndef NO_FORK_LOOP
         ::exit(status);
       }

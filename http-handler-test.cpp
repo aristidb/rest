@@ -58,6 +58,9 @@ int main(int argc, char **argv) {
     rest::host h("");
     tester t;
     h.get_context().bind("/", t);
+    h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
+    h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
+    h.get_context().declare_keyword("file", rest::FORM_PARAMETER);
     rest::server s(*rest::config(argc, argv));
     s.add_socket(rest::server::socket_param
                  (8080, rest::server::socket_param::ip4))->add_host(h);

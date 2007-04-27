@@ -30,6 +30,7 @@ public:
     : keyword(o.keyword), index(o.index), type(o.type) {}
 
     void read() const {
+      std::cout << "READ KEYWORD " << keyword << ',' << index << std::endl;
       if (stream) {
         if (output) {
           *output << stream->rdbuf();
@@ -71,6 +72,7 @@ public:
   data_t data;
 
   data_t::iterator find(std::string const &keyword, int index) {
+    std::cout << "FIND KEYWORD " << keyword << ',' << index << std::endl;
     data_t::iterator it = data.find(boost::make_tuple(keyword, index));
     if (it == data.end())
       throw std::logic_error("invalid keyword");
