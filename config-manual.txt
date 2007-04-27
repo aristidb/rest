@@ -1,0 +1,10 @@
+Default Path: /etc/musikdings/rest
+Can be changed with -c-Flag or by setting -DDEFAULT_CONFIG_PATH during compile time
+
+/connections
+/connections/listenq            the number of sockets queued by listen (see listen(2)) [default: 5]
+/connections/*                  subnodes specifies sockets to listen to
+/connections/*/type             type of socket (either 'ipv6' or 'ipv4') [default: ipv4]
+/connections/*/port             specifies the port
+/connections/*/bind             (see bind(2)) [default: INADDR_ANY] [TODO!]
+

@@ -148,7 +148,39 @@ public:
   impl(utils::property_tree const &config)
     : listenq(utils::get(config, DEFAULT_LISTENQ, "connections", "listenq")),
       config(config)
-  { }
+  {
+    typedef utils::property_tree::children_iterator children_iterator;
+    children_iterator end = config.children_end();
+    children_iterator i = utils::get(config, end,
+                                     "connection");
+    if(i == config.children_end()) {
+      std::cerr << "No Connections in Config File\n";
+      REST_LOG(utils::INFO, "no connections specified in config-file");
+    }
+    else
+      for(children_iterator j = (*i)->children_begin();
+          j != (*i)->children_end();
+          ++j)
+        {
+          short port = utils::get(**j, -1, "port");
+          if(port == -1)
+            throw std::runtime_error("no port specified!");
+          std::string type = utils::get(**j, std::string("ipv4"), "type");
+          if(algo::istarts_with(type, "ipv4") ||
+             algo::istarts_with(type, "ip4"))
+            type = socket_param::ip4;
+          else if(algo::istarts_with(type, "ipv6") ||
+                  algo::istarts_with(type, "ip6"))
+            type = socket_param::ip6;
+          else
+            throw std::runtime_error("unkown socket type specified");
+          
+          std::cout << "SOCKET " << port << ' ' << type << '\n';
+          // TODO add bind
+          
+          //      socket_params.push_back();
+        }
+  }
 
   static void sigchld_handler(int) {
     while (::waitpid(-1, 0, WNOHANG) > 0)

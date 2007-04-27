@@ -145,7 +145,7 @@ namespace utils {
 }
 
 #ifndef DEFAULT_CONFIG_PATH
-    #define DEFAULT_CONFIG_PATH "/etc/musikdings/rest"
+    #define DEFAULT_CONFIG_PATH "etc/musikdings/rest"
 #endif
 
   std::auto_ptr<utils::property_tree> config(int argc, char **argv) {
