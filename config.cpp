@@ -135,7 +135,7 @@ namespace utils {
         iter != end_iter;
         ++iter)
       if(fs::is_directory(*iter)) {
-        property_tree *child = new property_tree;
+        property_tree *child = new property_tree(iter->leaf());
         read_config(*iter, *child);
         root.add_child(child);
       }
