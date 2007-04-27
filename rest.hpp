@@ -348,9 +348,13 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
+namespace utils {
+  class property_tree;
+}
+
 class server : boost::noncopyable {
 public:
-  server(int argc, char **argv);
+  server(utils::property_tree const &config);
   ~server();
 
   void serve();

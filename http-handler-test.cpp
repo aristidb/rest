@@ -1,6 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 
 #include "rest.hpp"
+#include "rest-config.hpp"
 #include <iostream>
 
 struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
@@ -41,7 +42,7 @@ int main(int argc, char **argv) {
   rest::host h("");
   tester t;
   h.get_context().bind("/", t);
-  rest::server s(argc, argv);
+  rest::server s(*rest::config(argc, argv));
   s.add_socket(rest::server::socket_param
                (8080, rest::server::socket_param::ip4))->add_host(h);
   s.serve();

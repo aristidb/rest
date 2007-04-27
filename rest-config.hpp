@@ -5,6 +5,7 @@
 #include "rest-utils.hpp"
 
 #include <string>
+#include <memory>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/filesystem/path.hpp>
@@ -77,6 +78,9 @@ namespace utils {
     property_tree(property_tree const &);
     void operator=(property_tree const &);
   };
-}}
+
+}  
+  std::auto_ptr<utils::property_tree> config(int argc, char **argv);
+}
 
 #endif

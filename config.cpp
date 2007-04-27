@@ -2,8 +2,9 @@
 #include "rest-config.hpp"
 
 #include <cassert>
-#include <algorithm>
 #include <iterator>
+#include <iostream>
+#include <algorithm>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 
@@ -137,8 +138,33 @@ namespace utils {
         property_tree *child = new property_tree;
         read_config(*iter, *child);
         root.add_child(child);
-      } else {
-        root.add_property(property(iter->leaf(), *iter));
       }
+      else
+        root.add_property(property(iter->leaf(), *iter));
   }
-}}
+}
+
+#ifndef DEFAULT_CONFIG_PATH
+    #define DEFAULT_CONFIG_PATH "/etc/musikdings/rest"
+#endif
+
+  std::auto_ptr<utils::property_tree> config(int argc, char **argv) {
+    char const * config_path = DEFAULT_CONFIG_PATH;
+    for(int i = 1; i < argc; ++i)
+      if(argv[i][0] == '-') {
+        if(argv[i][1] == 'h' && argv[i][2] == 0)
+          std::cerr << "usage: " << argv[0] << " -c <config> -h\n"
+            "\n-c\tsets path to config\n";
+        else if(argv[i][1] == 'c' && argv[i][2] == 0) {
+          if(i+1 < argc)
+            config_path = argv[++i];
+          else
+            std::cerr << "error: no path to config given\n";
+        }
+      }
+
+    std::auto_ptr<utils::property_tree> tree(new utils::property_tree);
+    utils::read_config(config_path, *tree);
+    return tree;
+  }
+}

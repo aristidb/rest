@@ -1,6 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest.hpp"
 #include "rest-utils.hpp"
+#include "rest-config.hpp"
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
@@ -180,7 +181,7 @@ void server::set_listen_q(int no) {
   p->listenq = no;
 }
 
-server::server(int argc, char **argv) : p(new impl) { }
+server::server(utils::property_tree const &) : p(new impl) { }
 server::~server() {}
 
 typedef io::stream_buffer<utils::socket_device> connection_streambuf;
