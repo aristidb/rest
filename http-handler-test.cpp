@@ -34,9 +34,21 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     std::cout << "DELETE: " << path << '\n';
     return 200;
   }
-  rest::response post(std::string const &path, rest::keywords &) {
+  rest::response post(std::string const &path, rest::keywords &kw) {
     std::cout << "POST: " << path << '\n';
-    return 200;
+    rest::response resp("text/plain");
+    std::string user = kw["user"];
+    std::cout << "user: " << user << std::endl;
+    std::string bar = kw["bar"];
+    std::cout << "bar: " << bar << std::endl;
+    std::string file = kw["file"];
+    std::cout << "file: " << file << std::endl;
+    resp.set_data(
+      "user: " + user
+      + "\nbar: " + bar
+      + "\nfile: " + file
+    );
+    return resp;
   }
 };
 

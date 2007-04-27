@@ -122,6 +122,7 @@ public:
     {
       data_t::iterator it = data.find(boost::make_tuple(next_name, 0));
       if (it == data.end()) {
+        element.reset();
         next = 0;
         return;
       }
@@ -142,6 +143,11 @@ public:
 
     next_name = param["name"];
     next_filename = param["filename"];
+  }
+
+  void read_element() {
+    if (next)
+      next->read();
   }
 
   impl() : next(0) {}
@@ -243,18 +249,7 @@ void keywords::set_entity(
 
   while (p->start_element()) {
     p->read_headers();
-    std::cout << "<<\n";
-    char ch;
-    while (p->element->get(ch))
-      if (ch == 0)
-        std::cout << "\\0";
-      else if (ch == '\r')
-        std::cout << "\\r";
-      else if (ch == '\n')
-        std::cout << "\\n\n";
-      else
-        std::cout << ch;
-    std::cout << "\n>>\n" << std::flush;
+    p->read_element();
   }
 }
 

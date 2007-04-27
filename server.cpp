@@ -308,6 +308,7 @@ void server::serve() {
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
 
     sockaddr_in servaddr;
+    memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = type;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
     servaddr.sin_port = htons(i->port());
