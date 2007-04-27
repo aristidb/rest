@@ -27,6 +27,7 @@
 #include <limits>
 #include <fstream>
 
+#include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
 #include <sys/un.h>
@@ -262,6 +263,13 @@ namespace {
   };
 }
 
+namespace {
+  void close_on_exec(int fd) {
+    if(::fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
+      throw utils::errno_error("fcntl");
+  }
+}
+
 void server::serve() {
   typedef void(*sighnd_t)(int);
 
@@ -274,6 +282,7 @@ void server::serve() {
   int epoll = ::epoll_create(p->socket_params.size() + 1);
   if(epoll == -1)
     throw utils::errno_error("could not start server (epoll_create)");
+  close_on_exec(epoll);
 
   epoll_event epolle;
   epolle.events = EPOLLIN|EPOLLERR;

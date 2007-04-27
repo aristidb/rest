@@ -8,6 +8,7 @@
 #include <memory>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/preprocessor.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index_container.hpp>
@@ -79,6 +80,41 @@ namespace utils {
     void operator=(property_tree const &);
   };
 
+template<typename T>
+  T get(property_tree const &tree, T const &default_value,
+        std::string const &node0)
+  {
+    property_tree::property_iterator i = tree.find_property(node0);
+    if(i == tree.property_end())
+      return default_value;
+    else {
+      std::stringstream str(i->data());
+      T ret;
+      str >> ret;
+      return ret;
+    }
+  }
+
+#define ARG_FUN(z, i, _) BOOST_PP_COMMA_IF(i) std::string const &node ## i
+#define ARG_NAME(z, i, _) , node ## i
+
+#define DEF_GET_FUN(z, i, _)                                            \
+    template<typename T>                                                \
+    T get(property_tree const &tree, T const &default_value,            \
+          BOOST_PP_REPEAT(i, ARG_FUN, __)) {                            \
+      property_tree::children_iterator j = tree.find_children(node0);   \
+      if(j == tree.children_end())                                      \
+        return default_value;                                           \
+      else                                                              \
+        return get<T>(**j, default_value                                \
+                      BOOST_PP_REPEAT_FROM_TO(1, i, ARG_NAME, ___));    \
+    }
+
+  BOOST_PP_REPEAT_FROM_TO(2, 10, DEF_GET_FUN, _)
+
+#undef DEF_GET_FUN
+#undef ARG_NAME
+#undef ARG_FUN
 }  
   std::auto_ptr<utils::property_tree> config(int argc, char **argv);
 }
