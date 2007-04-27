@@ -95,11 +95,18 @@ public:
 
     parse_content_disposition(headers["content-disposition"]);
 
+    header_fields::iterator it = headers.find("content-type");
+    if (it != headers.end())
+      next_filetype = it->second;
+    else
+      next_filetype = "application/octet-stream";
+
     for (header_fields::iterator it = headers.begin(); it != headers.end();++it)
       std::cout << "_ " << it->first << ": " << it->second << std::endl;
 
     std::cout << "__ name: " << next_name << std::endl;
     std::cout << "__ filename: " << next_filename << std::endl;
+    std::cout << "__ filetype: " << next_filetype << std::endl;
   }
 
   void parse_content_disposition(std::string const &disp) {
