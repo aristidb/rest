@@ -137,19 +137,59 @@ host const *server::socket_param::get_host(std::string const &name) const {
 class server::impl {
 public:
   std::vector<socket_param> socket_params;
-  int config_socket;
-
-  //hosts_cont_t hosts;
 
   static const int DEFAULT_LISTENQ = 5;
   int listenq;
 
-  impl() : config_socket(-1), listenq(DEFAULT_LISTENQ) { }
+  utils::property_tree const &config;
+
+  impl(utils::property_tree const &config)
+    : listenq(DEFAULT_LISTENQ), config(config)
+  { }
 
   static void sigchld_handler(int) {
     while (::waitpid(-1, 0, WNOHANG) > 0)
       ;
   }
+
+#ifdef APPLE
+  static void restart_handler(int) {
+    std::cout << "No Restart for Apple\n";    
+  }
+#else
+  static std::vector<char*> getargs(std::string const &path, std::string &data) {
+    std::ifstream in(path.c_str());
+    data.assign(std::istreambuf_iterator<char>(in.rdbuf()),
+                std::istreambuf_iterator<char>());
+
+    std::vector<char*> ret;
+    ret.push_back(&data[0]);
+    std::size_t const size = data.size();
+
+    for(std::size_t i = 0; i < size; ++i)
+      if(data[i] == '\0' && i+1 < size)
+        ret.push_back(&data[i+1]);
+    ret.push_back(0);
+
+    return ret;
+  }
+
+  static void restart_handler(int) {
+    REST_LOG(utils::IMPORTANT, "server restart")
+    std::string proc = "/proc/";
+    proc += boost::lexical_cast<std::string>(::getpid());
+
+    std::string cmd = proc + "/cmdline";
+    std::string cmdbuffer;
+    std::string env = proc + "/environ";
+    std::string envbuffer;
+
+    proc += "/exe";
+    if(::execve(proc.c_str(), &getargs(cmd, cmdbuffer)[0],
+                &getargs(env, envbuffer)[0]) == -1)
+      REST_LOG_ERRNO(utils::CRITICAL, "restart failed (execve)");
+  }
+#endif
 };
 
 server::sockets_iterator server::add_socket(socket_param const &s) {
@@ -181,7 +221,7 @@ void server::set_listen_q(int no) {
   p->listenq = no;
 }
 
-server::server(utils::property_tree const &) : p(new impl) { }
+server::server(utils::property_tree const &conf) : p(new impl(conf)) { }
 server::~server() {}
 
 typedef io::stream_buffer<utils::socket_device> connection_streambuf;
@@ -226,8 +266,13 @@ namespace {
 }
 
 void server::serve() {
-  void (*oldhandler)(int) = ::signal(SIGCHLD, &impl::sigchld_handler);
+  typedef void(*sighnd_t)(int);
+
+  sighnd_t oldchld = ::signal(SIGCHLD, &impl::sigchld_handler);
   ::siginterrupt(SIGCHLD, 0);
+
+  sighnd_t oldhup = ::signal(SIGHUP, &impl::restart_handler);
+  ::siginterrupt(SIGHUP, 0);
 
   int epoll = ::epoll_create(p->socket_params.size() + 1);
   if(epoll == -1)
@@ -339,7 +384,8 @@ void server::serve() {
     }
   }
 
-  ::signal(SIGCHLD, oldhandler);
+  ::signal(SIGHUP, oldhup);
+  ::signal(SIGCHLD, oldchld);
 }
 
 namespace {
