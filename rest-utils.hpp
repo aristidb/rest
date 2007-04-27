@@ -458,6 +458,8 @@ public:
     return operator()(x.get());
   }
 };
+
+struct end { };
 }}
 
 #endif

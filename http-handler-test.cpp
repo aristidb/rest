@@ -42,11 +42,14 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 
 int main(int argc, char **argv) {
   std::cout << "STARTING, pid: " << getpid() << std::endl;
-  rest::host h("");
-  tester t;
-  h.get_context().bind("/", t);
-  rest::server s(*rest::config(argc, argv));
-  s.add_socket(rest::server::socket_param
-               (8080, rest::server::socket_param::ip4))->add_host(h);
-  s.serve();
+  try {
+    rest::host h("");
+    tester t;
+    h.get_context().bind("/", t);
+    rest::server s(*rest::config(argc, argv));
+    s.add_socket(rest::server::socket_param
+                 (8080, rest::server::socket_param::ip4))->add_host(h);
+    s.serve();
+  } catch(rest::utils::end &e) {
+  }
 }

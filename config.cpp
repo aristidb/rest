@@ -152,9 +152,11 @@ namespace utils {
     char const * config_path = DEFAULT_CONFIG_PATH;
     for(int i = 1; i < argc; ++i)
       if(argv[i][0] == '-') {
-        if(argv[i][1] == 'h' && argv[i][2] == 0)
+        if(argv[i][1] == 'h' && argv[i][2] == 0) {
           std::cerr << "usage: " << argv[0] << " -c <config> -h\n"
             "\n-c\tsets path to config\n";
+          throw utils::end();
+        }
         else if(argv[i][1] == 'c' && argv[i][2] == 0) {
           if(i+1 < argc)
             config_path = argv[++i];
