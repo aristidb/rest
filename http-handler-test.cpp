@@ -43,15 +43,15 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 
     std::ostringstream out;
 
-    std::string user = kw["user"];
-    out << "user: " << user << '\n';
-    std::cout << "user: " << user << std::endl;
-
     for (int i = 0; kw.exists("bar", i); ++i) {
       std::string bar = kw.access("bar", i);
       out << "bar: " << bar << std::endl;
       std::cout << "bar: " << bar << std::endl;
     }
+
+    std::string user = kw["user"];
+    out << "user: " << user << '\n';
+    std::cout << "user: " << user << std::endl;
 
     std::string file = kw["datei"];
     out << "file: " << file << std::endl;
