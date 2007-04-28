@@ -51,6 +51,11 @@ public:
       }
     }
 
+    void write() const {
+      if (!stream)
+        stream.reset(new std::istringstream(data));
+    }
+
     std::string keyword;
     int index;
     keyword_type type;
@@ -171,6 +176,15 @@ public:
       it->read();
   }
 
+  void read_until(std::string const &field) {
+    while (start_element()) {
+      read_headers();
+      if (next_name == field)
+        break;
+      prepare_element(true);
+    }
+  }
+
   impl() {}
 };
 
@@ -238,8 +252,7 @@ std::string keywords::get_name(std::string const &keyword, int index) const {
 
 std::istream &keywords::read(std::string const &keyword, int index) {
   impl::data_t::iterator it = p->find(keyword, index);
-  if (!it->stream)
-    it->stream.reset(new std::istringstream(it->data));
+  it->write();
   return *it->stream;
 }
 
