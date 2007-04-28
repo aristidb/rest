@@ -33,6 +33,7 @@
 #include <sys/un.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -57,6 +58,7 @@ namespace algo = boost::algorithm;
 /*
  * Big TODO:
  *
+ * - get IPv6 ready
  * - see below (for more)
  */
 
@@ -71,19 +73,21 @@ typedef
 
 class server::socket_param::impl {
 public:
-  impl(short port, socket_type_t type)
-    : port(port), socket_type(type), fd(-1)
+  impl(short port, socket_type_t type, std::string const &bind)
+    : port(port), socket_type(type), bind(bind), fd(-1)
   {}
 
   short port;
   socket_type_t socket_type;
+  std::string bind;
   hosts_cont_t hosts;
   
   int fd;
 };
 
-server::socket_param::socket_param(short port, socket_type_t type)
-  : p(new impl(port, type))
+server::socket_param::socket_param(short port, socket_type_t type,
+                                   std::string const &bind)
+  : p(new impl(port, type, bind))
 { }
 
 server::socket_param::~socket_param() {}
@@ -97,6 +101,10 @@ void server::socket_param::fd(int f) {
 
 short server::socket_param::port() const {
   return p->port;
+}
+
+std::string const &server::socket_param::bind() const {
+  return p->bind;
 }
 
 server::socket_param::socket_type_t
@@ -153,7 +161,6 @@ public:
     children_iterator end = config.children_end();
     children_iterator i = utils::get(config, end, "connections");
     if(i == config.children_end()) {
-      std::cerr << "No Connections in Config File\n";
       REST_LOG(utils::INFO, "no connections specified in config-file");
     }
     else
@@ -175,10 +182,13 @@ public:
           else
             throw std::runtime_error("unkown socket type specified");
           
-          std::cout << "SOCKET " << port << ' ' << type << '\n';
-          // TODO add bind
+          std::string bind = utils::get(**j, std::string(), "bind");
+          algo::trim(bind);
+
+          std::cout << "SOCKET " << port << ' ' << type << ' ' <<
+            bind << '\n';
           
-          socket_params.push_back(socket_param(port, type));
+          socket_params.push_back(socket_param(port, type, bind));
         }
   }
 
@@ -345,7 +355,14 @@ void server::serve() {
     sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = type;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // TODO config Frage? jo. für https nur lokal...
+
+    if(i->bind().empty())
+      servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    else {
+      servaddr.sin_addr.s_addr = inet_addr(i->bind().c_str());
+      if(servaddr.sin_addr.s_addr == INADDR_NONE)
+        throw std::runtime_error(std::string("unkown address: ") + i->bind());
+    }
     servaddr.sin_port = htons(i->port());
     if(::bind(listenfd, (sockaddr *) &servaddr, sizeof(servaddr)) == -1)
       throw utils::errno_error("could not start server (bind)");
