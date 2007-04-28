@@ -217,8 +217,11 @@ keywords::~keywords() {
 }
 
 bool keywords::exists(std::string const &keyword, int index) const {
-  p->read_until(keyword);
   impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
+  if (it == p->data.end()) {
+    p->read_until(keyword);
+    it = p->data.find(boost::make_tuple(keyword, index));
+  }
   return it != p->data.end();
 }
 
