@@ -38,18 +38,26 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
   }
   rest::response post(std::string const &path, rest::keywords &kw) {
     std::cout << "POST: " << path << '\n';
+
     rest::response resp("text/plain");
+
+    std::ostringstream out;
+
     std::string user = kw["user"];
+    out << "user: " << user << '\n';
     std::cout << "user: " << user << std::endl;
-    std::string bar = kw["bar"];
-    std::cout << "bar: " << bar << std::endl;
+
+    for (int i = 0; kw.exists("bar", i); ++i) {
+      std::string bar = kw.access("bar", i);
+      out << "bar: " << bar << std::endl;
+      std::cout << "bar: " << bar << std::endl;
+    }
+
     std::string file = kw["datei"];
+    out << "file: " << file << std::endl;
     std::cout << "file: " << file << std::endl;
-    resp.set_data(
-      "user: " + user
-      + "\nbar: " + bar
-      + "\nfile: " + file
-    );
+
+    resp.set_data(out.str());
     return resp;
   }
 };

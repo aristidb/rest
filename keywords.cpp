@@ -23,31 +23,38 @@ namespace io = boost::iostreams;
 class keywords::impl {
 public:
   struct entry {
+    enum state_t { s_normal, s_unread, s_prepared };
+
     entry(std::string const &keyword, int index, keyword_type type = NORMAL)
-    : keyword(keyword), index(index), type(type) {}
+    : keyword(keyword), index(index), type(type), state(s_normal) {}
 
     entry(entry const &o)
-    : keyword(o.keyword), index(o.index), type(o.type) {}
+    : keyword(o.keyword), index(o.index), type(o.type), state(s_normal) {}
 
     void read() const {
       std::cout << "READ KEYWORD " << keyword << ',' << index << std::endl;
       if (stream) {
         if (output) {
           *output << stream->rdbuf();
+          output.reset();
+          stream.reset();
         } else {
           data.assign(
             std::istreambuf_iterator<char>(stream->rdbuf()),
             std::istreambuf_iterator<char>());
+          stream.reset();
         }
         stream.reset();
       } else if (output) {
         *output << data;
+        output.reset();
       }
     }
 
     std::string keyword;
     int index;
     keyword_type type;
+    mutable state_t state;
     mutable std::string name;
     mutable std::string mime;
     mutable std::string data;
@@ -134,15 +141,32 @@ public:
   }
 
   void prepare_element(bool read) {
-    data_t::iterator it = data.find(boost::make_tuple(next_name, 0));
+    data_t::iterator it;
+    int i = 0;
+    for (;;) {
+      it = data.find(boost::make_tuple(next_name, i++));
+      if (it == data.end())
+        break;
+      if (it->type != FORM_PARAMETER)
+        break;
+      if (it->state == entry::s_unread)
+        break;
+    }
+
+    if (it == data.end() && i > 1)
+      it = data.insert(entry(next_name, i - 1, FORM_PARAMETER)).first;
+
     if (it == data.end() || it->type != FORM_PARAMETER) {
       element->ignore(std::numeric_limits<int>::max());
       element.reset();
       return;
     }
+
     it->name = next_filename;
     it->mime = next_filetype;
     it->stream.reset(element.release());
+    it->state = entry::s_prepared;
+
     if (read)
       it->read();
   }
@@ -243,6 +267,10 @@ void keywords::set_entity(
     filt.push(boost::ref(*entity), 0, 0);
     filt.ignore(std::numeric_limits<int>::max());
   }
+
+  for (impl::data_t::iterator it = p->data.begin(); it != p->data.end(); ++it)
+    if (it->type == FORM_PARAMETER)
+      it->state = impl::entry::s_unread;
 
   while (p->start_element()) {
     p->read_headers();
