@@ -185,19 +185,26 @@ public:
     }
   }
 
-  void read_until(entry const &next) {
-    if (next.state != entry::s_unread || !entity)
-      return;
+  bool read_until(std::string const &next) {
+    if (!entity)
+      return false;
     while (start_element()) {
       read_headers();
-      if (next_name == next.keyword) {
+      if (next_name == next) {
         prepare_element(false);
-        return;
+        return true;
       }
       prepare_element(true);
     }
-    next.state = entry::s_normal;
     entity.reset();
+    return false;
+  }
+
+  void read_until(entry const &next) {
+    if (next.state != entry::s_unread)
+      return;
+    if (!read_until(next.keyword))
+      next.state = entry::s_normal;
   }
 
   impl() : last(0) {}
@@ -210,6 +217,7 @@ keywords::~keywords() {
 }
 
 bool keywords::exists(std::string const &keyword, int index) const {
+  p->read_until(keyword);
   impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
   return it != p->data.end();
 }
