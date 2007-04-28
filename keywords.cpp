@@ -85,7 +85,6 @@ public:
   std::string next_name;
   std::string next_filename;
   std::string next_filetype;
-  entry const *next;
 
   bool start_element() {
     if (entity->peek() == EOF)
@@ -120,20 +119,6 @@ public:
     std::cout << "__ name: " << next_name << std::endl;
     std::cout << "__ filename: " << next_filename << std::endl;
     std::cout << "__ filetype: " << next_filetype << std::endl;
-
-    {
-      data_t::iterator it = data.find(boost::make_tuple(next_name, 0));
-      if (it == data.end() || it->type != FORM_PARAMETER) {
-        element->ignore(std::numeric_limits<int>::max());
-        element.reset();
-        next = 0;
-        return;
-      }
-      it->name = next_filename;
-      it->mime = next_filetype;
-      it->stream.reset(element.release());
-      next = &*it;
-    }
   }
 
   void parse_content_disposition(std::string const &disp) {
@@ -148,12 +133,21 @@ public:
     next_filename = param["filename"];
   }
 
-  void read_element() {
-    if (next)
-      next->read();
+  void prepare_element(bool read) {
+    data_t::iterator it = data.find(boost::make_tuple(next_name, 0));
+    if (it == data.end() || it->type != FORM_PARAMETER) {
+      element->ignore(std::numeric_limits<int>::max());
+      element.reset();
+      return;
+    }
+    it->name = next_filename;
+    it->mime = next_filetype;
+    it->stream.reset(element.release());
+    if (read)
+      it->read();
   }
 
-  impl() : next(0) {}
+  impl() {}
 };
 
 keywords::keywords() : p(new impl) {
@@ -252,7 +246,7 @@ void keywords::set_entity(
 
   while (p->start_element()) {
     p->read_headers();
-    p->read_element();
+    p->prepare_element(true);
   }
 }
 
@@ -266,5 +260,9 @@ void keywords::set_output(
 void keywords::flush() {
   if (!p->entity)
     return;
+  while (p->start_element()) {
+    p->read_headers();
+    p->prepare_element(true);
+  }
   p->entity.reset();
 }

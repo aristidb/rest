@@ -21,7 +21,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                   "<input type=\"text\" name=\"user\">"
                   "<input type=\"text\" name=\"bar\">"
                   "<input type=\"text\" name=\"bar\">"
-                  "<input name=\"Datei\" type=\"file\" size=\"50\""
+                  "<input name=\"datei\" type=\"file\" size=\"50\""
                   "maxlength=\"100000\" accept=\"text/*\">"
                   "<input type=\"submit\" value=\"Submit\">"
                   "</form></body></html>\n");
@@ -43,7 +43,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     std::cout << "user: " << user << std::endl;
     std::string bar = kw["bar"];
     std::cout << "bar: " << bar << std::endl;
-    std::string file = kw["file"];
+    std::string file = kw["datei"];
     std::cout << "file: " << file << std::endl;
     resp.set_data(
       "user: " + user
@@ -63,8 +63,8 @@ int main(int argc, char **argv) {
     tester t;
     h.get_context().bind("/", t);
     h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
-    h.get_context().declare_keyword("bar", rest::COOKIE);
-    h.get_context().declare_keyword("file", rest::FORM_PARAMETER);
+    h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
+    h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
     rest::server s(*rest::config(argc, argv));
     for(rest::server::sockets_iterator i = s.sockets_begin();
         i != s.sockets_end();
