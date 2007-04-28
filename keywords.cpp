@@ -37,12 +37,10 @@ public:
         if (output) {
           *output << stream->rdbuf();
           output.reset();
-          stream.reset();
         } else {
           data.assign(
             std::istreambuf_iterator<char>(stream->rdbuf()),
             std::istreambuf_iterator<char>());
-          stream.reset();
         }
         stream.reset();
       } else if (output) {
@@ -98,7 +96,14 @@ public:
   std::string next_filename;
   std::string next_filetype;
 
+  entry const *last;
+
   bool start_element() {
+    if (last) {
+      last->read();
+      last = 0;
+    }
+
     if (entity->peek() == EOF)
       return false;
 
@@ -172,20 +177,30 @@ public:
     it->stream.reset(element.release());
     it->state = entry::s_prepared;
 
-    if (read)
+    if (read) {
+      last = 0;
       it->read();
-  }
-
-  void read_until(std::string const &field) {
-    while (start_element()) {
-      read_headers();
-      if (next_name == field)
-        break;
-      prepare_element(true);
+    } else {
+      last = &*it;
     }
   }
 
-  impl() {}
+  void read_until(entry const &next) {
+    if (next.state != entry::s_unread || !entity)
+      return;
+    while (start_element()) {
+      read_headers();
+      if (next_name == next.keyword) {
+        prepare_element(false);
+        return;
+      }
+      prepare_element(true);
+    }
+    next.state = entry::s_normal;
+    entity.reset();
+  }
+
+  impl() : last(0) {}
 };
 
 keywords::keywords() : p(new impl) {
@@ -201,6 +216,7 @@ bool keywords::exists(std::string const &keyword, int index) const {
 
 std::string &keywords::access(std::string const &keyword, int index) {
   impl::data_t::iterator it = p->find(keyword, index);
+  p->read_until(*it);
   it->read();
   return it->data;
 }
@@ -227,6 +243,7 @@ void keywords::set(
     std::string const &keyword, int index, std::string const &data)
 {
   impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
+  it->state = impl::entry::s_normal;
   it->data = data;
   it->stream.reset();
 }
@@ -235,6 +252,7 @@ void keywords::set_stream(
     std::string const &keyword, int index, std::istream *stream)
 {
   impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
+  it->state = impl::entry::s_normal;
   it->stream.reset(stream);
 }
 
@@ -252,6 +270,7 @@ std::string keywords::get_name(std::string const &keyword, int index) const {
 
 std::istream &keywords::read(std::string const &keyword, int index) {
   impl::data_t::iterator it = p->find(keyword, index);
+  p->read_until(*it);
   it->write();
   return *it->stream;
 }
@@ -284,11 +303,6 @@ void keywords::set_entity(
   for (impl::data_t::iterator it = p->data.begin(); it != p->data.end(); ++it)
     if (it->type == FORM_PARAMETER)
       it->state = impl::entry::s_unread;
-
-  while (p->start_element()) {
-    p->read_headers();
-    p->prepare_element(true);
-  }
 }
 
 void keywords::set_output(
