@@ -43,6 +43,9 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 
     std::ostringstream out;
 
+    out << "file:\n";
+    out << kw.read("datei").rdbuf() << "\n\n";
+
     for (int i = 0; kw.exists("bar", i); ++i) {
       std::string bar = kw.access("bar", i);
       out << "bar: " << bar << std::endl;
@@ -54,7 +57,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     std::cout << "user: " << user << std::endl;
 
     std::string file = kw["datei"];
-    out << "file: " << file << std::endl;
+    out << "file (oh we read() it): " << file << std::endl;
     std::cout << "file: " << file << std::endl;
 
     resp.set_data(out.str());
