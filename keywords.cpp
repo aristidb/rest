@@ -32,8 +32,9 @@ public:
     : keyword(o.keyword), index(o.index), type(o.type), state(s_normal) {}
 
     void read() const {
-      std::cout << "READ KEYWORD " << keyword << ',' << index << std::endl;
+      std::cout << "read(e) " << keyword << ',' << index << std::endl;
       if (stream) {
+        std::cout << "\tstream" << std::endl;
         if (output) {
           *output << stream->rdbuf();
           output.reset();
@@ -50,6 +51,7 @@ public:
     }
 
     void write() const {
+      std::cout << "write(e) " << keyword << ',' << index << std::endl;
       if (!stream)
         stream.reset(new std::istringstream(data));
     }
@@ -104,6 +106,8 @@ public:
       last = 0;
     }
 
+    std::cout << "start_element" << std::endl;
+
     if (entity->peek() == EOF)
       return false;
 
@@ -116,6 +120,7 @@ public:
   }
 
   void read_headers() {
+    std::cout << "read_headers" << std::endl;
     using utils::http::header_fields;
 
     header_fields headers = utils::http::read_headers(*element);
@@ -130,12 +135,9 @@ public:
         next_filetype = "application/octet-stream";
     }
 
-    for (header_fields::iterator it = headers.begin(); it != headers.end();++it)
-      std::cout << "_ " << it->first << ": " << it->second << std::endl;
-
-    std::cout << "__ name: " << next_name << std::endl;
-    std::cout << "__ filename: " << next_filename << std::endl;
-    std::cout << "__ filetype: " << next_filetype << std::endl;
+    std::cout << "\tname: " << next_name << std::endl;
+    std::cout << "\tfilename: " << next_filename << std::endl;
+    std::cout << "\tfiletype: " << next_filetype << std::endl;
   }
 
   void parse_content_disposition(std::string const &disp) {
@@ -151,6 +153,7 @@ public:
   }
 
   void prepare_element(bool read) {
+    std::cout << "prepare_element " << read << std::endl;
     data_t::iterator it;
     int i = 0;
     for (;;) {
@@ -186,6 +189,7 @@ public:
   }
 
   bool read_until(std::string const &next) {
+    std::cout << "read until: " << next << std::endl;
     if (!entity)
       return false;
     while (start_element()) {

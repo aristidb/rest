@@ -49,8 +49,10 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
       std::cout << "bar: " << bar << std::endl;
     }
 
-    out << "file:\n";
-    out << kw.read("datei").rdbuf() << "\n\n";
+    std::string fln;
+    std::getline(kw.read("datei"), fln);
+    out << "file: " << fln << '\n';
+    std::cout << "file: " << fln << std::endl;
 
     std::string user = kw["user"];
     out << "user: " << user << '\n';
@@ -58,7 +60,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 
     std::string file = kw["datei"];
     out << "file (oh we read() it): " << file << std::endl;
-    std::cout << "file: " << file << std::endl;
+    std::cout << "file (oh we read() it): " << file << std::endl;
 
     resp.set_data(out.str());
     return resp;
