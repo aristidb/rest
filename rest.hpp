@@ -364,6 +364,8 @@ public:
     enum socket_type_t { ip4, ip6 };
 
     socket_param(short port, socket_type_t type, std::string const &bind = "");
+    socket_param(std::string const &service, socket_type_t type,
+                 std::string const &bind = "");
     //socket_param(socket_param const &);
     ~socket_param();
 
@@ -376,7 +378,7 @@ public:
       p.swap(o.p);
     }
 
-    short port() const;
+    std::string const &service() const;
     socket_type_t socket_type() const;
     std::string const &bind() const;
 

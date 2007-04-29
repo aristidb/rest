@@ -27,6 +27,7 @@
 #include <limits>
 #include <fstream>
 
+#include <netdb.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
@@ -74,10 +75,14 @@ typedef
 class server::socket_param::impl {
 public:
   impl(short port, socket_type_t type, std::string const &bind)
-    : port(port), socket_type(type), bind(bind), fd(-1)
-  {}
+    : service(boost::lexical_cast<std::string>(port)), socket_type(type),
+      bind(bind), fd(-1)
+  { }
+  impl(std::string const &service, socket_type_t type, std::string const &bind)
+    : service(service), socket_type(type), bind(bind), fd(-1)
+  { }
 
-  short port;
+  std::string service;
   socket_type_t socket_type;
   std::string bind;
   hosts_cont_t hosts;
@@ -90,17 +95,23 @@ server::socket_param::socket_param(short port, socket_type_t type,
   : p(new impl(port, type, bind))
 { }
 
-server::socket_param::~socket_param() {}
+server::socket_param::socket_param(std::string const &service,
+                                   socket_type_t type,
+                                   std::string const &bind)
+  : p(new impl(service, type, bind))
+{ }
 
-int server::socket_param::fd() const{
+server::socket_param::~socket_param() { }
+
+int server::socket_param::fd() const {
   return p->fd;
 }
 void server::socket_param::fd(int f) {
   p->fd = f;
 } 
 
-short server::socket_param::port() const {
-  return p->port;
+std::string const &server::socket_param::service() const {
+  return p->service;
 }
 
 std::string const &server::socket_param::bind() const {
@@ -168,9 +179,13 @@ public:
           j != (*i)->children_end();
           ++j)
         {
-          short port = utils::get(**j, -1, "port");
-          if(port == -1)
-            throw std::runtime_error("no port specified!");
+          std::string service = utils::get(**j, std::string(), "port");
+          if(service.empty()) {
+            service = utils::get(**j, std::string(), "service");
+            if(service.empty())
+              throw std::runtime_error("no port/service specified!");
+          }
+          algo::trim(service);
           std::string type_ = utils::get(**j, std::string("ipv4"), "type");
           socket_param::socket_type_t type;
           if(algo::istarts_with(type_, "ipv4") ||
@@ -185,10 +200,10 @@ public:
           std::string bind = utils::get(**j, std::string(), "bind");
           algo::trim(bind);
 
-          std::cout << "SOCKET " << port << ' ' << type << ' ' <<
+          std::cout << "SOCKET " << service << ' ' << type << ' ' <<
             bind << '\n';
           
-          socket_params.push_back(socket_param(port, type, bind));
+          socket_params.push_back(socket_param(service, type, bind));
         }
   }
 
@@ -344,28 +359,41 @@ void server::serve() {
     else
       throw utils::errno_error("could not start server (unkown socket type)");
 
-    int listenfd = ::socket(type, SOCK_STREAM, 0);
-    if(listenfd == -1)
-      throw utils::errno_error("could not start server (socket)");
-    close_on_exec(listenfd);
+    addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = type;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
 
-    int x = 1;
-    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
+    char const *hostname = i->bind().empty() ? 0x0 : i->bind().c_str();
+    addrinfo *res;
+    int n = ::getaddrinfo(hostname, i->service().c_str(), &hints, &res);
+    if(n != 0)
+      throw std::runtime_error(std::string("getaddrinfo failed: ") +
+                               gai_strerror(n));
+    addrinfo *const ressave = res;
 
-    sockaddr_in servaddr;
-    memset(&servaddr, 0, sizeof(servaddr));
-    servaddr.sin_family = type;
+    int listenfd;
+    do {
+      listenfd = ::socket(type, SOCK_STREAM, 0);
+      if(listenfd == -1)
+        throw utils::errno_error("could not start server (socket)");
+      close_on_exec(listenfd);
 
-    if(i->bind().empty())
-      servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    else {
-      servaddr.sin_addr.s_addr = inet_addr(i->bind().c_str());
-      if(servaddr.sin_addr.s_addr == INADDR_NONE)
-        throw std::runtime_error(std::string("unkown address: ") + i->bind());
-    }
-    servaddr.sin_port = htons(i->port());
-    if(::bind(listenfd, (sockaddr *) &servaddr, sizeof(servaddr)) == -1)
-      throw utils::errno_error("could not start server (bind)");
+      int const one = 1;
+      setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+
+      if(::bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
+        break;
+
+      ::close(listenfd);
+    } while( (res = res->ai_next) != 0x0 );
+
+    if(res == 0x0)
+      throw utils::errno_error("could not start server (listen)");
+    ::freeaddrinfo(ressave);
+
     if(::listen(listenfd, p->listenq) == -1)
       throw utils::errno_error("could not start server (listen)");
 
