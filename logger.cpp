@@ -21,6 +21,7 @@ public:
 };
 
 logger::logger() : p(new impl) {
+  unlink(REST_LOGPIPE);
   p->fd = ::mkfifo(REST_LOGPIPE, 0644);
   if(p->fd == -1)
     throw errno_error("mkfifo");

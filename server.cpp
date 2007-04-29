@@ -58,7 +58,6 @@ namespace algo = boost::algorithm;
 /*
  * Big TODO:
  *
- * - get IPv6 ready
  * - see below (for more)
  */
 
@@ -348,28 +347,37 @@ namespace {
     }
   }
 
-  int create_listenfd(server::sockets_iterator i, int backlog) {
+  int socket(int type) {
+    int sock = ::socket(type, SOCK_STREAM, 0);
+    if(sock == -1)
+      throw utils::errno_error("could not start server (socket)");
+    close_on_exec(sock);
+    return sock;
+  }
+
+  void getaddrinfo(server::sockets_iterator i, addrinfo **res) {
     addrinfo hints;
-    memset(&hints, 0, sizeof(hints));
+    std::memset(&hints, 0, sizeof(hints));
     hints.ai_family = i->socket_type();
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
     char const *hostname = i->bind().empty() ? 0x0 : i->bind().c_str();
-    addrinfo *res;
-    int n = ::getaddrinfo(hostname, i->service().c_str(), &hints, &res);
+    int n = ::getaddrinfo(hostname, i->service().c_str(), &hints, res);
     if(n != 0)
       throw std::runtime_error(std::string("getaddrinfo failed: ") +
                                gai_strerror(n));
+  }
+
+  int create_listenfd(server::sockets_iterator i, int backlog) {
+    addrinfo *res;
+    getaddrinfo(i, &res);
     addrinfo *const ressave = res;
 
     int listenfd;
     do {
-      listenfd = ::socket(i->socket_type(), SOCK_STREAM, 0);
-      if(listenfd == -1)
-        throw utils::errno_error("could not start server (socket)");
-      close_on_exec(listenfd);
+      listenfd = socket(i->socket_type());
 
       int const one = 1;
       setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
@@ -379,10 +387,10 @@ namespace {
 
       ::close(listenfd);
     } while( (res = res->ai_next) != 0x0 );
+    ::freeaddrinfo(ressave);
 
     if(res == 0x0)
       throw utils::errno_error("could not start server (listen)");
-    ::freeaddrinfo(ressave);
 
     if(::listen(listenfd, backlog) == -1)
       throw utils::errno_error("could not start server (listen)");
