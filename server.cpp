@@ -35,7 +35,6 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
 
 #ifdef APPLE
@@ -328,40 +327,31 @@ namespace {
     if(::fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
       throw utils::errno_error("fcntl");
   }
-}
 
-void server::serve() {
-  typedef void(*sighnd_t)(int);
+  namespace epoll {
+    int create(int size) {
+      int epollfd = ::epoll_create(size);
+      if(epollfd == -1)
+        throw utils::errno_error("could not start server (epoll_create)");
+      close_on_exec(epollfd);
+      return epollfd;
+    }
 
-  sighnd_t oldchld = ::signal(SIGCHLD, &impl::sigchld_handler);
-  ::siginterrupt(SIGCHLD, 0);
+    int wait(int epollfd, epoll_event *events, int maxevents) {
+      int nfds = ::epoll_wait(epollfd, events, maxevents, -1);
+      if(nfds == -1) {
+        if(errno == EINTR)
+          return 0;
+        throw utils::errno_error("could not run server (epoll_wait)");
+      }
+      return nfds;
+    }
+  }
 
-  sighnd_t oldhup = ::signal(SIGHUP, &impl::restart_handler);
-  ::siginterrupt(SIGHUP, 0);
-
-  int epoll = ::epoll_create(p->socket_params.size() + 1);
-  if(epoll == -1)
-    throw utils::errno_error("could not start server (epoll_create)");
-  close_on_exec(epoll);
-
-  epoll_event epolle;
-  epolle.events = EPOLLIN|EPOLLERR;
-
-  for(sockets_iterator i = sockets_begin();
-      i != sockets_end();
-      ++i)
-  {
-    int type;
-    if(i->socket_type() == socket_param::ip4)
-      type = AF_INET;
-    else if(i->socket_type() == socket_param::ip6)
-      type = AF_INET6;
-    else
-      throw utils::errno_error("could not start server (unkown socket type)");
-
+  int create_listenfd(server::sockets_iterator i, int backlog) {
     addrinfo hints;
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = type;
+    hints.ai_family = i->socket_type();
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
@@ -376,7 +366,7 @@ void server::serve() {
 
     int listenfd;
     do {
-      listenfd = ::socket(type, SOCK_STREAM, 0);
+      listenfd = ::socket(i->socket_type(), SOCK_STREAM, 0);
       if(listenfd == -1)
         throw utils::errno_error("could not start server (socket)");
       close_on_exec(listenfd);
@@ -394,27 +384,51 @@ void server::serve() {
       throw utils::errno_error("could not start server (listen)");
     ::freeaddrinfo(ressave);
 
-    if(::listen(listenfd, p->listenq) == -1)
+    if(::listen(listenfd, backlog) == -1)
       throw utils::errno_error("could not start server (listen)");
 
     i->fd(listenfd);
 
+    return listenfd;
+  }
+}
+
+int server::initialize_sockets() {
+  int epollfd = epoll::create(p->socket_params.size() + 1);
+
+  epoll_event epolle;
+  epolle.events = EPOLLIN|EPOLLERR;
+
+  for(sockets_iterator i = sockets_begin();
+      i != sockets_end();
+      ++i)
+  {
+    int listenfd = create_listenfd(i, p->listenq);
+
     epolle.data.ptr = &*i;
-    if(::epoll_ctl(epoll, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
+    if(::epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
       throw utils::errno_error("could not start server (epoll_ctl)");
   }
+
+  return epollfd;
+}
+
+void server::serve() {
+  typedef void(*sighnd_t)(int);
+
+  sighnd_t oldchld = ::signal(SIGCHLD, &impl::sigchld_handler);
+  ::siginterrupt(SIGCHLD, 0);
+
+  sighnd_t oldhup = ::signal(SIGHUP, &impl::restart_handler);
+  ::siginterrupt(SIGHUP, 0);
+
+  int epollfd = initialize_sockets();
 
   int const EVENTS_N = 100;
 
   for(;;) {
     epoll_event events[EVENTS_N];
-    int nfds = ::epoll_wait(epoll, events, EVENTS_N, -1);
-    if(nfds == -1) {
-      if (errno == EINTR)
-        continue;
-      throw utils::errno_error("could not run server (epoll_wait)");
-    }
-
+    int nfds = epoll::wait(epollfd, events, EVENTS_N);
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
       assert(ptr);

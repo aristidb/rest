@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <iosfwd>
+#include <sys/socket.h>
 #include <boost/mpl/void.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/type_traits/is_scalar.hpp>
@@ -361,7 +362,7 @@ public:
 
   class socket_param {
   public:
-    enum socket_type_t { ip4, ip6 };
+    enum socket_type_t { ip4 = AF_INET, ip6 = AF_INET6 };
 
     socket_param(short port, socket_type_t type, std::string const &bind = "");
     socket_param(std::string const &service, socket_type_t type,
@@ -408,6 +409,8 @@ public:
 
   void set_listen_q(int no);
 private:
+  int initialize_sockets();
+
   class impl;
   boost::scoped_ptr<impl> p;
 };
