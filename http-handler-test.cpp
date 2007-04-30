@@ -14,19 +14,19 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     std::cout << "GET: " << path << '\n';
 
     rest::response resp("text/html");
-    resp.set_data("<html><head><title>supi</title></head>"
-                  "<body><h3>Allles Supi!!</h3><blink>blink</blink>"
-                  "<form name=\"input\" action=\"/\""
+    resp.set_data("<html><head><title>supi</title></head>\n"
+                  "<body>\n<h3>Allles Supi!!</h3>\n<blink>blink</blink>\n"
+                  "<form name=\"input\" action=\"/\" "
                   "method=\"post\" "
-                  //"enctype=\"multipart/form-data\""
-                  ">"
-                  "<input type=\"text\" name=\"user\">"
-                  "<input type=\"text\" name=\"bar\">"
-                  "<input type=\"text\" name=\"bar\">"
-                  "<input name=\"datei\" type=\"file\" size=\"50\""
-                  "maxlength=\"100000\" accept=\"text/*\">"
-                  "<input type=\"submit\" value=\"Submit\">"
-                  "</form></body></html>\n");
+                  "enctype=\"multipart/form-data\" "
+                  ">\n"
+                  "<input type=\"text\" name=\"user\">\n"
+                  "<input type=\"text\" name=\"bar\">\n"
+                  "<input type=\"text\" name=\"bar\">\n"
+                  "<input name=\"datei\" type=\"file\" size=\"50\" "
+                  "maxlength=\"100000\" accept=\"text/*\">\n"
+                  "<input type=\"submit\" value=\"Submit\">\n"
+                  "</form>\n</body>\n</html>\n");
 
     return resp;
   }

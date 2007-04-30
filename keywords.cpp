@@ -326,7 +326,7 @@ void keywords::set_entity(
     {
       io::filtering_istream filt;
       filt.push(utils::boundary_filter(p->boundary));
-      filt.push(boost::ref(*entity), 0, 0);
+      filt.push(boost::ref(*p->entity), 0, 0);
       filt.ignore(std::numeric_limits<int>::max());
     }
 
