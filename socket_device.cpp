@@ -54,16 +54,25 @@ std::streamsize socket_device::read(char *buf, std::streamsize length) {
 std::streamsize socket_device::write(char const *buf, std::streamsize length) {
   if (p->fd < 0)
     return -1;
+
+  std::cout << ",wrote " << length << " (" << length << ") bytes:\n+{{";
+  std::cout.write(buf, length);
+  std::cout << "}}+\n" << std::flush;
+
   std::streamsize n;
-  do {
+  for (;;) {
     n = ::write(p->fd, buf, size_t(length));
-  } while (n < 0 && errno == EINTR);
+    if (n == length)
+      break;
+    if (n >= 0) {
+      buf += n;
+      length -= n;
+    } else if (errno != EINTR)
+      break;
+  }
   if (n <= 0) {
     p->close();
     return -1;
   }
-  std::cout << ",wrote " << n << " (" << length << ") bytes:\n+{{";
-  std::cout.write(buf, n);
-  std::cout << "}}+\n" << std::flush;
   return n;
 }
