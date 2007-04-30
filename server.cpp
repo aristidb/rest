@@ -457,7 +457,7 @@ void server::serve() {
       }
       else if(pid == 0) {
         ::close(ptr->fd());
-        ::close(epoll);
+        ::close(epollfd);
 #endif
         int status = 0;
         try {
