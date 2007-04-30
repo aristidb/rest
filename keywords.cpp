@@ -156,22 +156,9 @@ public:
 
   void prepare_element(bool read) {
     std::cout << "prepare_element " << read << std::endl;
-    data_t::iterator it;
-    int i = 0;
-    for (;;) {
-      it = data.find(boost::make_tuple(next_name, i++));
-      if (it == data.end())
-        break;
-      if (it->type != FORM_PARAMETER)
-        break;
-      if (it->state == entry::s_unread)
-        break;
-    }
+    data_t::iterator it = find_next_form(next_name);
 
-    if (it == data.end() && i > 1)
-      it = data.insert(entry(next_name, i - 1, FORM_PARAMETER)).first;
-
-    if (it == data.end() || it->type != FORM_PARAMETER) {
+    if (it == data.end()) {
       element->ignore(std::numeric_limits<int>::max());
       element.reset();
       return;
@@ -211,6 +198,32 @@ public:
       return;
     if (!read_until(next.keyword))
       next.state = entry::s_normal;
+  }
+
+  void unread_form() {
+    for (data_t::iterator it = data.begin(); it != data.end(); ++it)
+      if (it->type == FORM_PARAMETER)
+        it->state = entry::s_unread;
+  }
+
+  data_t::iterator find_next_form(std::string const &name) {
+    data_t::iterator it;
+
+    int i = 0;
+    for (;;) {
+      it = data.find(boost::make_tuple(name, i++));
+      if (it == data.end())
+        break;
+      if (it->type != FORM_PARAMETER)
+        return data.end();
+      if (it->state == entry::s_unread)
+        break;
+    }
+
+    if (it == data.end() && i > 1)
+      it = data.insert(entry(name, i - 1, FORM_PARAMETER)).first;
+
+    return it;
   }
 
   impl() : last(0) {}
@@ -317,9 +330,7 @@ void keywords::set_entity(
       filt.ignore(std::numeric_limits<int>::max());
     }
 
-    for (impl::data_t::iterator it = p->data.begin(); it != p->data.end(); ++it)
-      if (it->type == FORM_PARAMETER)
-        it->state = impl::entry::s_unread;
+    p->unread_form();
   } else if (type == "application/x-www-form-urlencoded") {
     std::cout << "~~ urlencoded" << std::endl;
 
@@ -336,6 +347,8 @@ void keywords::set_entity(
 }
 
 void keywords::add_uri_encoded(std::string const &data) {
+  p->unread_form();
+
   boost::char_separator<char> sep("&");
 
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
@@ -344,11 +357,15 @@ void keywords::add_uri_encoded(std::string const &data) {
   for (tokenizer::iterator it = pairs.begin(); it != pairs.end(); ++it) {
     std::string::const_iterator split = std::find(it->begin(), it->end(), '=');
     std::string key = uri::unescape(it->begin(), split, true);
-    if (get_declared_type(key) == FORM_PARAMETER) {
+
+    impl::data_t::iterator el = p->find_next_form(key);
+
+    if (el != p->data.end()) {
       if (split != it->end())
         ++split;
-      std::string value = uri::unescape(split, it->end(), true);
-      set(key, value);
+      el->state = impl::entry::s_prepared;
+      el->stream.reset();
+      el->data = uri::unescape(split, it->end(), true);
     }
   }
 }
