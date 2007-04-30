@@ -203,21 +203,8 @@ void context::find_responder(
 
   out_context->prepare_keywords(out_keywords);
 
-  if (middle != end) {
-    boost::char_separator<char> sep("&");
-    tokenizer pairs(++middle, end, sep);
-
-    for (tokenizer::iterator it = pairs.begin(); it != pairs.end(); ++it) {
-      iterator split = std::find(it->begin(), it->end(), '=');
-      std::string key = uri::unescape(it->begin(), split, true);
-      if (out_keywords.get_declared_type(key) == FORM_PARAMETER) {
-        if (split != it->end())
-          ++split;
-        std::string value = uri::unescape(split, it->end(), true);
-        out_keywords.set(key, value);
-      }
-    }
-  }
+  if (middle != end)
+    out_keywords.add_uri_encoded(std::string(++middle, end));
 }
 
 template<class Iterator>

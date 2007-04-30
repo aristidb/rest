@@ -109,8 +109,6 @@ public:
 
   void set_name(std::string const &key, int index, std::string const &name);
 
-  void set_entity(std::istream *entity, std::string const &type);
-
   void set_output(std::string const &key, std::ostream *stream) {
     set_output(key, 0, stream);
   }
@@ -118,6 +116,10 @@ public:
   void set_output(std::string const &key, int index, std::ostream *output);
 
   void flush();
+
+  void set_entity(std::istream *entity, std::string const &type);
+
+  void add_uri_encoded(std::string const &data);
 
 private:
   class impl;

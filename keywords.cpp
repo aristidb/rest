@@ -6,6 +6,7 @@
 #include <boost/multi_index/key_extractors.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/tokenizer.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <map>
@@ -18,6 +19,7 @@
 
 using namespace rest;
 using namespace boost::multi_index;
+namespace uri = rest::utils::uri;
 namespace io = boost::iostreams;
 
 class keywords::impl {
@@ -318,6 +320,24 @@ void keywords::set_entity(
   for (impl::data_t::iterator it = p->data.begin(); it != p->data.end(); ++it)
     if (it->type == FORM_PARAMETER)
       it->state = impl::entry::s_unread;
+}
+
+void keywords::add_uri_encoded(std::string const &data) {
+  boost::char_separator<char> sep("&");
+
+  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+  tokenizer pairs(data.begin(), data.end(), sep);
+
+  for (tokenizer::iterator it = pairs.begin(); it != pairs.end(); ++it) {
+    std::string::const_iterator split = std::find(it->begin(), it->end(), '=');
+    std::string key = uri::unescape(it->begin(), split, true);
+    if (get_declared_type(key) == FORM_PARAMETER) {
+      if (split != it->end())
+        ++split;
+      std::string value = uri::unescape(split, it->end(), true);
+      set(key, value);
+    }
+  }
 }
 
 void keywords::set_output(
