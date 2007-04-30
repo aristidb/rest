@@ -78,6 +78,7 @@ int main() {
   std::cout << boost::any_cast<std::string>(path_id) << std::endl << std::endl;
   std::cout << "xyz=" << kw["xyz"] << std::endl;
 
-  kw.set_stream("other", new std::istringstream("test"));
+  std::auto_ptr<std::istream> pstream(new std::istringstream("test"));
+  kw.set_stream("other", pstream);
   std::cout << "$$ " << kw["other"] << std::endl;
 }

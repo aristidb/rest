@@ -266,11 +266,11 @@ void keywords::set(
 }
 
 void keywords::set_stream(
-    std::string const &keyword, int index, std::istream *stream)
+    std::string const &keyword, int index, std::auto_ptr<std::istream> &stream)
 {
   impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
   it->state = impl::entry::s_normal;
-  it->stream.reset(stream);
+  it->stream.reset(stream.release());
 }
 
 void keywords::set_name(
@@ -293,33 +293,46 @@ std::istream &keywords::read(std::string const &keyword, int index) {
 }
 
 void keywords::set_entity(
-    std::istream *entity, std::string const &content_type)
+    std::auto_ptr<std::istream> &entity, std::string const &content_type)
 {
-  p->entity.reset(entity);
-
-  std::cout << "~~ " << content_type << std::endl;
-
   std::string type;
   std::set<std::string> pset;
   pset.insert("boundary");
   std::map<std::string, std::string> params;
 
   utils::http::parse_parametrised(content_type, type, pset, params);
+
   std::cout << "~~ " << type << " ; " << params["boundary"] << std::endl;
 
-  p->boundary = "--" + params["boundary"];
+  if (type == "multipart/form-data") {
+    p->entity.reset(entity.release());
 
-  // Strip preamble and first boundary
-  {
-    io::filtering_istream filt;
-    filt.push(utils::boundary_filter(p->boundary));
-    filt.push(boost::ref(*entity), 0, 0);
-    filt.ignore(std::numeric_limits<int>::max());
+    p->boundary = "--" + params["boundary"];
+
+    // Strip preamble and first boundary
+    {
+      io::filtering_istream filt;
+      filt.push(utils::boundary_filter(p->boundary));
+      filt.push(boost::ref(*entity), 0, 0);
+      filt.ignore(std::numeric_limits<int>::max());
+    }
+
+    for (impl::data_t::iterator it = p->data.begin(); it != p->data.end(); ++it)
+      if (it->type == FORM_PARAMETER)
+        it->state = impl::entry::s_unread;
+  } else if (type == "application/x-www-form-urlencoded") {
+    std::cout << "~~ urlencoded" << std::endl;
+
+    std::string data;
+    data.assign(
+      std::istreambuf_iterator<char>(entity->rdbuf()),
+      std::istreambuf_iterator<char>());
+
+    add_uri_encoded(data);
+  } else {
+    declare("_", NORMAL);
+    set_stream("_", entity);
   }
-
-  for (impl::data_t::iterator it = p->data.begin(); it != p->data.end(); ++it)
-    if (it->type == FORM_PARAMETER)
-      it->state = impl::entry::s_unread;
 }
 
 void keywords::add_uri_encoded(std::string const &data) {
@@ -341,10 +354,10 @@ void keywords::add_uri_encoded(std::string const &data) {
 }
 
 void keywords::set_output(
-    std::string const &keyword, int index, std::ostream *stream)
+    std::string const &keyword, int index, std::auto_ptr<std::ostream> &stream)
 {
   impl::data_t::iterator it = p->find(keyword, index);
-  it->output.reset(stream);
+  it->output.reset(stream.release());
 }
 
 void keywords::flush() {

@@ -711,8 +711,9 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
 
   header_fields::iterator content_type = fields.find("content-type");
 
+  std::auto_ptr<std::istream> pstream(new pop_filt_stream(fin.reset()));
   kw.set_entity(
-      new pop_filt_stream(fin.reset()),
+      pstream,
       content_type == fields.end() ?
         "application/octet-stream" :
         content_type->second

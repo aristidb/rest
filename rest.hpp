@@ -97,11 +97,12 @@ public:
 
   void set(std::string const &key, int index, std::string const &value);
 
-  void set_stream(std::string const &key, std::istream *value) {
+  void set_stream(std::string const &key, std::auto_ptr<std::istream> &value) {
     return set_stream(key, 0, value);
   }
 
-  void set_stream(std::string const &key, int index, std::istream *stream);
+  void set_stream(
+      std::string const &key, int index, std::auto_ptr<std::istream> &stream);
 
   void set_name(std::string const &key, std::string const &value) {
     set_name(key, 0, value);
@@ -109,15 +110,16 @@ public:
 
   void set_name(std::string const &key, int index, std::string const &name);
 
-  void set_output(std::string const &key, std::ostream *stream) {
+  void set_output(std::string const &key, std::auto_ptr<std::ostream> &stream) {
     set_output(key, 0, stream);
   }
 
-  void set_output(std::string const &key, int index, std::ostream *output);
+  void set_output(
+      std::string const &key, int index, std::auto_ptr<std::ostream> &output);
 
   void flush();
 
-  void set_entity(std::istream *entity, std::string const &type);
+  void set_entity(std::auto_ptr<std::istream> &entity, std::string const &type);
 
   void add_uri_encoded(std::string const &data);
 
