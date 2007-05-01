@@ -8,6 +8,10 @@
 #include <errno.h>
 #include <iostream>//DEBUG
 
+#ifdef APPLE
+#define TCP_CORK TCP_NOPUSH
+#endif
+
 using namespace rest::utils;
 
 class socket_device::impl {
