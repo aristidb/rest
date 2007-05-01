@@ -768,10 +768,7 @@ void http_connection::send(response const &r, bool entity) {
     }
     out2.push(boost::ref(out), 0, 0);
     out2 << r.get_data();
-    out2.pop();
   }
-
-  out.pop();
 }
 
 #if 0
