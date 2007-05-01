@@ -474,6 +474,7 @@ void server::serve() {
               std::cout << "before CORK" << std::endl;
               setsockopt(connfd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
               conn.send(r);
+              io::flush(buf);
               cork = 0;
               setsockopt(connfd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
               std::cout << "after CORK" << std::endl;
