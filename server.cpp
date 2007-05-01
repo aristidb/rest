@@ -470,14 +470,12 @@ void server::serve() {
             while (conn.open()) {
               conn.reset_flags();
               response r = conn.handle_request(*ptr);
-              int cork = 1;
-              std::cout << "before CORK" << std::endl;
-              setsockopt(connfd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
               conn.send(r);
               io::flush(buf);
-              cork = 0;
-              setsockopt(connfd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
-              std::cout << "after CORK" << std::endl;
+              int flush = 1;
+              setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &flush, sizeof(int));
+              flush = 0;
+              setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &flush, sizeof(int));
             }
           }
           catch (utils::http::remote_close&) {

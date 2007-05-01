@@ -2,6 +2,8 @@
 #include "rest-utils.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <unistd.h>
 #include <errno.h>
 #include <iostream>//DEBUG
@@ -31,13 +33,16 @@ socket_device::socket_device(int fd, long timeout_s)
   timeout.tv_usec = 0;
   ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
   ::setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
+  int cork = 1;
+  ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
 }
 
 socket_device::~socket_device() {
 }
 
 void socket_device::close(std::ios_base::open_mode) {
-  p->close();
+  //p->close();
 }
 
 std::streamsize socket_device::read(char *buf, std::streamsize length) {
