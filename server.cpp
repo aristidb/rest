@@ -35,7 +35,10 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
+
 
 #ifdef APPLE
 #include "epoll.h"
@@ -467,7 +470,13 @@ void server::serve() {
             while (conn.open()) {
               conn.reset_flags();
               response r = conn.handle_request(*ptr);
+              int cork = 1;
+              std::cout << "before CORK" << std::endl;
+              setsockopt(connfd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
               conn.send(r);
+              cork = 0;
+              setsockopt(connfd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+              std::cout << "after CORK" << std::endl;
             }
           }
           catch (utils::http::remote_close&) {

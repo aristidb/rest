@@ -62,6 +62,7 @@ std::streamsize socket_device::write(char const *buf, std::streamsize length) {
   std::streamsize n;
   for (;;) {
     n = ::write(p->fd, buf, size_t(length));
+    std::cout << n << "-";
     if (n == length)
       break;
     if (n >= 0) {
@@ -70,6 +71,7 @@ std::streamsize socket_device::write(char const *buf, std::streamsize length) {
     } else if (errno != EINTR)
       break;
   }
+  std::cout << std::endl;
   if (n <= 0) {
     p->close();
     return -1;
