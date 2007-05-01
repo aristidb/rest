@@ -52,12 +52,12 @@ inline boost::tuple<bool,int> hex2int(int ascii) {
     return boost::make_tuple(false, 0);
 }
 
-struct socket_device {
-  typedef char char_type;
-  typedef boost::iostreams::bidirectional_device_tag category;
-
+struct socket_device 
+: boost::iostreams::device<boost::iostreams::bidirectional> {
   socket_device(int fd, long timeout);
   ~socket_device();
+
+  void close(std::ios_base::open_mode);
 
   std::streamsize read(char *, std::streamsize);
   std::streamsize write(char const *, std::streamsize);

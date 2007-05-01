@@ -14,7 +14,9 @@ public:
   ~impl() { if (fd >= 0) close(); }
 
   void close() {
-    ::close(fd);
+    std::cout << ",closing " << fd << std::endl;
+    if (fd >= 0)
+      ::close(fd);
     fd = -1;
   }
 
@@ -34,9 +36,14 @@ socket_device::socket_device(int fd, long timeout_s)
 socket_device::~socket_device() {
 }
 
+void socket_device::close(std::ios_base::open_mode) {
+  p->close();
+}
+
 std::streamsize socket_device::read(char *buf, std::streamsize length) {
   if (p->fd < 0)
     return -1;
+
   std::streamsize n;
   do {
     n = ::read(p->fd, buf, size_t(length));
