@@ -742,32 +742,36 @@ void http_connection::send(response const &r, bool entity) {
   if (!r.get_type().empty())
     out << "Content-Type: " << r.get_type() << "\r\n";
   if (entity) {
-  out << "Content-Length: " << r.get_data().size() << "\r\n";
-  if (!r.get_data().empty()) {
-    if (flags.test(ACCEPT_GZIP))
-      out << "Transfer-Encoding: chunked\r\nContent-Encoding: gzip\r\n";
-    else if (flags.test(ACCEPT_BZIP2))
-      out << "Transfer-Encoding: chunked\r\nContent-Encoding: bzip2\r\n";
+    out << "Content-Length: " << r.get_data().size() << "\r\n";
+    if (!r.get_data().empty()) {
+      if (flags.test(ACCEPT_GZIP)) {
+        out << "Transfer-Encoding: chunked\r\n";
+        out << "Content-Encoding: gzip\r\n";
+      } else if (flags.test(ACCEPT_BZIP2)) {
+        out << "Transfer-Encoding: chunked\r\n";
+        out << "Content-Encoding: bzip2\r\n";
+      }
+    }
   }
- }
- out << "\r\n";
-// Entity
- if (entity && !r.get_data().empty()) {
-   io::filtering_ostream out2;
-   if (flags.test(ACCEPT_GZIP)) {
-     out2.push(io::gzip_compressor());
-     out2.push(utils::chunked_filter());
-   }
-   else if (flags.test(ACCEPT_BZIP2)) {
-     out2.push(io::bzip2_compressor());
-     out2.push(utils::chunked_filter());
-   }
-   out2.push(boost::ref(out), 0, 0);
-   out2 << r.get_data();
-   out2.pop();
- }
+  out << "\r\n";
 
- out.pop();
+  // Entity
+  if (entity && !r.get_data().empty()) {
+    io::filtering_ostream out2;
+    if (flags.test(ACCEPT_GZIP)) {
+      out2.push(io::gzip_compressor());
+      out2.push(utils::chunked_filter());
+    }
+    else if (flags.test(ACCEPT_BZIP2)) {
+      out2.push(io::bzip2_compressor());
+      out2.push(utils::chunked_filter());
+    }
+    out2.push(boost::ref(out), 0, 0);
+    out2 << r.get_data();
+    out2.pop();
+  }
+
+  out.pop();
 }
 
 #if 0
