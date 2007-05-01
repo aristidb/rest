@@ -184,7 +184,7 @@ BOOST_IOSTREAMS_PIPABLE(length_filter, 0)
 
 class chunked_filter : public boost::iostreams::multichar_dual_use_filter {
 public:
-  chunked_filter() : pending(0), out(false) { }
+  chunked_filter() : pending(0) { }
 
   template<typename Sink>
   std::streamsize write(Sink& snk, char const* s, std::streamsize n) {
@@ -207,14 +207,13 @@ public:
     if( (ret = io::write(snk, "\r\n", 2)) < 0)
       return ret;
 
-    out = true;
     return n;
   }
 
-  template<typename Device, typename OpenMode>
-  void close(Device &d, OpenMode) {
+  template<typename Device>
+  void close(Device &d, std::ios_base::open_mode mode) {
     namespace io = boost::iostreams;
-    if(out)
+    if (mode & std::ios_base::out)
       io::write(d, "0\r\n", 3);
   }
 
@@ -277,7 +276,6 @@ public:
 
 private:
   std::streamsize pending;
-  bool out;
 };
 
 class logger : boost::noncopyable {
