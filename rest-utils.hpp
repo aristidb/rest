@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/pipeline.hpp>
+#include <boost/iostreams/write.hpp>
 #include <boost/iostreams/read.hpp>
 #include <boost/current_function.hpp>
 #include <boost/scoped_array.hpp>
@@ -19,6 +20,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/format.hpp>
 #include <boost/ref.hpp>
 
 namespace rest { namespace utils {
@@ -180,9 +182,42 @@ private:
 };
 BOOST_IOSTREAMS_PIPABLE(length_filter, 0)
 
-class chunked_filter : public boost::iostreams::multichar_input_filter {
+class chunked_filter : public boost::iostreams::multichar_dual_use_filter {
 public:
-  chunked_filter() : pending(0) {}
+  chunked_filter() : pending(0), out(false) { }
+
+  template<typename Sink>
+  std::streamsize write(Sink& snk, char const* s, std::streamsize n) {
+    namespace io = boost::iostreams;
+
+    assert(n >= 0);
+    boost::format length("%1$x");
+    length % n;
+
+    // TODO handle 0 <= ret < length 
+
+    std::streamsize ret = io::write(snk, length.str().c_str(),
+                                    length.str().length());
+    if(ret < 0)
+      return ret;
+    if( (ret = io::write(snk, "\r\n", 2)) < 0 )
+      return ret;
+    if( (ret = io::write(snk, s, n)) < 0 )
+      return ret;
+    if( (ret = io::write(snk, "\r\n", 2)) < 0)
+      return ret;
+
+    out = true;
+    return n;
+  }
+
+  template<typename Device, typename OpenMode>
+  void close(Device &d, OpenMode) {
+    namespace io = boost::iostreams;
+    if(out)
+      io::write(d, "0\r\n", 3);
+  }
+
 
   template<typename Source>
   std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
@@ -242,6 +277,7 @@ public:
 
 private:
   std::streamsize pending;
+  bool out;
 };
 
 class logger : boost::noncopyable {

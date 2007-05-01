@@ -629,8 +629,8 @@ response http_connection::handle_request(server::socket_param const &sock) {
 void http_connection::set_header_options(header_fields &fields) {
   std::string &accept_encoding = fields["accept-encoding"];
   // TODO: properly handle accept-encoding list
-  flags.set(ACCEPT_GZIP, algo::iequals(accept_encoding, "gzip"));
-  flags.set(ACCEPT_BZIP2, algo::iequals(accept_encoding, "bzip2"));
+  flags.set(ACCEPT_GZIP, algo::ifind_first(accept_encoding, "gzip"));
+  flags.set(ACCEPT_BZIP2, algo::ifind_first(accept_encoding, "bzip2"));
 }
 
 namespace {
@@ -742,29 +742,32 @@ void http_connection::send(response const &r, bool entity) {
   if (!r.get_type().empty())
     out << "Content-Type: " << r.get_type() << "\r\n";
   if (entity) {
-    // TODO send length of encoded data if content-encoded! (?)
-    out << "Content-Length: " << r.get_data().size() << "\r\n";
-    if (!r.get_data().empty()) {
-      if (flags.test(ACCEPT_GZIP))
-        out << "Content-Encoding: gzip\r\n";
-      else if (flags.test(ACCEPT_BZIP2))
-        out << "Content-Encoding: bzip2\r\n";
-    }
-  }
-  out << "\r\n";
-
-  // Entity
-  if (entity && !r.get_data().empty()) {
-    io::filtering_ostream out2;
+  out << "Content-Length: " << r.get_data().size() << "\r\n";
+  if (!r.get_data().empty()) {
     if (flags.test(ACCEPT_GZIP))
-      out2.push(io::gzip_compressor());
+      out << "Transfer-Encoding: chunked\r\nContent-Encoding: gzip\r\n";
     else if (flags.test(ACCEPT_BZIP2))
-      out2.push(io::bzip2_compressor());
-    out2.push(boost::ref(out), 0, 0);
-    out2 << r.get_data();
-    out2.pop();
+      out << "Transfer-Encoding: chunked\r\nContent-Encoding: bzip2\r\n";
   }
-  out.pop();
+ }
+ out << "\r\n";
+// Entity
+ if (entity && !r.get_data().empty()) {
+   io::filtering_ostream out2;
+   if (flags.test(ACCEPT_GZIP)) {
+     out2.push(io::gzip_compressor());
+     out2.push(utils::chunked_filter());
+   }
+   else if (flags.test(ACCEPT_BZIP2)) {
+     out2.push(io::bzip2_compressor());
+     out2.push(utils::chunked_filter());
+   }
+   out2.push(boost::ref(out), 0, 0);
+   out2 << r.get_data();
+   out2.pop();
+ }
+
+ out.pop();
 }
 
 #if 0
