@@ -755,6 +755,8 @@ void http_connection::send(response const &r, bool entity) {
   }
   out << "\r\n";
 
+  std::cout << "before OUT2" << std::endl;
+
   // Entity
   if (entity && !r.get_data().empty()) {
     io::filtering_ostream out2;
@@ -769,6 +771,8 @@ void http_connection::send(response const &r, bool entity) {
     out2.push(boost::ref(out), 0, 0);
     out2 << r.get_data();
   }
+
+  std::cout << "after OUT2" << std::endl;
 }
 
 #if 0
