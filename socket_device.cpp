@@ -38,21 +38,21 @@ socket_device::socket_device(int fd, long timeout_s)
   struct timeval timeout;
   timeout.tv_sec = timeout_s;
   timeout.tv_usec = 0;
-  ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-  ::setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+//  ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+//  ::setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 }
 
 socket_device::~socket_device() {
 }
 
 void socket_device::push_cork() {
-  int const cork = 1;
-  ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+//  int const cork = 1;
+//  ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
 }
 
 void socket_device::pull_cork() {
-  int const cork = 0;
-  ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+//  int const cork = 0;
+//  ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
 }
 
 void socket_device::close(std::ios_base::open_mode) {
