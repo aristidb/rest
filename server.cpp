@@ -730,7 +730,7 @@ void http_connection::send(response const &r, bool entity) {
 
   conn->push_cork();
 
-  io::filtering_ostream out(boost::ref(conn));
+  std::ostream out(&conn);
 
   // Status Line
   if (flags.test(HTTP_1_0_COMPAT))
