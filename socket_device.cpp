@@ -57,7 +57,7 @@ void socket_device::pull_cork() {
 }
 
 void socket_device::close(std::ios_base::open_mode) {
-  //  p->close();
+  p->close();
 }
 
 std::streamsize socket_device::read(char *buf, std::streamsize length) {
