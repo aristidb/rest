@@ -760,8 +760,6 @@ void http_connection::send(response const &r, bool entity) {
   }
   out << "\r\n";
 
-  std::cout << "before OUT2" << std::endl;
-
   // Entity
   if (entity && !r.get_data().empty()) {
     io::filtering_ostream out2;
@@ -779,9 +777,8 @@ void http_connection::send(response const &r, bool entity) {
     out2.reset();
   }
 
-  std::cout << "after OUT2" << std::endl;
+  io::flush(out);
   conn->pull_cork();
-  // std::cout << "after pull cork" << std::endl;
 }
 
 #if 0
