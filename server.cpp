@@ -471,11 +471,6 @@ void server::serve() {
               conn.reset_flags();
               response r = conn.handle_request(*ptr);
               conn.send(r);
-              io::flush(buf);
-              int flush = 1;
-              setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &flush, sizeof(int));
-              flush = 0;
-              setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &flush, sizeof(int));
             }
           }
           catch (utils::http::remote_close&) {
