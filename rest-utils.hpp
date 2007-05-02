@@ -199,8 +199,18 @@ private:
 };
 BOOST_IOSTREAMS_PIPABLE(length_filter, 0)
 
-class chunked_filter : public boost::iostreams::multichar_dual_use_filter {
+class chunked_filter {
 public:
+  typedef char char_type;
+
+  struct category
+    :
+      boost::iostreams::filter_tag,
+      boost::iostreams::multichar_tag,
+      boost::iostreams::dual_use,
+      boost::iostreams::closable_tag
+  {};
+
   chunked_filter() : pending(0) { }
 
   template<typename Sink>
