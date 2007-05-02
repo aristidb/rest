@@ -60,6 +60,11 @@ void socket_device::close(std::ios_base::open_mode) {
   p->close();
 }
 
+bool socket_device::flush() {
+  std::cout << ",flush " << p->fd << std::endl;
+  return true;
+}
+
 std::streamsize socket_device::read(char *buf, std::streamsize length) {
   if (p->fd < 0)
     return -1;
