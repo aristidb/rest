@@ -730,7 +730,7 @@ void http_connection::send(response const &r, bool entity) {
 
   conn->push_cork();
 
-  io::filtering_ostream out(boost::ref(conn), 0, 0);
+  io::filtering_ostream out(boost::ref(conn));
 
   // Status Line
   if (flags.test(HTTP_1_0_COMPAT))
@@ -771,7 +771,7 @@ void http_connection::send(response const &r, bool entity) {
       out2.push(io::bzip2_compressor());
       out2.push(utils::chunked_filter());
     }
-    out2.push(boost::ref(out), 0, 0);
+    out2.push(boost::ref(out));
     out2 << r.get_data();
     out2.set_auto_close(false);
     out2.reset();
