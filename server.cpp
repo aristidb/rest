@@ -733,6 +733,8 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
 void http_connection::send(response const &r, bool entity) {
   //TODO implement partial-GET, entity data from streams
 
+  conn->push_cork();
+
   io::filtering_ostream out(boost::ref(conn), 0, 0);
 
   // Status Line
@@ -778,9 +780,13 @@ void http_connection::send(response const &r, bool entity) {
     }
     out2.push(boost::ref(out), 0, 0);
     out2 << r.get_data();
+    out2.set_auto_close(false);
+    out2.reset();
   }
 
   std::cout << "after OUT2" << std::endl;
+  conn->pull_cork();
+  std::cout << "after pull cork" << std::endl;
 }
 
 #if 0

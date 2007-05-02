@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/pipeline.hpp>
+#include <boost/iostreams/flush.hpp>
 #include <boost/iostreams/write.hpp>
 #include <boost/iostreams/read.hpp>
 #include <boost/current_function.hpp>
@@ -58,6 +59,9 @@ struct socket_device
   ~socket_device();
 
   void close(std::ios_base::open_mode);
+
+  void push_cork();
+  void pull_cork();
 
   std::streamsize read(char *, std::streamsize);
   std::streamsize write(char const *, std::streamsize);
@@ -215,8 +219,10 @@ public:
   void close(Device &d, std::ios_base::open_mode mode) {
     std::cout << "closing " << this << "- " << &d << " - " << mode << std::endl;
     namespace io = boost::iostreams;
-    if (mode & std::ios_base::out)
+    if (mode & std::ios_base::out) {
       io::write(d, "0\r\n", 3);
+      io::flush(d);
+    }
   }
 
 

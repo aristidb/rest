@@ -21,8 +21,11 @@ public:
 
   void close() {
     std::cout << ",closing " << fd << std::endl;
-    if (fd >= 0)
+    if (fd >= 0) {
+      int cork = 0;
+      ::setsockopt(fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
       ::close(fd);
+    }
     fd = -1;
   }
 
@@ -37,16 +40,24 @@ socket_device::socket_device(int fd, long timeout_s)
   timeout.tv_usec = 0;
   ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
   ::setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-
-  int cork = 1;
-  ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
 }
 
 socket_device::~socket_device() {
 }
 
+void socket_device::push_cork() {
+  int const cork = 1;
+  ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+}
+
+void socket_device::pull_cork() {
+  int const cork = 0;
+  ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+}
+
 void socket_device::close(std::ios_base::open_mode) {
-  //p->close();
+  std::cout << "socket_device::close\n";
+  //  p->close();
 }
 
 std::streamsize socket_device::read(char *buf, std::streamsize length) {
