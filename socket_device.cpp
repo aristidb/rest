@@ -21,11 +21,8 @@ public:
 
   void close() {
     std::cout << ",closing " << fd << std::endl;
-    if (fd >= 0) {
-      int cork = 0;
-      ::setsockopt(fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+    if (fd >= 0)
       ::close(fd);
-    }
     fd = -1;
   }
 
@@ -46,17 +43,20 @@ socket_device::~socket_device() {
 }
 
 void socket_device::push_cork() {
+#ifndef APPLE
   int const cork = 1;
   ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+#endif
 }
 
 void socket_device::pull_cork() {
+#ifndef APPLE
   int const cork = 0;
   ::setsockopt(p->fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+#endif
 }
 
 void socket_device::close(std::ios_base::open_mode) {
-  std::cout << "socket_device::close\n";
   //  p->close();
 }
 

@@ -220,7 +220,7 @@ public:
     std::cout << "closing " << this << "- " << &d << " - " << mode << std::endl;
     namespace io = boost::iostreams;
     if (mode & std::ios_base::out) {
-      io::write(d, "0\r\n", 3);
+      io::write(d, "0\r\n\r\n", 5);
       io::flush(d);
     }
   }

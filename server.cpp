@@ -786,7 +786,7 @@ void http_connection::send(response const &r, bool entity) {
 
   std::cout << "after OUT2" << std::endl;
   conn->pull_cork();
-  std::cout << "after pull cork" << std::endl;
+  // std::cout << "after pull cork" << std::endl;
 }
 
 #if 0
