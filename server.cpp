@@ -630,10 +630,29 @@ response http_connection::handle_request(server::socket_param const &sock) {
 }
 
 void http_connection::set_header_options(header_fields &fields) {
-  std::string &accept_encoding = fields["accept-encoding"];
-  // TODO: properly handle accept-encoding list
-  flags.set(ACCEPT_GZIP, algo::ifind_first(accept_encoding, "gzip"));
-  flags.set(ACCEPT_BZIP2, algo::ifind_first(accept_encoding, "bzip2"));
+  typedef std::multimap<int, std::string> qlist_t;
+
+  qlist_t qlist;
+  utils::http::parse_qlist(fields["accept-encoding"], qlist);
+
+  qlist_t::const_reverse_iterator const rend = qlist.rend();
+  for(qlist_t::const_reverse_iterator i = qlist.rbegin();
+      i != rend;
+      ++i)
+  {
+    if(i->first == 0)
+      break;
+    else if(i->second == "gzip") {
+      flags.set(ACCEPT_GZIP);
+      break;
+    }
+    else if(i->second == "bzip2") {
+      flags.set(ACCEPT_BZIP2);
+      break;
+    }
+    else if(i->second == "identity")
+      break;
+  }
 }
 
 namespace {

@@ -98,7 +98,7 @@ void rest::utils::http::parse_list(
 
 int rest::utils::http::parse_qvalue(std::string const &in) {
   if (in.empty())
-    return -1;
+    return 1000;
   int x = 1000;
   int v = 0;
   for (std::string::const_iterator it = in.begin(); it != in.end(); ++it) {
@@ -106,6 +106,8 @@ int rest::utils::http::parse_qvalue(std::string const &in) {
       v += (*it - '0') * x;
       x /= 10;
     }
+    else if(*it == '.' && x == 1000)
+      x = 100;
   }
   return v;
 }
