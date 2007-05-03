@@ -788,6 +788,7 @@ private:
 
 void http_connection::send(response const &r, bool entity) {
   //TODO implement partial-GET, entity data from streams
+  //TODO BUG: gzip does not work with w3m!
 
   conn->push_cork();
 
