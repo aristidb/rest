@@ -640,20 +640,34 @@ int http_connection::set_header_options(header_fields &fields) {
 
   qlist_t::const_reverse_iterator const rend = qlist.rend();
   for(qlist_t::const_reverse_iterator i = qlist.rbegin();
-      i != rend;
-      ++i)
+      i != rend;)
   {
-    if(i->first == 0 && (i->second == "identity" || i->second == "*"))
-         return 406;
-    else if(i->second == "gzip") {
-      flags.set(ACCEPT_GZIP);
-      break;
+    std::pair<qlist_t::iterator, qlist_t::iterator> its =
+      qlist.equal_range(i->first);
+    bool found = false;
+    --i;
+    for(qlist_t::iterator j = its.first;
+        j != its.second;
+        ++j)
+    {
+      if(j->second == "gzip" || j->second == "x-gzip") {
+        flags.set(ACCEPT_GZIP);
+        found = true;
+        break;
+      }
+      else if(j->second == "bzip2" || j->second == "x-bzip2") {
+        flags.set(ACCEPT_BZIP2);
+        found = true;
+        break;
+      }
+      else if(j->second == "identity" || j->second == "*") {
+        if(j->first == 0)
+          return 406;
+        found = true;
+      }
+      ++i;
     }
-    else if(i->second == "bzip2") {
-      flags.set(ACCEPT_BZIP2);
-      break;
-    }
-    else if(i->second == "identity" || i->second == "*")
+    if(found)
       break;
   }
 
