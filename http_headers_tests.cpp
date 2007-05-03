@@ -5,7 +5,7 @@
 using namespace rest::utils::http;
 
 TEST(parse_parametrised) {
-  std::string in = "application/x-test ; q=0.7; boundary=\"\\\\\"";
+  std::string in = "application/x-test ; q = 0.7; boundary= \"\\\\\"";
   std::string type;
   std::set<std::string> interests;
   interests.insert("q");

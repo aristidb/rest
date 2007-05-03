@@ -43,11 +43,16 @@ void rest::utils::http::parse_parametrised(
     skip_ws_fwd(++it, end);
     iterator next = std::find(it, end, ';');
     iterator delim = std::find(it, next, '=');
-    std::string key(it, delim);
+
+    iterator right = delim;
+    skip_ws_bwd(right, it);
+    std::string key(it, right);
+
     algo::to_lower(key);
     std::string value;
     if (delim != next)
       ++delim;
+    skip_ws_fwd(delim, next);
     if (delim == next || *delim != '"') {
       iterator qend = next;
       skip_ws_bwd(qend, delim);
