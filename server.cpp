@@ -214,42 +214,13 @@ public:
       ;
   }
 
-#ifdef APPLE
+  static bool restart;
   static void restart_handler(int) {
-    std::cout << "No Restart for Apple\n";    
+    restart = true;
   }
-#else
-  static std::vector<char*> getargs(std::string const &path, std::string &data)
-  {
-    std::ifstream in(path.c_str());
-    data.assign(std::istreambuf_iterator<char>(in.rdbuf()),
-                std::istreambuf_iterator<char>());
-
-    std::vector<char*> ret;
-    ret.push_back(&data[0]);
-    std::size_t const size = data.size();
-
-    for(std::size_t i = 0; i < size; ++i)
-      if(data[i] == '\0' && i+1 < size)
-        ret.push_back(&data[i+1]);
-    ret.push_back(0);
-
-    return ret;
-  }
-
-  static void restart_handler(int) {
-    REST_LOG(utils::IMPORTANT, "server restart");
-
-    std::string cmdbuffer;
-    std::string envbuffer;
-
-    if(::execve("/proc/self/exe", &getargs("/proc/self/cmdline", cmdbuffer)[0],
-                &getargs("/proc/self/environ", envbuffer)[0]) == -1)
-      REST_LOG_ERRNO(utils::CRITICAL, "restart failed (execve)");
-  }
-  #endif
 };
 
+bool server::impl::restart = false;
 int const server::impl::DEFAULT_LISTENQ = 5;
 
 server::sockets_iterator server::add_socket(socket_param const &s) {
@@ -425,6 +396,36 @@ int server::initialize_sockets() {
   return epollfd;
 }
 
+namespace {
+  std::vector<char*> getargs(std::string const &path, std::string &data) {
+    std::ifstream in(path.c_str());
+    data.assign(std::istreambuf_iterator<char>(in.rdbuf()),
+                std::istreambuf_iterator<char>());
+
+    std::vector<char*> ret;
+    ret.push_back(&data[0]);
+    std::size_t const size = data.size();
+
+    for(std::size_t i = 0; i < size; ++i)
+      if(data[i] == '\0' && i+1 < size)
+        ret.push_back(&data[i+1]);
+    ret.push_back(0);
+
+    return ret;
+  }
+
+  void do_restart() {
+    REST_LOG(utils::IMPORTANT, "server restart");
+
+    std::string cmdbuffer;
+    std::string envbuffer;
+
+    if(::execve("/proc/self/exe", &getargs("/proc/self/cmdline", cmdbuffer)[0],
+                &getargs("/proc/self/environ", envbuffer)[0]) == -1)
+      REST_LOG_ERRNO(utils::CRITICAL, "restart failed (execve)");
+  }
+}
+
 void server::serve() {
   typedef void(*sighnd_t)(int);
 
@@ -441,6 +442,8 @@ void server::serve() {
   for(;;) {
     epoll_event events[EVENTS_N];
     int nfds = epoll::wait(epollfd, events, EVENTS_N);
+    if(impl::restart)
+      do_restart();
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
       assert(ptr);
