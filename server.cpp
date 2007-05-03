@@ -644,7 +644,7 @@ int http_connection::set_header_options(header_fields &fields) {
       ++i)
   {
     if(i->first == 0 && (i->second == "identity" || i->second == "*"))
-         return 406;
+      return 406;
     else if(i->second == "gzip") {
       flags.set(ACCEPT_GZIP);
       break;
