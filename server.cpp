@@ -308,7 +308,7 @@ namespace {
 
     typedef utils::http::header_fields header_fields;
 
-    void set_header_options(header_fields &fields);
+    int set_header_options(header_fields &fields);
 
     void reset_flags() { flags.reset(); }
     response handle_request(server::socket_param const &hosts);
@@ -535,7 +535,9 @@ response http_connection::handle_request(server::socket_param const &sock) {
 
     header_fields fields = utils::http::read_headers(conn);
 
-    set_header_options(fields);
+    int ret = set_header_options(fields);
+    if(ret != 200)
+      return ret;
 
     header_fields::const_iterator host_header = fields.find("host");
     if(host_header == fields.end())
@@ -630,7 +632,7 @@ response http_connection::handle_request(server::socket_param const &sock) {
   return 200;
 }
 
-void http_connection::set_header_options(header_fields &fields) {
+int http_connection::set_header_options(header_fields &fields) {
   typedef std::multimap<int, std::string> qlist_t;
 
   qlist_t qlist;
@@ -641,8 +643,8 @@ void http_connection::set_header_options(header_fields &fields) {
       i != rend;
       ++i)
   {
-    if(i->first == 0)
-      break;
+    if(i->first == 0 && (i->second == "identity" || i->second == "*"))
+         return 406;
     else if(i->second == "gzip") {
       flags.set(ACCEPT_GZIP);
       break;
@@ -651,9 +653,11 @@ void http_connection::set_header_options(header_fields &fields) {
       flags.set(ACCEPT_BZIP2);
       break;
     }
-    else if(i->second == "identity")
+    else if(i->second == "identity" || i->second == "*")
       break;
   }
+
+  return 200;
 }
 
 namespace {
