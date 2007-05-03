@@ -14,6 +14,7 @@
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/operations.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -725,12 +726,35 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
   return 0;
 }
 
+class noflush_writer {
+public:
+  typedef char char_type;
+
+  struct category
+    :
+      io::sink_tag
+  {};
+
+  noflush_writer(std::streambuf *buf) : buf(buf) {}
+
+  std::streamsize write(char const *data, std::streamsize length) {
+    return io::write(*buf, data, length);
+  }
+
+  void real_flush() {
+    io::flush(*buf);
+  }
+
+private:
+  std::streambuf *buf;
+};
+
 void http_connection::send(response const &r, bool entity) {
   //TODO implement partial-GET, entity data from streams
 
   conn->push_cork();
 
-  std::ostream out(&conn);
+  io::stream<noflush_writer> out(&conn);
 
   // Status Line
   if (flags.test(HTTP_1_0_COMPAT))
@@ -777,7 +801,8 @@ void http_connection::send(response const &r, bool entity) {
     out2.reset();
   }
 
-  io::flush(out);
+  out->real_flush();
+
   conn->pull_cork();
 }
 
