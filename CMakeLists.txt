@@ -40,8 +40,8 @@ target_link_libraries(test1 rest)
 add_executable(http-handler-test http-handler-test.cpp)
 target_link_libraries(http-handler-test rest)
 
-add_executable(benchmark benchmark.cpp)
-target_link_libraries(benchmark rest)
+#add_executable(benchmark benchmark.cpp)
+#target_link_libraries(benchmark rest)
 
 add_executable(pipedump pipedump.cpp)
 

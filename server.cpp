@@ -636,44 +636,45 @@ response http_connection::handle_request(server::socket_param const &sock) {
 }
 
 int http_connection::set_header_options(header_fields &fields) {
-  typedef std::multimap<int, std::string> qlist_t;
+  if(!flags.test(HTTP_1_0_COMPAT)) {
+    typedef std::multimap<int, std::string> qlist_t;
 
-  qlist_t qlist;
-  utils::http::parse_qlist(fields["accept-encoding"], qlist);
+    qlist_t qlist;
+    utils::http::parse_qlist(fields["accept-encoding"], qlist);
 
-  qlist_t::const_reverse_iterator const rend = qlist.rend();
-  for(qlist_t::const_reverse_iterator i = qlist.rbegin();
-      i != rend;)
-  {
-    std::pair<qlist_t::iterator, qlist_t::iterator> its =
-      qlist.equal_range(i->first);
-    bool found = false;
-    --i;
-    for(qlist_t::iterator j = its.first;
-        j != its.second;
-        ++j)
-    {
-      if(j->second == "gzip" || j->second == "x-gzip") {
-        flags.set(ACCEPT_GZIP);
-        found = true;
-        break;
+    qlist_t::const_reverse_iterator const rend = qlist.rend();
+    for(qlist_t::const_reverse_iterator i = qlist.rbegin();
+        i != rend;)
+      {
+        std::pair<qlist_t::iterator, qlist_t::iterator> its =
+          qlist.equal_range(i->first);
+        bool found = false;
+        --i;
+        for(qlist_t::iterator j = its.first;
+            j != its.second;
+            ++j)
+          {
+            if(j->second == "gzip" || j->second == "x-gzip") {
+              flags.set(ACCEPT_GZIP);
+              found = true;
+              break;
+            }
+            else if(j->second == "bzip2" || j->second == "x-bzip2") {
+              flags.set(ACCEPT_BZIP2);
+              found = true;
+              break;
+            }
+            else if(j->second == "identity" || j->second == "*") {
+              if(j->first == 0)
+                return 406;
+              found = true;
+            }
+            ++i;
+          }
+        if(found)
+          break;
       }
-      else if(j->second == "bzip2" || j->second == "x-bzip2") {
-        flags.set(ACCEPT_BZIP2);
-        found = true;
-        break;
-      }
-      else if(j->second == "identity" || j->second == "*") {
-        if(j->first == 0)
-          return 406;
-        found = true;
-      }
-      ++i;
-    }
-    if(found)
-      break;
   }
-
   return 200;
 }
 
@@ -809,18 +810,19 @@ void http_connection::send(response const &r, bool entity) {
   // Header Fields
   out << "Date: " << utils::http::current_date_time()  << "\r\n";
   out << "Server: " << REST_SERVER_ID << "\r\n";
-  if (!r.get_type().empty())
+  if (!r.get_type().empty()) {
     out << "Content-Type: " << r.get_type() << "\r\n";
-  if (entity) {
-    out << "Content-Length: " << r.get_data().size() << "\r\n";
-    if (!r.get_data().empty()) {
+    if (entity) {
       if (flags.test(ACCEPT_GZIP)) {
         out << "Transfer-Encoding: chunked\r\n";
         out << "Content-Encoding: gzip\r\n";
-      } else if (flags.test(ACCEPT_BZIP2)) {
+      }
+      else if (flags.test(ACCEPT_BZIP2)) {
         out << "Transfer-Encoding: chunked\r\n";
         out << "Content-Encoding: bzip2\r\n";
       }
+      else
+        out << "Content-Length: " << r.get_data().size() << "\r\n";
     }
   }
   out << "\r\n";
