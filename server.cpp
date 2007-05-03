@@ -820,6 +820,7 @@ void http_connection::send(response const &r, bool entity) {
     out2.reset();
   }
 
+  io::flush(out);
   out->real_flush();
 
   conn->pull_cork();
