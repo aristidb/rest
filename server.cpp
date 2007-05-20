@@ -469,6 +469,10 @@ void server::serve() {
 
       std::cout << "%% ACCEPTED" << std::endl; // DEBUG
 #ifndef NO_FORK_LOOP
+      sigset_t mask, oldmask;
+      sigfillset(&mask);
+      sigprocmask(SIG_BLOCK, &mask, &oldmask);
+
       pid_t pid = ::fork();
       if(pid == -1) {
         REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
@@ -508,10 +512,12 @@ void server::serve() {
 #endif
 
 #ifndef NO_FORK_LOOP
-        ::exit(status);
+        exit(status);
       }
-      else
-        ::close(connfd);
+      else {
+        close(connfd);
+        sigprocmask(SIG_SETMASK, &oldmask, 0);
+      }
 #endif
     }
   }
