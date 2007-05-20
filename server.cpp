@@ -432,7 +432,7 @@ namespace {
     std::string envbuffer;
 
     char resolved_cmd[8192];
-    int n = readlink("/proc/self/exe", resolved_cmd, sizeof(resolved_cmd));
+    int n = readlink("/proc/self/exe", resolved_cmd, sizeof(resolved_cmd) - 1);
     if (n < 0) {
       REST_LOG_ERRNO(utils::CRITICAL, "restart failed (readlink)");
       return;
