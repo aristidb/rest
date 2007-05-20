@@ -431,7 +431,15 @@ namespace {
     std::string cmdbuffer;
     std::string envbuffer;
 
-    if(::execve("/proc/self/exe", &getargs("/proc/self/cmdline", cmdbuffer)[0],
+    char resolved_cmd[8192];
+    int n = readlink("/proc/self/exe", resolved_cmd, sizeof(resolved_cmd));
+    if (n < 0) {
+      REST_LOG_ERRNO(utils::CRITICAL, "restart failed (readlink)");
+      return;
+    }
+    resolved_cmd[n] = '\0';
+
+    if(::execve(resolved_cmd, &getargs("/proc/self/cmdline", cmdbuffer)[0],
                 &getargs("/proc/self/environ", envbuffer)[0]) == -1)
       REST_LOG_ERRNO(utils::CRITICAL, "restart failed (execve)");
   }
