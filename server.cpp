@@ -160,11 +160,19 @@ host const *server::socket_param::get_host(std::string const &name) const {
 class server::impl {
 public:
   std::vector<socket_param> socket_params;
+  std::set<int> close_on_fork;
 
   static int const DEFAULT_LISTENQ;
   int listenq;
 
   utils::property_tree const &config;
+
+  void do_close_on_fork() {
+    for(std::set<int>::const_iterator i = close_on_fork.begin();
+        i != close_on_fork.end();
+        ++i)
+      ::close(*i);
+  }
 
   impl(utils::property_tree const &config)
     : listenq(utils::get(config, DEFAULT_LISTENQ, "connections", "listenq")),
@@ -378,6 +386,7 @@ namespace {
 
 int server::initialize_sockets() {
   int epollfd = epoll::create(p->socket_params.size() + 1);
+  p->close_on_fork.insert(epollfd);
 
   epoll_event epolle;
   epolle.events = EPOLLIN|EPOLLERR;
@@ -387,6 +396,8 @@ int server::initialize_sockets() {
       ++i)
   {
     int listenfd = create_listenfd(i, p->listenq);
+
+    p->close_on_fork.insert(listenfd);
 
     epolle.data.ptr = &*i;
     if(::epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
@@ -463,8 +474,7 @@ void server::serve() {
         REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
       }
       else if(pid == 0) {
-        ::close(ptr->fd());
-        ::close(epollfd);
+        p->do_close_on_fork();
 #endif
         int status = 0;
         try {
