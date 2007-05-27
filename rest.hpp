@@ -29,21 +29,12 @@ public:
   response(int code);
   response(std::string const &type);
   response(std::string const &type, std::string const &data);
-  // nene nich zu viel :) - content_encoding sollte auch unnötig sein. wenn du meinst
-  // naja, wer mehr braucht nimmt die methoden...
-  // ein konstruktor mit 10 parametern ist doof jo hast recht
-  
+  response(response const &r); // copy ctor wenn wir scoped_ptr nehmen!
+
   void set_code(int code);
   void set_type(std::string const &type);
-  
-  // überschreiben oder mit ", " kombinieren? 
-  // - gute Frage können wir uns später überlegen 
-  // oder gleich ein flag :D 
-  // - :D ne
-  // pfft
-  // - bin nicht so ein Flag Fan :p lieber zwei unterschiedliche Methoden
-  // ne, in dem fall lieber ein flag *FIND*
-  void add_header(std::string const &name, std::string const &value); 
+  void set_header(std::string const &name, std::string const &value);
+  void add_header_part(std::string const &name, std::string const &value);
 
   enum content_encoding_t {
     identity,
@@ -54,8 +45,11 @@ public:
   void set_data(std::istream &data, bool seekable, content_encoding_t content_encoding = identity);
   void set_data(std::string const &data, content_encoding_t content_encoding = identity);
 
-  //void send_http(std::streambuf *); // ne nicht hier - wo dann? sonst brauchen wir 100 accessor-methoden :DDD hmm. Aber dann brauchen wir noch die flags :p - ach so. ok, wie machen wir das? das ist die frage. Ich wäre dafür das wie bisher zu machen. Wobei dann haben wir die accessor-Probleme.
-  // "wie bisher" geht nicht - allein wegen den streams und alternativen
+  int get_code() const;
+  std::string const &get_reason() const;
+  std::string const &get_type();
+
+  bool has_content_encoding(content_encoding_t content_encoding) const;
 
 private:
   class impl;
