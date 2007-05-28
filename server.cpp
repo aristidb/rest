@@ -451,8 +451,8 @@ void server::serve() {
   sighnd_t oldchld = ::signal(SIGCHLD, &impl::sigchld_handler);
   ::siginterrupt(SIGCHLD, 0);
 
-  sighnd_t oldhup = ::signal(SIGHUP, &impl::restart_handler);
-  ::siginterrupt(SIGHUP, 0);
+  sighnd_t oldhup = ::signal(SIGUSR1, &impl::restart_handler);
+  ::siginterrupt(SIGUSR1, 0);
 
   int epollfd = initialize_sockets();
 
