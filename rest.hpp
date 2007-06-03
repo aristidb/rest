@@ -21,15 +21,16 @@ namespace rest {
 	DAS HIER muss gut werden.
 */
 class response {
-/*
-neu...
-
+#ifndef OLD_RESPONSE
 public:
   response();
   response(int code);
   response(std::string const &type);
   response(std::string const &type, std::string const &data);
-  response(response const &r); // copy ctor wenn wir scoped_ptr nehmen!
+  response(response const &r);
+  ~response();
+
+  response &operator=(response const &lhs);
 
   void set_code(int code);
   void set_type(std::string const &type);
@@ -42,19 +43,23 @@ public:
     bzip2
   };
   
-  void set_data(std::istream &data, bool seekable, content_encoding_t content_encoding = identity);
-  void set_data(std::string const &data, content_encoding_t content_encoding = identity);
+  void set_data(std::istream &data, bool seekable,
+                content_encoding_t content_encoding = identity);
+  void set_data(std::string const &data,
+                content_encoding_t content_encoding = identity);
 
   int get_code() const;
-  std::string const &get_reason() const;
-  std::string const &get_type();
+  char const *get_reason() const;
+  std::string const &get_type() const;
 
   bool has_content_encoding(content_encoding_t content_encoding) const;
 
+  // LEGACY FUNCTION (remove later)
+  std::string const &get_data() const;
 private:
   class impl;
   boost::scoped_ptr<impl> p;
-*/
+#else
 private:
   int code;
   std::string type;
@@ -82,6 +87,7 @@ public:
   std::string const &get_reason() const { return reason; }
   std::string const &get_type() const { return type; }
   void set_type(std::string const &t) { type = t; }
+#endif
 };
 
 enum response_type {
