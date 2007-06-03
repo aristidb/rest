@@ -40,7 +40,8 @@ public:
   enum content_encoding_t {
     identity,
     gzip,
-    bzip2
+    bzip2,
+    X_NO_OF_ENCODINGS
   };
   
   void set_data(std::istream &data, bool seekable,

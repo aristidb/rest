@@ -1,5 +1,8 @@
 #include "rest.hpp"
 
+#include <boost/array.hpp>
+#include <map>
+
 namespace rest {
   namespace {
     char const *default_reasons[] = {
@@ -48,39 +51,86 @@ namespace rest {
   struct response::impl {
     int code;
     std::string type;
+    typedef std::map<std::string, std::string> header_map;
+    header_map header;
 
-    impl() { }
+    struct data_holder {
+      enum { NIL, STRING, STREAM } type;
+      std::pair<std::istream*, bool> stream;
+      std::string string;
+
+      void set(std::string const &str) {
+        type = STRING;
+        string = str;
+      }
+      void set(std::istream &in, bool seekable) {
+        type = STREAM;
+        stream = std::make_pair(&in, seekable);
+      }
+
+      data_holder() : type(NIL) { }
+    };
+    boost::array<data_holder, response::X_NO_OF_ENCODINGS> data;
+
+    impl() : code(-1) { }
     impl(int code) : code(code) { }
-    impl(std::string const &type) : type(type) { }
+    impl(std::string const &type) : code(-1), type(type) { }
   };
 
   response::response() : p(new impl) { }
   response::response(int code) : p(new impl(code)) { }
   response::response(std::string const &type) : p(new impl(type)) { }
   response::response(std::string const &type, std::string const &data)
-    : p(new impl(type)) { }
+    : p(new impl(type))
+  {
+    p->data[identity].set(data);
+  }
   response::response(response const &r)
-    : p(new impl(*r.p)) { }
+    : p(new impl(*r.p))
+  { }
   response::~response() { }
 
   response &response::operator=(response const &lhs) {
-    if(&lhs != this) {
+    if(&lhs != this)
       p.reset(new impl(*lhs.p));
-    }
     return *this;
   }
 
+  void response::set_code(int code) {
+    p->code = code;
+  }
 
-  void response::set_code(int code) { p->code = code; }
-  void response::set_type(std::string const &type) { p->type = type; }
-  void response::set_header(std::string const &name, std::string const &value)
-  { }
+  void response::set_type(std::string const &type) {
+    p->type = type;
+  }
+
+  void response::set_header(std::string const &name, std::string const &value) {
+    p->header[name] = value;
+  }
+
   void response::add_header_part(std::string const &name,
                                  std::string const &value)
-  { }
+  {
+    impl::header_map::iterator i = p->header.find(name);
+    if(i == p->header.end())
+      set_header(name, value);
+    else {
+      i->second += ", ";
+      i->second += value;
+    }
+  }
 
-  void response::set_data(std::istream &data, bool seekable, content_encoding_t content_encoding) { }
-  void response::set_data(std::string const &data, content_encoding_t content_encoding) { }
+  void response::set_data(std::istream &data, bool seekable,
+                          content_encoding_t content_encoding)
+  {
+    p->data[content_encoding].set(data, seekable);
+  }
+
+  void response::set_data(std::string const &data,
+                          content_encoding_t content_encoding)
+  {
+    p->data[content_encoding].set(data);
+  }
 
   int response::get_code() const {
     return p->code;
@@ -94,8 +144,12 @@ namespace rest {
     return p->type;
   }
 
-  bool response::has_content_encoding(content_encoding_t content_encoding) const { }
+  bool response::has_content_encoding
+                        (content_encoding_t content_encoding) const
+  {
+    return p->data[content_encoding].type != impl::data_holder::NIL;
+  }
 
-  std::string const &response::get_data() const { return ""; }
+  std::string const &response::get_data() const { return p->data[0].string; }
 #endif
 }
