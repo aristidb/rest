@@ -1,3 +1,4 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest.hpp"
 
 #include <boost/array.hpp>
@@ -26,26 +27,20 @@ namespace rest {
       "Internal Server Error", "Not Implemented", "Bad Gateway",
       "Service Unavailable", "Gateway Timeout", "HTTP Version Not Supported"
     };
-#ifdef OLD_RESPONSE
-  }
-  char const *response::default_reason(int code) {
-#else
     char const *default_reason(int code) {
-#endif
-    if(code == 100 || code == 101)
-      return default_reasons[code - 100];
-    else if(code >= 200 && code <= 206)
-      return default_reasons[code - 198];
-    else if(code >= 300 && code <= 307)
-      return default_reasons[code - 291];
-    else if(code >= 400 && code <= 417)
-      return default_reasons[code - 383];
-    else if(code >= 500 && code <= 505)
-      return default_reasons[code - 465];
-    else // throw exception!
-      return "";
-  }
-#ifndef OLD_RESPONSE
+      if(code == 100 || code == 101)
+        return default_reasons[code - 100];
+      else if(code >= 200 && code <= 206)
+        return default_reasons[code - 198];
+      else if(code >= 300 && code <= 307)
+        return default_reasons[code - 291];
+      else if(code >= 400 && code <= 417)
+        return default_reasons[code - 383];
+      else if(code >= 500 && code <= 505)
+        return default_reasons[code - 465];
+      else // throw exception!
+        return "";
+    }
   }
 
   struct response::impl {
@@ -151,5 +146,4 @@ namespace rest {
   }
 
   std::string const &response::get_data() const { return p->data[0].string; }
-#endif
 }

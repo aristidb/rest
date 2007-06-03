@@ -17,11 +17,7 @@
 
 namespace rest {
 
-/*
-	DAS HIER muss gut werden.
-*/
 class response {
-#ifndef OLD_RESPONSE
 public:
   response();
   response(int code);
@@ -60,35 +56,6 @@ public:
 private:
   class impl;
   boost::scoped_ptr<impl> p;
-#else
-private:
-  int code;
-  std::string type;
-  std::string data;
-  std::string reason; // <- wozu?
-
-  static char const *default_reason(int code);
-
-public:
-  response(int code,
-           std::string const &type="",
-           std::string const &data="",
-           std::string const &reason="")
-    : code(code), type(type), data(data),
-      reason(reason.empty() ? default_reason(code) : reason)
-  {}
-  response(std::string const &type)
-  : code(200), type(type), reason(default_reason(code)) {}
-
-  void set_data(std::string const &d) { data = d; }
-  std::string const &get_data() const { return data; }
-  void set_code(int c) { code = c; }
-  int get_code() const { return code; }
-  void set_reason(std::string const &r) { reason = r; }
-  std::string const &get_reason() const { return reason; }
-  std::string const &get_type() const { return type; }
-  void set_type(std::string const &t) { type = t; }
-#endif
 };
 
 enum response_type {
