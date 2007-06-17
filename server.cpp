@@ -661,7 +661,7 @@ response http_connection::handle_request(server::socket_param const &sock) {
 }
 
 int http_connection::set_header_options(header_fields &fields) {
-  if(!flags.test(HTTP_1_0_COMPAT)) {
+  //if(!flags.test(HTTP_1_0_COMPAT)) {
     typedef std::multimap<int, std::string> qlist_t;
 
     qlist_t qlist;
@@ -698,7 +698,7 @@ int http_connection::set_header_options(header_fields &fields) {
             ++i;
           }
       }
-  }
+  //}
   return 200;
 }
 
@@ -815,6 +815,9 @@ private:
 };
 
 void http_connection::send(response const &r, bool entity) {
+  for (std::vector<response::content_encoding_t>::iterator it = encodings.begin(); it != encodings.end(); ++it)
+    std::cout << "enc " << *it << std::endl;
+
   //TODO implement partial-GET, entity data from streams
   //TODO BUG: gzip does not work with w3m!
 
