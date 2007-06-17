@@ -290,7 +290,11 @@ namespace {
 
     int set_header_options(header_fields &fields);
 
-    void reset_flags() { flags.reset(); }
+    void reset() {
+      flags.reset();
+      encodings.clear();
+    }
+
     response handle_request(server::socket_param const &hosts);
     int handle_entity(keywords &kw, header_fields &fields);
 
@@ -495,7 +499,7 @@ void server::serve() {
           http_connection conn(buf);
           try {
             while (conn.open()) {
-              conn.reset_flags();
+              conn.reset();
               response r = conn.handle_request(*ptr);
               conn.send(r);
             }
@@ -803,8 +807,9 @@ private:
 };
 
 void http_connection::send(response const &r, bool entity) {
+  std::cout << "enc ";
   for (std::vector<response::content_encoding_t>::iterator it = encodings.begin(); it != encodings.end(); ++it)
-    std::cout << "enc " << *it << std::endl;
+    std::cout << *it << (it+1 == encodings.end() ? '\n' : ',');
 
   //TODO implement partial-GET, entity data from streams
   //TODO BUG: gzip does not work with w3m!
