@@ -278,6 +278,7 @@ namespace {
     };
     typedef std::bitset<X_NO_FLAG> state_flags;
     state_flags flags;
+    std::vector<response::content_encoding_t> encodings;
 
   public:
     http_connection(connection_streambuf &conn)
@@ -667,36 +668,35 @@ int http_connection::set_header_options(header_fields &fields) {
     utils::http::parse_qlist(fields["accept-encoding"], qlist);
 
     qlist_t::const_reverse_iterator const rend = qlist.rend();
+    bool found = false;
     for(qlist_t::const_reverse_iterator i = qlist.rbegin();
         i != rend;)
       {
         std::pair<qlist_t::iterator, qlist_t::iterator> its =
           qlist.equal_range(i->first);
-        bool found = false;
         --i;
         for(qlist_t::iterator j = its.first;
             j != its.second;
             ++j)
           {
-            if(j->second == "gzip" || j->second == "x-gzip") {
-              flags.set(ACCEPT_GZIP);
-              found = true;
-              break;
-            }
-            else if(j->second == "bzip2" || j->second == "x-bzip2") {
-              flags.set(ACCEPT_BZIP2);
-              found = true;
-              break;
-            }
-            else if(j->second == "identity" || j->second == "*") {
-              if(j->first == 0)
+            if(j->first == 0 && !found) {
+              if(j->second == "identity" || j->second == "*")
                 return 406;
-              found = true;
+            }
+            else {
+              if(j->second == "gzip" || j->second == "x-gzip") {
+                encodings.push_back(response::gzip);
+                found = true;
+              }
+              else if(j->second == "bzip2" || j->second == "x-bzip2") {
+                encodings.push_back(response::bzip2);
+                found = true;
+              }
+              else if(j->second == "identity")
+                found = true;
             }
             ++i;
           }
-        if(found)
-          break;
       }
   }
   return 200;
@@ -837,7 +837,7 @@ void http_connection::send(response const &r, bool entity) {
   if (!r.get_type().empty()) {
     out << "Content-Type: " << r.get_type() << "\r\n";
     if (entity) {
-      if (flags.test(ACCEPT_GZIP)) {
+      if (flags.test(ACCEPT_GZIP)) { // stattdessen wählt response das encoding
         out << "Transfer-Encoding: chunked\r\n";
         out << "Content-Encoding: gzip\r\n";
       }
