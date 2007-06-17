@@ -661,35 +661,31 @@ response http_connection::handle_request(server::socket_param const &sock) {
 }
 
 int http_connection::set_header_options(header_fields &fields) {
-  //if(!flags.test(HTTP_1_0_COMPAT)) {
-    typedef std::multimap<int, std::string> qlist_t;
+  typedef std::multimap<int, std::string> qlist_t;
 
-    qlist_t qlist;
-    utils::http::parse_qlist(fields["accept-encoding"], qlist);
+  qlist_t qlist;
+  utils::http::parse_qlist(fields["accept-encoding"], qlist);
 
-    qlist_t::const_reverse_iterator const rend = qlist.rend();
-    bool found = false;
-    for(qlist_t::const_reverse_iterator i = qlist.rbegin();
-        i != rend;
-        ++i)
-      {
-        if(i->first == 0) {
-          if(!found && (i->second == "identity" || i->second == "*"))
-            return 406;
-        }
-        else {
-          if(i->second == "gzip" || i->second == "x-gzip") {
-            encodings.push_back(response::gzip);
-            found = true;
-          }
-          else if(i->second == "bzip2" || i->second == "x-bzip2") {
-            encodings.push_back(response::bzip2);
-            found = true;
-          }
-          else if(i->second == "identity")
-            found = true;
-        }
+  qlist_t::const_reverse_iterator const rend = qlist.rend();
+  bool found = false;
+  for(qlist_t::const_reverse_iterator i = qlist.rbegin(); i != rend; ++i) {
+    if(i->first == 0) {
+      if(!found && (i->second == "identity" || i->second == "*"))
+        return 406;
+    }
+    else {
+      if(i->second == "gzip" || i->second == "x-gzip") {
+        encodings.push_back(response::gzip);
+        found = true;
       }
+      else if(i->second == "bzip2" || i->second == "x-bzip2") {
+        encodings.push_back(response::bzip2);
+        found = true;
+      }
+      else if(i->second == "identity")
+        found = true;
+    }
+  }
 
   return 200;
 }
