@@ -670,35 +670,27 @@ int http_connection::set_header_options(header_fields &fields) {
     qlist_t::const_reverse_iterator const rend = qlist.rend();
     bool found = false;
     for(qlist_t::const_reverse_iterator i = qlist.rbegin();
-        i != rend;)
+        i != rend;
+        ++i)
       {
-        std::pair<qlist_t::iterator, qlist_t::iterator> its =
-          qlist.equal_range(i->first);
-        --i;
-        for(qlist_t::iterator j = its.first;
-            j != its.second;
-            ++j)
-          {
-            if(j->first == 0 && !found) {
-              if(j->second == "identity" || j->second == "*")
-                return 406;
-            }
-            else {
-              if(j->second == "gzip" || j->second == "x-gzip") {
-                encodings.push_back(response::gzip);
-                found = true;
-              }
-              else if(j->second == "bzip2" || j->second == "x-bzip2") {
-                encodings.push_back(response::bzip2);
-                found = true;
-              }
-              else if(j->second == "identity")
-                found = true;
-            }
-            ++i;
+        if(i->first == 0) {
+          if(!found && (i->second == "identity" || i->second == "*"))
+            return 406;
+        }
+        else {
+          if(i->second == "gzip" || i->second == "x-gzip") {
+            encodings.push_back(response::gzip);
+            found = true;
           }
+          else if(i->second == "bzip2" || i->second == "x-bzip2") {
+            encodings.push_back(response::bzip2);
+            found = true;
+          }
+          else if(i->second == "identity")
+            found = true;
+        }
       }
-  //}
+
   return 200;
 }
 
