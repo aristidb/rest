@@ -52,7 +52,9 @@ public:
   bool has_content_encoding(content_encoding_t content_encoding) const;
 
   content_encoding_t choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings) const;
+      std::vector<content_encoding_t> const &encodings,
+      bool may_chunk
+    ) const;
 
   bool empty(content_encoding_t content_encoding) const;
   bool chunked(content_encoding_t content_encoding) const;
@@ -60,9 +62,10 @@ public:
 
   void print(std::ostream &out, content_encoding_t enc) const;
 
-  // LEGACY FUNCTION (remove later)
-  std::string const &get_data() const;
 private:
+  void encode(std::ostream &out, content_encoding_t enc) const;
+  void decode(std::ostream &out, content_encoding_t enc) const;
+
   class impl;
   boost::scoped_ptr<impl> p;
 };

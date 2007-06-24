@@ -16,7 +16,6 @@
 #include <boost/iostreams/operations.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 
@@ -833,8 +832,10 @@ void http_connection::send(response const &r, bool entity) {
   if (!entity)
     out << "\r\n";
   else {
+    bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
+
     response::content_encoding_t enc = 
-        r.choose_content_encoding(encodings);
+        r.choose_content_encoding(encodings, may_chunk);
 
     switch (enc) {
     case response::identity:
@@ -854,23 +855,6 @@ void http_connection::send(response const &r, bool entity) {
     out << "\r\n";
 
     r.print(out, enc);
-/*
-    if (!r.get_data().empty()) {
-      io::filtering_ostream out2;
-      if (flags.test(ACCEPT_GZIP)) {
-        out2.push(io::gzip_compressor());
-        out2.push(utils::chunked_filter());
-      }
-      else if (flags.test(ACCEPT_BZIP2)) {
-        out2.push(io::bzip2_compressor());
-        out2.push(utils::chunked_filter());
-      }
-      out2.push(boost::ref(out));
-      out2 << r.get_data();
-      out2.set_auto_close(false);
-      out2.reset();
-    }
-*/
   }
 
   io::flush(out);

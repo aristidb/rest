@@ -1,8 +1,12 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest.hpp"
-
+#include "rest-utils.hpp"
 #include <boost/array.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
 #include <map>
+#include <cassert>
 
 using rest::response;
 
@@ -202,11 +206,11 @@ bool response::has_content_encoding(content_encoding_t content_encoding) const {
   return p->data[content_encoding].type != impl::data_holder::NIL;
 }
 
-std::string const &response::get_data() const { return p->data[0].string; }
-
 response::content_encoding_t
 response::choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings) const
+    std::vector<content_encoding_t> const &encodings,
+    bool may_chunk
+  ) const
 {
   if (encodings.empty() || empty(identity))
     return identity;
@@ -216,8 +220,9 @@ response::choose_content_encoding(
       return *it;
   if (p->data[identity].type == impl::data_holder::NIL)
     return identity;
-  else
-    return encodings[0];
+  if (!may_chunk)
+    return identity;
+  return encodings[0];
 }
 
 bool response::empty(content_encoding_t enc) const {
@@ -235,4 +240,51 @@ std::size_t response::length(content_encoding_t enc) const {
 }
 
 void response::print(std::ostream &out, content_encoding_t enc) const {
+  impl::data_holder &d = p->data[enc];
+  switch (d.type) {
+  case impl::data_holder::STRING:
+    out << d.string;
+    break;
+  case impl::data_holder::STREAM:
+    {
+      std::streambuf *in = d.stream.first->rdbuf();
+      std::copy(
+        std::istreambuf_iterator<char>(in),
+        std::istreambuf_iterator<char>(),
+        std::ostreambuf_iterator<char>(out.rdbuf())
+      );
+    }
+    break;
+  case impl::data_holder::NIL:
+    if (d.compute_from == identity) {
+      if (enc != identity)
+        encode(out, enc);
+    } else {
+      assert(enc == identity);
+      decode(out, d.compute_from);
+    }
+  }
+}
+
+void response::encode(std::ostream &out, content_encoding_t enc) const {
+  namespace io = boost::iostreams;
+  io::filtering_ostream out2;
+  assert(enc == gzip || enc == bzip2);
+  switch (enc) {
+  case gzip:
+    out2.push(io::gzip_compressor());
+    break;
+  case bzip2:
+    out2.push(io::bzip2_compressor());
+    break;
+  }
+  out2.push(utils::chunked_filter());
+  out2.push(boost::ref(out));
+  print(out2, identity);
+  out2.set_auto_close(false);
+  out2.reset();
+}
+
+void response::decode(std::ostream &out, content_encoding_t enc) const {
+  //TODO: DECODING NOT IMPLEMENTED YET
 }
