@@ -158,5 +158,11 @@ response::content_encoding_t
 response::choose_content_encoding(
     std::vector<content_encoding_t> const &encodings) const
 {
-  return identity;
+  if (encodings.empty())
+    return identity;
+  typedef std::vector<content_encoding_t>::const_iterator iterator;
+  for (iterator it = encodings.begin(); it != encodings.end(); ++it)
+    if (has_content_encoding(*it))
+      return *it;
+  return encodings[0];
 }
