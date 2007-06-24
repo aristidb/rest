@@ -818,7 +818,6 @@ void http_connection::send(response const &r, bool entity) {
 
   io::stream<noflush_writer> out(&conn);
 
-  // Status Line
   if (flags.test(HTTP_1_0_COMPAT))
     out << "HTTP/1.0 ";
   else
@@ -827,12 +826,13 @@ void http_connection::send(response const &r, bool entity) {
   std::cout << "Send: " << r.get_code() << " CE:" << (flags.test(ACCEPT_GZIP) ? "gzip" : (flags.test(ACCEPT_BZIP2) ? "bzip2" : "none")) << "\n"; //DEBUG
   out << r.get_code() << " " << r.get_reason() << "\r\n";
 
-  // Header Fields
   out << "Date: " << utils::http::current_date_time()  << "\r\n";
   out << "Server: " << REST_SERVER_ID << "\r\n";
   if (!r.get_type().empty()) 
     out << "Content-Type: " << r.get_type() << "\r\n";
-  if (entity) {
+  if (!entity)
+    out << "\r\n";
+  else {
     if (flags.test(ACCEPT_GZIP)) { // stattdessen wählt response das encoding
       out << "Transfer-Encoding: chunked\r\n";
       out << "Content-Encoding: gzip\r\n";
@@ -843,24 +843,23 @@ void http_connection::send(response const &r, bool entity) {
     }
     else
       out << "Content-Length: " << r.get_data().size() << "\r\n";
-  }
-  out << "\r\n";
+    out << "\r\n";
 
-  // Entity
-  if (entity && !r.get_data().empty()) {
-    io::filtering_ostream out2;
-    if (flags.test(ACCEPT_GZIP)) {
-      out2.push(io::gzip_compressor());
-      out2.push(utils::chunked_filter());
+    if (!r.get_data().empty()) {
+      io::filtering_ostream out2;
+      if (flags.test(ACCEPT_GZIP)) {
+        out2.push(io::gzip_compressor());
+        out2.push(utils::chunked_filter());
+      }
+      else if (flags.test(ACCEPT_BZIP2)) {
+        out2.push(io::bzip2_compressor());
+        out2.push(utils::chunked_filter());
+      }
+      out2.push(boost::ref(out));
+      out2 << r.get_data();
+      out2.set_auto_close(false);
+      out2.reset();
     }
-    else if (flags.test(ACCEPT_BZIP2)) {
-      out2.push(io::bzip2_compressor());
-      out2.push(utils::chunked_filter());
-    }
-    out2.push(boost::ref(out));
-    out2 << r.get_data();
-    out2.set_auto_close(false);
-    out2.reset();
   }
 
   io::flush(out);

@@ -39,11 +39,14 @@ public:
     bzip2,
     X_NO_OF_ENCODINGS
   };
+
+  content_encoding_t choose_content_encoding(
+    std::vector<content_encoding_t> const &encodings) const;
   
   void set_data(std::istream &data, bool seekable,
-                content_encoding_t content_encoding = identity);
+    content_encoding_t content_encoding = identity);
   void set_data(std::string const &data,
-                content_encoding_t content_encoding = identity);
+    content_encoding_t content_encoding = identity);
 
   int get_code() const;
   char const *get_reason() const;
