@@ -830,20 +830,19 @@ void http_connection::send(response const &r, bool entity) {
   // Header Fields
   out << "Date: " << utils::http::current_date_time()  << "\r\n";
   out << "Server: " << REST_SERVER_ID << "\r\n";
-  if (!r.get_type().empty()) {
+  if (!r.get_type().empty()) 
     out << "Content-Type: " << r.get_type() << "\r\n";
-    if (entity) {
-      if (flags.test(ACCEPT_GZIP)) { // stattdessen wählt response das encoding
-        out << "Transfer-Encoding: chunked\r\n";
-        out << "Content-Encoding: gzip\r\n";
-      }
-      else if (flags.test(ACCEPT_BZIP2)) {
-        out << "Transfer-Encoding: chunked\r\n";
-        out << "Content-Encoding: bzip2\r\n";
-      }
-      else
-        out << "Content-Length: " << r.get_data().size() << "\r\n";
+  if (entity) {
+    if (flags.test(ACCEPT_GZIP)) { // stattdessen wählt response das encoding
+      out << "Transfer-Encoding: chunked\r\n";
+      out << "Content-Encoding: gzip\r\n";
     }
+    else if (flags.test(ACCEPT_BZIP2)) {
+      out << "Transfer-Encoding: chunked\r\n";
+      out << "Content-Encoding: bzip2\r\n";
+    }
+    else
+      out << "Content-Length: " << r.get_data().size() << "\r\n";
   }
   out << "\r\n";
 
