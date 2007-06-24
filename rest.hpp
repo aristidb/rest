@@ -39,9 +39,6 @@ public:
     bzip2,
     X_NO_OF_ENCODINGS
   };
-
-  content_encoding_t choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings) const;
   
   void set_data(std::istream &data, bool seekable,
     content_encoding_t content_encoding = identity);
@@ -53,6 +50,15 @@ public:
   std::string const &get_type() const;
 
   bool has_content_encoding(content_encoding_t content_encoding) const;
+
+  content_encoding_t choose_content_encoding(
+    std::vector<content_encoding_t> const &encodings) const;
+
+  bool empty(content_encoding_t content_encoding) const;
+  bool chunked(content_encoding_t content_encoding) const;
+  std::size_t length(content_encoding_t content_encoding) const;
+
+  void print(std::ostream &out, content_encoding_t enc) const;
 
   // LEGACY FUNCTION (remove later)
   std::string const &get_data() const;

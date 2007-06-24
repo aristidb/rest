@@ -833,18 +833,28 @@ void http_connection::send(response const &r, bool entity) {
   if (!entity)
     out << "\r\n";
   else {
-    if (flags.test(ACCEPT_GZIP)) { // stattdessen wählt response das encoding
-      out << "Transfer-Encoding: chunked\r\n";
+    response::content_encoding_t enc = 
+        r.choose_content_encoding(encodings);
+
+    switch (enc) {
+    case response::identity:
+      break;
+    case response::gzip:
       out << "Content-Encoding: gzip\r\n";
-    }
-    else if (flags.test(ACCEPT_BZIP2)) {
-      out << "Transfer-Encoding: chunked\r\n";
+      break;
+    case response::bzip2:
       out << "Content-Encoding: bzip2\r\n";
+      break;
     }
+
+    if (r.chunked(enc))
+      out << "Transfer-Encoding: chunked\r\n";
     else
-      out << "Content-Length: " << r.get_data().size() << "\r\n";
+      out << "Content-Length: " << r.length(enc) << "\r\n";
     out << "\r\n";
 
+    r.print(out, enc);
+/*
     if (!r.get_data().empty()) {
       io::filtering_ostream out2;
       if (flags.test(ACCEPT_GZIP)) {
@@ -860,6 +870,7 @@ void http_connection::send(response const &r, bool entity) {
       out2.set_auto_close(false);
       out2.reset();
     }
+*/
   }
 
   io::flush(out);

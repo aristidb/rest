@@ -55,6 +55,7 @@ struct response::impl {
     enum { NIL, STRING, STREAM } type;
     std::pair<std::istream*, bool> stream;
     std::string string;
+    content_encoding_t compute_from;
 
     void set(std::string const &str) {
       type = STRING;
@@ -66,7 +67,52 @@ struct response::impl {
       stream = std::make_pair(&in, seekable);
     }
 
-    data_holder() : type(NIL) { }
+    bool empty() const {
+      switch (type) {
+      case NIL:
+        return true;
+      case STRING:
+        return string.empty();
+      case STREAM:
+        stream.first->peek();
+        return !*stream.first;
+      }
+      return true;
+    }
+
+    bool chunked() const {
+      switch (type) {
+      case NIL:
+        return true;
+      case STRING:
+        return false;
+      case STREAM:
+        return !stream.second;
+      }
+      return true;
+    }
+
+    std::size_t length() const {
+      switch (type) {
+      case NIL:
+        break;
+      case STRING:
+        return string.length();
+      case STREAM:
+        if (stream.second) {
+          std::istream &i = *stream.first;
+          std::size_t old_pos = i.tellg();
+          i.seekg(0, std::ios::end);
+          std::size_t new_pos = i.tellg();
+          i.seekg(old_pos, std::ios::beg);
+          return new_pos - old_pos;
+        }
+        break;
+      }
+      return 0;
+    }
+
+    data_holder() : type(NIL), compute_from(identity) { }
   };
 
   boost::array<data_holder, response::X_NO_OF_ENCODINGS> data;
@@ -128,12 +174,16 @@ void response::set_data(
     std::istream &data, bool seekable, content_encoding_t content_encoding)
 {
   p->data[content_encoding].set(data, seekable);
+  if (p->data[identity].type == impl::data_holder::NIL)
+    p->data[identity].compute_from = content_encoding;
 }
 
 void response::set_data(
     std::string const &data, content_encoding_t content_encoding)
 {
   p->data[content_encoding].set(data);
+  if (p->data[identity].type == impl::data_holder::NIL)
+    p->data[identity].compute_from = content_encoding;
 }
 
 int response::get_code() const {
@@ -158,11 +208,31 @@ response::content_encoding_t
 response::choose_content_encoding(
     std::vector<content_encoding_t> const &encodings) const
 {
-  if (encodings.empty())
+  if (encodings.empty() || empty(identity))
     return identity;
   typedef std::vector<content_encoding_t>::const_iterator iterator;
   for (iterator it = encodings.begin(); it != encodings.end(); ++it)
     if (has_content_encoding(*it))
       return *it;
-  return encodings[0];
+  if (p->data[identity].type == impl::data_holder::NIL)
+    return identity;
+  else
+    return encodings[0];
+}
+
+bool response::empty(content_encoding_t enc) const {
+  if (p->data[enc].type == impl::data_holder::NIL)
+    return p->data[enc].compute_from == enc;
+  return p->data[enc].empty();
+}
+
+bool response::chunked(content_encoding_t enc) const {
+  return !empty(enc) && p->data[enc].chunked();
+}
+
+std::size_t response::length(content_encoding_t enc) const {
+  return p->data[enc].length();
+}
+
+void response::print(std::ostream &out, content_encoding_t enc) const {
 }
