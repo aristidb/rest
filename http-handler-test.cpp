@@ -4,6 +4,7 @@
 #include "rest-config.hpp"
 #include <boost/lambda/lambda.hpp>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <sys/types.h>
 #include <unistd.h>
@@ -14,6 +15,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     std::cout << "GET: " << path << '\n';
 
     rest::response resp("text/html");
+    #if 0
     resp.set_data("<html><head><title>supi</title></head>\n"
                   "<body>\n<h3>Allles Supi!!</h3>\n<blink>blink</blink>\n"
                   "<form name=\"input\" action=\"/\" "
@@ -27,6 +29,11 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                   "maxlength=\"100000\" accept=\"text/*\">\n"
                   "<input type=\"submit\" value=\"Submit\">\n"
                   "</form>\n</body>\n</html>\n");
+    #endif
+    resp.set_data(
+      new std::ifstream("out.html.gz"),
+      false,
+      rest::response::gzip);
 
     return resp;
   }

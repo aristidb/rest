@@ -3,6 +3,7 @@
 #include "rest-utils.hpp"
 #include <boost/array.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <map>
@@ -32,21 +33,6 @@ namespace {
     "Internal Server Error", "Not Implemented", "Bad Gateway",
     "Service Unavailable", "Gateway Timeout", "HTTP Version Not Supported"
   };
-
-  char const *default_reason(int code) {
-    if(code == 100 || code == 101)
-      return default_reasons[code - 100];
-    else if(code >= 200 && code <= 206)
-      return default_reasons[code - 198];
-    else if(code >= 300 && code <= 307)
-      return default_reasons[code - 291];
-    else if(code >= 400 && code <= 417)
-      return default_reasons[code - 383];
-    else if(code >= 500 && code <= 505)
-      return default_reasons[code - 465];
-    else // throw exception!
-      return "";
-  }
 }
 
 struct response::impl {
@@ -57,7 +43,9 @@ struct response::impl {
 
   struct data_holder {
     enum { NIL, STRING, STREAM } type;
-    std::pair<std::istream*, bool> stream;
+    std::istream *stream;
+    bool seekable;
+    bool own_stream;
     std::string string;
     content_encoding_t compute_from;
 
@@ -66,9 +54,11 @@ struct response::impl {
       string = str;
     }
 
-    void set(std::istream &in, bool seekable) {
+    void set(std::istream *in, bool seekable_, bool own) {
       type = STREAM;
-      stream = std::make_pair(&in, seekable);
+      stream = in;
+      seekable = seekable_;
+      own_stream = own;
     }
 
     bool empty() const {
@@ -78,8 +68,8 @@ struct response::impl {
       case STRING:
         return string.empty();
       case STREAM:
-        stream.first->peek();
-        return !*stream.first;
+        stream->peek();
+        return !*stream;
       }
       return true;
     }
@@ -91,7 +81,7 @@ struct response::impl {
       case STRING:
         return false;
       case STREAM:
-        return !stream.second;
+        return !seekable;
       }
       return true;
     }
@@ -103,12 +93,11 @@ struct response::impl {
       case STRING:
         return string.length();
       case STREAM:
-        if (stream.second) {
-          std::istream &i = *stream.first;
-          std::size_t old_pos = i.tellg();
-          i.seekg(0, std::ios::end);
-          std::size_t new_pos = i.tellg();
-          i.seekg(old_pos, std::ios::beg);
+        if (seekable) {
+          std::size_t old_pos = stream->tellg();
+          stream->seekg(0, std::ios::end);
+          std::size_t new_pos = stream->tellg();
+          stream->seekg(old_pos, std::ios::beg);
           return new_pos - old_pos;
         }
         break;
@@ -116,7 +105,15 @@ struct response::impl {
       return 0;
     }
 
-    data_holder() : type(NIL), compute_from(identity) { }
+    data_holder() 
+    : type(NIL),
+      stream(0), seekable(false), own_stream(false),
+      compute_from(identity) { }
+
+    ~data_holder() {
+      if (own_stream)
+        delete stream;
+    }
   };
 
   boost::array<data_holder, response::X_NO_OF_ENCODINGS> data;
@@ -177,7 +174,15 @@ void response::add_header_part(
 void response::set_data(
     std::istream &data, bool seekable, content_encoding_t content_encoding)
 {
-  p->data[content_encoding].set(data, seekable);
+  p->data[content_encoding].set(&data, seekable, false);
+  if (p->data[identity].type == impl::data_holder::NIL)
+    p->data[identity].compute_from = content_encoding;
+}
+
+void response::set_data(
+    std::istream *data, bool seekable, content_encoding_t content_encoding)
+{
+  p->data[content_encoding].set(data, seekable, true);
   if (p->data[identity].type == impl::data_holder::NIL)
     p->data[identity].compute_from = content_encoding;
 }
@@ -194,8 +199,19 @@ int response::get_code() const {
   return p->code;
 }
 
-char const *response::get_reason() const {
-  return default_reason(p->code);
+char const *response::reason(int code) {
+  if(code == 100 || code == 101)
+    return default_reasons[code - 100];
+  else if(code >= 200 && code <= 206)
+    return default_reasons[code - 198];
+  else if(code >= 300 && code <= 307)
+    return default_reasons[code - 291];
+  else if(code >= 400 && code <= 417)
+    return default_reasons[code - 383];
+  else if(code >= 500 && code <= 505)
+    return default_reasons[code - 465];
+  else
+    return "";
 }
 
 std::string const &response::get_type() const {
@@ -239,7 +255,9 @@ std::size_t response::length(content_encoding_t enc) const {
   return p->data[enc].length();
 }
 
-void response::print(std::ostream &out, content_encoding_t enc) const {
+void response::print(
+    std::ostream &out, content_encoding_t enc, bool may_chunk) const
+{
   impl::data_holder &d = p->data[enc];
   switch (d.type) {
   case impl::data_holder::STRING:
@@ -247,29 +265,42 @@ void response::print(std::ostream &out, content_encoding_t enc) const {
     break;
   case impl::data_holder::STREAM:
     {
-      std::streambuf *in = d.stream.first->rdbuf();
-      std::copy(
-        std::istreambuf_iterator<char>(in),
-        std::istreambuf_iterator<char>(),
-        std::ostreambuf_iterator<char>(out.rdbuf())
-      );
+      std::streambuf *in = d.stream->rdbuf();
+      if (d.seekable || !may_chunk)
+        std::copy(
+          std::istreambuf_iterator<char>(in),
+          std::istreambuf_iterator<char>(),
+          std::ostreambuf_iterator<char>(out.rdbuf())
+        );
+      else {
+        namespace io = boost::iostreams;
+        io::filtering_ostreambuf out2;
+        out2.push(utils::chunked_filter());
+        out2.push(boost::ref(out));
+        std::copy(
+          std::istreambuf_iterator<char>(in),
+          std::istreambuf_iterator<char>(),
+          std::ostreambuf_iterator<char>(&out2)
+        );
+      }
     }
     break;
   case impl::data_holder::NIL:
     if (d.compute_from == identity) {
       if (enc != identity)
-        encode(out, enc);
+        encode(out, enc, may_chunk);
     } else {
       assert(enc == identity);
-      decode(out, d.compute_from);
+      decode(out, d.compute_from, may_chunk);
     }
   }
 }
 
-void response::encode(std::ostream &out, content_encoding_t enc) const {
+void response::encode(
+    std::ostream &out, content_encoding_t enc, bool may_chunk) const
+{
   namespace io = boost::iostreams;
   io::filtering_ostream out2;
-  assert(enc == gzip || enc == bzip2);
   switch (enc) {
   case gzip:
     out2.push(io::gzip_compressor());
@@ -277,14 +308,18 @@ void response::encode(std::ostream &out, content_encoding_t enc) const {
   case bzip2:
     out2.push(io::bzip2_compressor());
     break;
+  default:
+    assert(false);
+    break;
   }
-  out2.push(utils::chunked_filter());
+  if (may_chunk)
+    out2.push(utils::chunked_filter());
   out2.push(boost::ref(out));
-  print(out2, identity);
-  out2.set_auto_close(false);
-  out2.reset();
+  print(out2, identity, false);
 }
 
-void response::decode(std::ostream &out, content_encoding_t enc) const {
+void response::decode(
+    std::ostream &out, content_encoding_t enc, bool may_chunk) const
+{
   //TODO: DECODING NOT IMPLEMENTED YET
 }

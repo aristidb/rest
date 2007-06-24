@@ -42,11 +42,13 @@ public:
   
   void set_data(std::istream &data, bool seekable,
     content_encoding_t content_encoding = identity);
+  void set_data(std::istream *data, bool seekable,
+    content_encoding_t content_encoding = identity);
   void set_data(std::string const &data,
     content_encoding_t content_encoding = identity);
 
   int get_code() const;
-  char const *get_reason() const;
+  static char const *reason(int code);
   std::string const &get_type() const;
 
   bool has_content_encoding(content_encoding_t content_encoding) const;
@@ -60,11 +62,11 @@ public:
   bool chunked(content_encoding_t content_encoding) const;
   std::size_t length(content_encoding_t content_encoding) const;
 
-  void print(std::ostream &out, content_encoding_t enc) const;
+  void print(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
 
 private:
-  void encode(std::ostream &out, content_encoding_t enc) const;
-  void decode(std::ostream &out, content_encoding_t enc) const;
+  void encode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
+  void decode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
 
   class impl;
   boost::scoped_ptr<impl> p;

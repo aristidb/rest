@@ -822,15 +822,22 @@ void http_connection::send(response const &r, bool entity) {
   else
     out << "HTTP/1.1 ";
 
-  std::cout << "Send: " << r.get_code() << " CE:" << (flags.test(ACCEPT_GZIP) ? "gzip" : (flags.test(ACCEPT_BZIP2) ? "bzip2" : "none")) << "\n"; //DEBUG
-  out << r.get_code() << " " << r.get_reason() << "\r\n";
+  int code = r.get_code();
+  if (code == -1)
+    code = 200;
+
+  std::cout << "Send: " << code << " CE:" << (flags.test(ACCEPT_GZIP) ? "gzip" : (flags.test(ACCEPT_BZIP2) ? "bzip2" : "none")) << "\n"; //DEBUG
+
+  out << code << " " << response::reason(code) << "\r\n";
 
   out << "Date: " << utils::http::current_date_time()  << "\r\n";
   out << "Server: " << REST_SERVER_ID << "\r\n";
+
   if (!r.get_type().empty()) 
     out << "Content-Type: " << r.get_type() << "\r\n";
   if (!entity)
     out << "\r\n";
+
   else {
     bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
 
@@ -848,13 +855,13 @@ void http_connection::send(response const &r, bool entity) {
       break;
     }
 
-    if (r.chunked(enc))
-      out << "Transfer-Encoding: chunked\r\n";
-    else
+    if (!r.chunked(enc))
       out << "Content-Length: " << r.length(enc) << "\r\n";
+    else if (may_chunk)
+      out << "Transfer-Encoding: chunked\r\n";
     out << "\r\n";
 
-    r.print(out, enc);
+    r.print(out, enc, may_chunk);
   }
 
   io::flush(out);
