@@ -14,6 +14,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace rest {
 
@@ -27,6 +28,9 @@ public:
   ~response();
 
   response &operator=(response const &lhs);
+
+  void move(response &o);
+  void swap(response &o);
 
   void set_code(int code);
   void set_type(std::string const &type);

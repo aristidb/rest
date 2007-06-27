@@ -294,7 +294,7 @@ namespace {
       encodings.clear();
     }
 
-    response handle_request(server::socket_param const &hosts);
+    void handle_request(server::socket_param const &hosts, response &o);
     int handle_entity(keywords &kw, header_fields &fields);
 
     void send(response const &r, bool entity);
@@ -491,15 +491,16 @@ void server::serve() {
       }
       else if(pid == 0) {
         p->do_close_on_fork();
-#endif
         int status = 0;
+#endif
         try {
           connection_streambuf buf(connfd, 10);
           http_connection conn(buf);
           try {
             while (conn.open()) {
               conn.reset();
-              response r = conn.handle_request(*ptr);
+              response r;
+              conn.handle_request(*ptr, r);
               conn.send(r);
             }
           }
@@ -550,7 +551,9 @@ namespace {
   }
 }
 
-response http_connection::handle_request(server::socket_param const &sock) {
+void http_connection::handle_request(
+    server::socket_param const &sock, response &out)
+{
   try {
     std::string method, uri, version;
     boost::tie(method, uri, version) = utils::http::get_request_line(conn);
@@ -562,13 +565,13 @@ response http_connection::handle_request(server::socket_param const &sock) {
       open_ = false;
     }
     else if(version != "HTTP/1.1")
-      return 505; // HTTP Version not Supported
+      throw 505; // HTTP Version not Supported
 
     header_fields fields = utils::http::read_headers(conn);
 
     int ret = set_header_options(fields);
     if(ret != 200)
-      return ret;
+      throw ret;
 
     header_fields::const_iterator host_header = fields.find("host");
     if(host_header == fields.end())
@@ -576,7 +579,7 @@ response http_connection::handle_request(server::socket_param const &sock) {
 
     host const *h = sock.get_host(host_header->second);
     if(!h)
-      return 404;
+      throw 404;
     context &global = h->get_context();
 
     keywords kw;
@@ -589,7 +592,7 @@ response http_connection::handle_request(server::socket_param const &sock) {
     global.find_responder(uri, path_id, responder, local, kw);
 
     if (!responder)
-      return 404;
+      throw 404;
 
     if(!flags.test(HTTP_1_0_COMPAT)) {
       header_fields::iterator connect_header = fields.find("connection");
@@ -600,43 +603,49 @@ response http_connection::handle_request(server::socket_param const &sock) {
     if (method == "GET") {
       det::getter_base *getter = responder->x_getter();
       if (!getter || !responder->x_exists(path_id, kw))
-        return 404;
-      return getter->x_get(path_id, kw);
+        throw 404;
+      getter->x_get(path_id, kw).move(out);
+      return;
     }
     else if(method == "HEAD") {
       flags.set(NO_ENTITY);
       det::getter_base *getter = responder->x_getter();
       if (!getter || !responder->x_exists(path_id, kw))
-        return 404;
-      return getter->x_get(path_id, kw);
+        throw 404;
+
+      getter->x_get(path_id, kw).move(out);
+      return;
     }
     else if(method == "POST") {
       det::poster_base *poster = responder->x_poster();
       if (!poster || !responder->x_exists(path_id, kw))
-        return 404;
+        throw 404;
 
       int ret = handle_entity(kw, fields);
       if(ret != 0)
-        return ret;
+        throw ret;
 
-      return poster->x_post(path_id, kw);
+      poster->x_post(path_id, kw).move(out);
+      return;
     }
     else if(method == "PUT") {
       det::putter_base *putter = responder->x_putter();
       if (!putter)
-        return 404;
+        throw 404;
 
       int ret = handle_entity(kw, fields);
       if(ret != 0)
-        return ret;
+        throw ret;
 
-      return putter->x_put(path_id, kw);
+      putter->x_put(path_id, kw).move(out);
+      return;
     }
     else if (method == "DELETE") {
       det::deleter_base *deleter = responder->x_deleter();
       if (!deleter || !responder->x_exists(path_id, kw))
-        return 404;
-      return deleter->x_delete(path_id, kw);
+        throw 404;
+      deleter->x_delete(path_id, kw).move(out);
+      return;
     }
     else if (method == "TRACE") {
 #ifndef NO_HTTP_TRACE
@@ -648,19 +657,20 @@ response http_connection::handle_request(server::socket_param const &sock) {
         data += i->first + ": " + i->second + "\r\n";
       data += "\r\nEntity-Data not included!\r\n";
       ret.set_data(data);
-      return ret;
+      ret.move(out);
 #else
-      return 501;
+      throw 501;
 #endif
     }
     else if (method == "CONNECT" || method == "OPTIONS")
-      return 501; // Not Supported
+      throw 501; // Not Supported
     else
-      return 400; // Bad Request
+      throw 400; // Bad Request
   } catch (utils::http::bad_format &) {
-    return 400; // Bad Request
+    response(400).move(out); // Bad Request
+  } catch (int i) {
+    response(i).move(out);
   }
-  return 200;
 }
 
 int http_connection::set_header_options(header_fields &fields) {
@@ -845,14 +855,13 @@ void http_connection::send(response const &r, bool entity) {
         r.choose_content_encoding(encodings, may_chunk);
 
     switch (enc) {
-    case response::identity:
-      break;
     case response::gzip:
       out << "Content-Encoding: gzip\r\n";
       break;
     case response::bzip2:
       out << "Content-Encoding: bzip2\r\n";
       break;
+    default: break;
     }
 
     if (!r.chunked(enc))

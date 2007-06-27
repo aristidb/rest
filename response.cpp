@@ -45,7 +45,7 @@ struct response::impl {
     enum { NIL, STRING, STREAM } type;
     std::istream *stream;
     bool seekable;
-    bool own_stream;
+    boost::shared_ptr<std::istream> own_stream;
     std::string string;
     content_encoding_t compute_from;
 
@@ -58,7 +58,7 @@ struct response::impl {
       type = STREAM;
       stream = in;
       seekable = seekable_;
-      own_stream = own;
+      own_stream.reset(own ? stream : 0);
     }
 
     bool empty() const {
@@ -107,13 +107,7 @@ struct response::impl {
 
     data_holder() 
     : type(NIL),
-      stream(0), seekable(false), own_stream(false),
-      compute_from(identity) { }
-
-    ~data_holder() {
-      if (own_stream)
-        delete stream;
-    }
+      stream(0), seekable(false), compute_from(identity) { }
   };
 
   boost::array<data_holder, response::X_NO_OF_ENCODINGS> data;
@@ -145,6 +139,17 @@ response &response::operator=(response const &lhs) {
   if(&lhs != this)
     p.reset(new impl(*lhs.p));
   return *this;
+}
+
+void response::move(response &o) {
+  if (this == &o)
+    return;
+  p.swap(o.p);
+  p.reset();
+}
+
+void response::swap(response &o) {
+  p.swap(o.p);
 }
 
 void response::set_code(int code) {
@@ -321,5 +326,6 @@ void response::encode(
 void response::decode(
     std::ostream &out, content_encoding_t enc, bool may_chunk) const
 {
+  (void) out; (void) enc; (void) may_chunk;
   //TODO: DECODING NOT IMPLEMENTED YET
 }
