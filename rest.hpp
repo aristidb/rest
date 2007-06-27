@@ -31,8 +31,6 @@ public:
   response(empty_tag_t);
   static empty_tag_t empty_tag() { return empty_tag_t(); }
 
-//  response &operator=(response const &lhs);
-
   void move(response &o);
   void swap(response &o);
 

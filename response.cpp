@@ -45,7 +45,7 @@ struct response::impl {
     enum { NIL, STRING, STREAM } type;
     std::istream *stream;
     bool seekable;
-    boost::shared_ptr<std::istream> own_stream;
+    boost::scoped_ptr<std::istream> own_stream;
     std::string string;
     content_encoding_t compute_from;
 
