@@ -117,6 +117,8 @@ struct response::impl {
   impl(std::string const &type) : code(-1), type(type) { }
 };
 
+response::response(empty_tag_t) {}
+
 response::response() : p(new impl) { }
 
 response::response(int code) : p(new impl(code)) { }
@@ -129,17 +131,11 @@ response::response(std::string const &type, std::string const &data)
   p->data[identity].set(data);
 }
 
-response::response(response const &r)
-  : p(new impl(*r.p))
-{ }
+response::response(response &o) {
+  p.swap(o.p);
+}
 
 response::~response() { }
-
-response &response::operator=(response const &lhs) {
-  if(&lhs != this)
-    p.reset(new impl(*lhs.p));
-  return *this;
-}
 
 void response::move(response &o) {
   if (this == &o)

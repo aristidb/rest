@@ -499,7 +499,7 @@ void server::serve() {
           try {
             while (conn.open()) {
               conn.reset();
-              response r;
+              response r(response::empty_tag());
               conn.handle_request(*ptr, r);
               conn.send(r);
             }

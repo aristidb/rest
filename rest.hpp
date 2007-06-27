@@ -24,10 +24,14 @@ public:
   response(int code);
   response(std::string const &type);
   response(std::string const &type, std::string const &data);
-  response(response const &r);
+  response(response &r);
   ~response();
 
-  response &operator=(response const &lhs);
+  struct empty_tag_t {};
+  response(empty_tag_t);
+  static empty_tag_t empty_tag() { return empty_tag_t(); }
+
+//  response &operator=(response const &lhs);
 
   void move(response &o);
   void swap(response &o);
@@ -222,7 +226,9 @@ namespace detail {
     virtual response get(path_parameter, keywords &) = 0;
   private:
     response x_get(any_path const &path, keywords &kw) {
-      return get(unpack<path_type>(path), kw);
+      response result(response::empty_tag());
+      get(unpack<path_type>(path), kw).move(result);
+      return result;
     }
   };
   template<typename Path>
@@ -232,7 +238,9 @@ namespace detail {
     virtual response put(path_parameter, keywords &) = 0;
   private:
     response x_put(any_path const &path, keywords &kw) {
-      return put(unpack<path_type>(path), kw);
+      response result(response::empty_tag());
+      put(unpack<path_type>(path), kw).move(result);
+      return result;
     }
   };
   template<typename Path>
@@ -242,7 +250,9 @@ namespace detail {
     virtual response post(path_parameter, keywords &) = 0;
   private:
     response x_post(any_path const &path, keywords &kw) {
-      return post(unpack<path_type>(path), kw);
+      response result(response::empty_tag());
+      post(unpack<path_type>(path), kw).move(result);
+      return result;
     }
   };
   template<typename Path>
@@ -252,7 +262,9 @@ namespace detail {
     virtual response delete_(path_parameter, keywords &) = 0;
   private:
     response x_delete(any_path const &path, keywords &kw) {
-      return delete_(unpack<path_type>(path), kw);
+      response result(response::empty_tag());
+      delete_(unpack<path_type>(path), kw).move(result);
+      return result;
     }
   };
 }

@@ -39,11 +39,13 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
   }
   rest::response put(std::string const &path, rest::keywords &) {
     std::cout << "PUT: " << path << '\n';
-    return 200;
+    rest::response ok(200);
+    return ok;
   }
   rest::response delete_(std::string const &path, rest::keywords &) {
     std::cout << "DELETE: " << path << '\n';
-    return 200;
+    rest::response ok(200);
+    return ok;
   }
   rest::response post(std::string const &path, rest::keywords &kw) {
     std::cout << "POST: " << path << '\n';

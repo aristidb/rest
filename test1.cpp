@@ -17,19 +17,24 @@ struct displayer : rest::responder<rest::GET | rest::PUT> {
   rest::response get(std::string const &path, rest::keywords &data) {
     if (path == "list") {
       // return a list of objects
-      return 200;
+      rest::response ok;
+      return ok;
     } else {
       std::string id = data["id"];
       // display the object
-      return 200;
+      rest::response ok;
+      return ok;
     }
   }
   rest::response put(std::string const &path, rest::keywords &) {
-    if (path == "list")
-      return 404; // some error code
-    else {
+    if (path == "list") {
+      // error
+      rest::response err(404);
+      return err;
+    } else {
       // upload the new object
-      return 201;
+      rest::response ok(201);
+      return ok;
     }
   }
 };
