@@ -22,6 +22,9 @@ set(rest_src
   config.cpp
 )
 
+# we don't need threading
+add_definitions(-DBOOST_SP_DISABLE_THREADS)
+
 if (APPLE)
   add_definitions(-DAPPLE)
   set(CMAKE_C_FLAGS "-std=c99 ")
