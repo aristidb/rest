@@ -851,8 +851,6 @@ void http_connection::send(response const &r, bool entity) {
   else {
     bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
 
-    encodings.clear();//XXX
-
     response::content_encoding_t enc = 
         r.choose_content_encoding(encodings, may_chunk);
 

@@ -76,6 +76,8 @@ private:
 
   class impl;
   boost::scoped_ptr<impl> p;
+
+  response &operator=(response const &); //DUMMY
 };
 
 enum response_type {
