@@ -8,6 +8,8 @@
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/invert.hpp>
 #include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/device/null.hpp>
 #include <map>
 #include <cassert>
 
@@ -268,15 +270,15 @@ void response::print(
     break;
   case impl::data_holder::STREAM:
     {
+      namespace io = boost::iostreams;
       std::streambuf &in = *d.stream->rdbuf();
       if (d.seekable || !may_chunk)
-        boost::iostreams::copy(in, out);
+        io::copy(in, out);
       else {
-        namespace io = boost::iostreams;
         io::filtering_ostreambuf out2;
         out2.push(utils::chunked_filter());
         out2.push(boost::ref(out));
-        boost::iostreams::copy(in, out2);
+        io::copy(in, out2);
       }
     }
     break;
@@ -317,20 +319,41 @@ void response::decode(
     std::ostream &out, content_encoding_t enc, bool may_chunk) const
 {
   namespace io = boost::iostreams;
-  io::filtering_ostream out2;
+  io::filtering_istream in;
   switch (enc) {
   case gzip:
-    out2.push(io::invert(io::gzip_decompressor()));
+    in.push(io::gzip_decompressor());
     break;
   case bzip2:
-    out2.push(io::bzip2_decompressor());
+    in.push(io::bzip2_decompressor());
     break;
   default:
     assert(false);
     break;
   }
-  if (may_chunk)
+
+  impl::data_holder &d = p->data[enc];
+  switch (d.type) {
+  case impl::data_holder::NIL:
+    in.push(io::null_source());
+    break;
+  case impl::data_holder::STRING:
+    in.push(io::array_source(d.string.data(), d.string.length()));
+    break;
+  case impl::data_holder::STREAM:
+    in.push(boost::ref(*d.stream));
+    break;
+  }
+
+  std::ostream *out_;
+  if (may_chunk) {
+    io::filtering_ostream out2;
     out2.push(utils::chunked_filter());
-  out2.push(boost::ref(out));
-  print(out2, enc, false);
+    out2.push(boost::ref(out));
+    out_ = &out2;
+  } else {
+    out_ = &out;
+  }
+
+  io::copy(in, *out_);
 }
