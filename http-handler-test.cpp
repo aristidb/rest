@@ -32,7 +32,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     #endif
     resp.set_data(
       new std::ifstream("out.html.gz"),
-      false,
+      true,
       rest::response::gzip);
 
     return resp;

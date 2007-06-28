@@ -6,6 +6,8 @@
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
+#include <boost/iostreams/invert.hpp>
+#include <boost/iostreams/copy.hpp>
 #include <map>
 #include <cassert>
 
@@ -266,23 +268,15 @@ void response::print(
     break;
   case impl::data_holder::STREAM:
     {
-      std::streambuf *in = d.stream->rdbuf();
+      std::streambuf &in = *d.stream->rdbuf();
       if (d.seekable || !may_chunk)
-        std::copy(
-          std::istreambuf_iterator<char>(in),
-          std::istreambuf_iterator<char>(),
-          std::ostreambuf_iterator<char>(out.rdbuf())
-        );
+        boost::iostreams::copy(in, out);
       else {
         namespace io = boost::iostreams;
         io::filtering_ostreambuf out2;
         out2.push(utils::chunked_filter());
         out2.push(boost::ref(out));
-        std::copy(
-          std::istreambuf_iterator<char>(in),
-          std::istreambuf_iterator<char>(),
-          std::ostreambuf_iterator<char>(&out2)
-        );
+        boost::iostreams::copy(in, out2);
       }
     }
     break;
@@ -322,6 +316,21 @@ void response::encode(
 void response::decode(
     std::ostream &out, content_encoding_t enc, bool may_chunk) const
 {
-  (void) out; (void) enc; (void) may_chunk;
-  //TODO: DECODING NOT IMPLEMENTED YET
+  namespace io = boost::iostreams;
+  io::filtering_ostream out2;
+  switch (enc) {
+  case gzip:
+    out2.push(io::invert(io::gzip_decompressor()));
+    break;
+  case bzip2:
+    out2.push(io::bzip2_decompressor());
+    break;
+  default:
+    assert(false);
+    break;
+  }
+  if (may_chunk)
+    out2.push(utils::chunked_filter());
+  out2.push(boost::ref(out));
+  print(out2, enc, false);
 }
