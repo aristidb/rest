@@ -345,15 +345,10 @@ void response::decode(
     break;
   }
 
-  std::ostream *out_;
-  if (may_chunk) {
-    io::filtering_ostream out2;
+  io::filtering_ostream out2;
+  if (may_chunk)
     out2.push(utils::chunked_filter());
-    out2.push(boost::ref(out));
-    out_ = &out2;
-  } else {
-    out_ = &out;
-  }
+  out2.push(boost::ref(out));
 
-  io::copy(in, *out_);
+  io::copy(in, out2);
 }
