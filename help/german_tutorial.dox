@@ -8,6 +8,7 @@ bietet, ob 1 denn gleich 1 ist:
 
 @code
 #include <testsoon.hpp>
+#include <iostream>
 
 TEST(compiler_check) {
   Equals(1, 1); // Hoffen wir das Beste
@@ -16,7 +17,7 @@ TEST(compiler_check) {
 TEST_REGISTRY;
 
 int main() {
-  testsoon::default_reporter rep;
+  testsoon::default_reporter rep(std::cout);
   testsoon::tests().run(rep);
 }
 @endcode
@@ -41,6 +42,7 @@ erkl&auml;rend kommentiert:
 @code
 // Das sollte klar sein...
 #include <testsoon.hpp>
+#include <iostream>
 
 // Hier wird ein Test mit Namen "compiler_check" erstellt. Es ist nicht noetig,
 // dass der Name gequoted (in "" eingeschlossen) wird.
@@ -57,8 +59,8 @@ TEST_REGISTRY;
 
 int main() {
   // Hier wird eine Instanz eines Reporters erstellt. Wir verwenden den 
-  // "default_reporter".
-  testsoon::default_reporter rep;
+  // "default_reporter", der auf std::cout drucken soll.
+  testsoon::default_reporter rep(std::cout);
 
   // Testsoon fuehrt durch das Aufrufen dieser Funktion alle erstellten Tests
   // durch. Uebergeben wird eine Instanz eines Reporters.

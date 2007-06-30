@@ -8,6 +8,7 @@ decently! We do this by testing whether 1 is actually the same as 1.
 
 @code
 #include <testsoon.hpp>
+#include <iostream>
 
 TEST(compiler_check) {
   Equals(1, 1); // let's hope it works!!
@@ -16,7 +17,7 @@ TEST(compiler_check) {
 TEST_REGISTRY;
 
 int main() {
-  testsoon::default_reporter rep;
+  testsoon::default_reporter rep(std::cout);
   testsoon::tests().run(rep);
 }
 @endcode
@@ -42,6 +43,7 @@ the code.
 @code
 // You really can guess why we do this.
 #include <testsoon.hpp>
+#include <iostream>
 
 // Declare a simple test with name "compiler_check". Note that no quotes are
 // required here.
@@ -57,7 +59,9 @@ TEST_REGISTRY;
 int main() {
   // Declare a reporter. The default_reporter should be a sensible setting.
   // That's why it's the default.
-  testsoon::default_reporter rep;
+  // We need to pass it a reference to a std::ostream object to print to,
+  // usually just std::cout.
+  testsoon::default_reporter rep(std::cout);
 
   // Run all tests.
   testsoon::tests().run(rep);
