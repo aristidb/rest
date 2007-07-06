@@ -20,51 +20,79 @@ namespace rest {
 
 class input_stream {
 public:
-  explicit
-  input_stream(std::istream &stream)
-    : stream(&stream), own(false)
-  {}
+  input_stream() : stream(0), own(false) {}
 
-  explicit
-  input_stream(std::istream *stream, bool own = true)
+  explicit input_stream(std::istream &stream)
+    : stream(&stream), own(false) {}
+
+  explicit input_stream(std::istream *stream, bool own = true)
     : stream(stream), own(own)
   {}
 
   input_stream(input_stream &o)
     : stream(o.stream), own(o.own)
-  {
-    o.stream = 0;
-  }
+  { o.stream = 0; }
 
   void move(input_stream &x) {
+    x.reset();
     x.stream = stream;
     x.own = own;
     stream = 0;
   }
 
-  operator input_stream &() {
-    return *this;
-  }
+  void reset();
 
-  std::istream &operator*() const {
-    return *stream;
-  }
-
-  std::istream *operator->() const {
-    return stream;
-  }
-
-  std::istream *get() const {
-    return stream;
-  }
-
-  ~input_stream();
+  operator input_stream &() { return *this; }
+  std::istream &operator*() const { return *stream; }
+  std::istream *operator->() const { return stream; }
+  std::istream *get() const { return stream; }
+  ~input_stream() { reset(); }
 
 private:
   std::istream *stream;
   bool own;
 
   input_stream &operator=(input_stream const &); //DUMMY
+};
+
+class output_stream {
+public:
+  output_stream() : stream(0), own(false) {}
+
+  explicit
+  output_stream(std::ostream &stream)
+    : stream(&stream), own(false)
+  {}
+
+  explicit
+  output_stream(std::ostream *stream, bool own = true)
+    : stream(stream), own(own)
+  {}
+
+  output_stream(output_stream &o)
+    : stream(o.stream), own(o.own)
+  { o.stream = 0; }
+
+  void move(output_stream &x) {
+    x.reset();
+    x.stream = stream;
+    x.own = own;
+    stream = 0;
+  }
+
+  operator output_stream &() { return *this; }
+  std::ostream &operator*() const { return *stream; }
+  std::ostream *operator->() const { return stream; }
+  std::ostream *get() const { return stream; }
+  ~output_stream() { reset(); }
+
+  void reset();
+
+private:
+  std::ostream *stream;
+  bool own;
+
+  output_stream &operator=(output_stream const &); //DUMMY
 };
 
 class response {
@@ -177,12 +205,12 @@ public:
 
   void set(std::string const &key, int index, std::string const &value);
 
-  void set_stream(std::string const &key, std::auto_ptr<std::istream> &value) {
+  void set_stream(std::string const &key, input_stream &value) {
     return set_stream(key, 0, value);
   }
 
   void set_stream(
-      std::string const &key, int index, std::auto_ptr<std::istream> &stream);
+      std::string const &key, int index, input_stream &stream);
 
   void set_name(std::string const &key, std::string const &value) {
     set_name(key, 0, value);
@@ -190,12 +218,12 @@ public:
 
   void set_name(std::string const &key, int index, std::string const &name);
 
-  void set_output(std::string const &key, std::auto_ptr<std::ostream> &stream) {
+  void set_output(std::string const &key, output_stream &stream) {
     set_output(key, 0, stream);
   }
 
   void set_output(
-      std::string const &key, int index, std::auto_ptr<std::ostream> &output);
+      std::string const &key, int index, output_stream &output);
 
   void flush();
 

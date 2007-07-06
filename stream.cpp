@@ -2,7 +2,16 @@
 #include "rest.hpp"
 #include <istream>
 
-rest::input_stream::~input_stream() {
+void rest::input_stream::reset() {
   if (own)
     delete stream;
+  stream = 0;
+  own = false;
+}
+
+void rest::output_stream::reset() {
+  if (own)
+    delete stream;
+  stream = 0;
+  own = false;
 }

@@ -35,9 +35,9 @@ public:
 
     void read() const {
       std::cout << "read(e) " << keyword << ',' << index << std::endl;
-      if (stream) {
+      if (stream.get()) {
         std::cout << "\tstream" << std::endl;
-        if (output) {
+        if (output.get()) {
           *output << stream->rdbuf();
           output.reset();
         } else {
@@ -46,7 +46,7 @@ public:
             std::istreambuf_iterator<char>());
         }
         stream.reset();
-      } else if (output) {
+      } else if (output.get()) {
         *output << data;
         output.reset();
       }
@@ -54,8 +54,8 @@ public:
 
     void write() const {
       std::cout << "write(e) " << keyword << ',' << index << std::endl;
-      if (!stream)
-        stream.reset(new std::istringstream(data));
+      if (!stream.get())
+        input_stream(new std::istringstream(data)).move(stream);
     }
 
     std::string keyword;
@@ -65,8 +65,8 @@ public:
     mutable std::string name;
     mutable std::string mime;
     mutable std::string data;
-    mutable boost::scoped_ptr<std::istream> stream;
-    mutable boost::scoped_ptr<std::ostream> output;
+    mutable input_stream stream;
+    mutable output_stream output;
   };
 
   typedef
@@ -166,7 +166,7 @@ public:
 
     it->name = next_filename;
     it->mime = next_filetype;
-    it->stream.reset(element.release());
+    input_stream(element.release()).move(it->stream);
     it->state = entry::s_prepared;
 
     if (read) {
@@ -279,11 +279,11 @@ void keywords::set(
 }
 
 void keywords::set_stream(
-    std::string const &keyword, int index, std::auto_ptr<std::istream> &stream)
+    std::string const &keyword, int index, input_stream &stream)
 {
   impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
   it->state = impl::entry::s_normal;
-  it->stream.reset(stream.release());
+  stream.move(it->stream);
 }
 
 void keywords::set_name(
@@ -342,7 +342,7 @@ void keywords::set_entity(
     add_uri_encoded(data);
   } else {
     declare("_", NORMAL);
-    set_stream("_", entity);
+    set_stream("_", input_stream(entity.release()));
   }
 }
 
@@ -371,10 +371,10 @@ void keywords::add_uri_encoded(std::string const &data) {
 }
 
 void keywords::set_output(
-    std::string const &keyword, int index, std::auto_ptr<std::ostream> &stream)
+    std::string const &keyword, int index, output_stream &stream)
 {
   impl::data_t::iterator it = p->find(keyword, index);
-  it->output.reset(stream.release());
+  stream.move(it->output);
 }
 
 void keywords::flush() {
