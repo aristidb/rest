@@ -23,7 +23,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/format.hpp>
 #include <boost/ref.hpp>
-#include<iostream>//DEBUG
 
 namespace rest { namespace utils {
 
@@ -239,7 +238,6 @@ public:
 
   template<typename Device>
   void close(Device &d, std::ios_base::open_mode mode) {
-    std::cout << "closing " << this << "- " << &d << " - " << mode << std::endl;
     namespace io = boost::iostreams;
     if (mode & std::ios_base::out) {
       io::write(d, "0\r\n\r\n", 5);
