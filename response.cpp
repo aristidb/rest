@@ -47,9 +47,8 @@ struct response::impl {
 
   struct data_holder {
     enum { NIL, STRING, STREAM } type;
-    std::istream *stream;
+    input_stream stream;
     bool seekable;
-    boost::scoped_ptr<std::istream> own_stream;
     std::string string;
     content_encoding_t compute_from;
 
@@ -58,11 +57,10 @@ struct response::impl {
       string = str;
     }
 
-    void set(std::istream *in, bool seekable_, bool own) {
+    void set(input_stream &in, bool seekable_) {
       type = STREAM;
-      stream = in;
+      in.move(stream);
       seekable = seekable_;
-      own_stream.reset(own ? stream : 0);
     }
 
     bool empty() const {
@@ -177,17 +175,9 @@ void response::add_header_part(
 }
 
 void response::set_data(
-    std::istream &data, bool seekable, content_encoding_t content_encoding)
+    input_stream &data, bool seekable, content_encoding_t content_encoding)
 {
-  p->data[content_encoding].set(&data, seekable, false);
-  if (p->data[identity].type == impl::data_holder::NIL)
-    p->data[identity].compute_from = content_encoding;
-}
-
-void response::set_data(
-    std::istream *data, bool seekable, content_encoding_t content_encoding)
-{
-  p->data[content_encoding].set(data, seekable, true);
+  p->data[content_encoding].set(data, seekable);
   if (p->data[identity].type == impl::data_holder::NIL)
     p->data[identity].compute_from = content_encoding;
 }

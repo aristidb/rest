@@ -31,7 +31,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                   "</form>\n</body>\n</html>\n");
     #endif
     resp.set_data(
-      new std::ifstream("out.html.gz"),
+      rest::input_stream(new std::ifstream("out.html.gz")),
       true,
       rest::response::gzip);
 

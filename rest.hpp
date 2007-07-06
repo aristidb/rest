@@ -18,6 +18,55 @@
 
 namespace rest {
 
+class input_stream {
+public:
+  explicit
+  input_stream(std::istream &stream)
+    : stream(&stream), own(false)
+  {}
+
+  explicit
+  input_stream(std::istream *stream, bool own = true)
+    : stream(stream), own(own)
+  {}
+
+  input_stream(input_stream &o)
+    : stream(o.stream), own(o.own)
+  {
+    o.stream = 0;
+  }
+
+  void move(input_stream &x) {
+    x.stream = stream;
+    x.own = own;
+    stream = 0;
+  }
+
+  operator input_stream &() {
+    return *this;
+  }
+
+  std::istream &operator*() const {
+    return *stream;
+  }
+
+  std::istream *operator->() const {
+    return stream;
+  }
+
+  std::istream *get() const {
+    return stream;
+  }
+
+  ~input_stream();
+
+private:
+  std::istream *stream;
+  bool own;
+
+  input_stream &operator=(input_stream const &); //DUMMY
+};
+
 class response {
 public:
   response();
@@ -45,12 +94,10 @@ public:
     bzip2,
     X_NO_OF_ENCODINGS
   };
-  
-  void set_data(std::istream &data, bool seekable,
-    content_encoding_t content_encoding = identity);
-  void set_data(std::istream *data, bool seekable,
-    content_encoding_t content_encoding = identity);
+
   void set_data(std::string const &data,
+    content_encoding_t content_encoding = identity);
+  void set_data(input_stream &data, bool seekable,
     content_encoding_t content_encoding = identity);
 
   int get_code() const;

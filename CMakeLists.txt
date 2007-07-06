@@ -20,6 +20,7 @@ set(rest_src
   socket_device.cpp
   http_headers.cpp
   config.cpp
+  stream.cpp
 )
 
 # we don't need threading
