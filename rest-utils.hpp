@@ -107,7 +107,7 @@ public:
         }
 
         if (len > 0)
-          std::memmove(buf.get(), buf.get() + pos, len);
+          memmove(buf.get(), buf.get() + pos, len);
 
         std::streamsize c =
           boost::iostreams::read(source, buf.get() + len, pos);
@@ -117,7 +117,7 @@ public:
           break;
         } else if (c != pos) {
           pos = boundary.size() - c;
-          std::memmove(buf.get() + pos, buf.get(), c);
+          memmove(buf.get() + pos, buf.get(), c);
           continue;
         } else {
           pos = 0;

@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <cerrno>
+#include <cstring>
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -14,7 +15,7 @@ int main(int argc, char **argv) {
   int pipe = open(argv[1], O_RDONLY);
   if (pipe < 0) {
     std::cerr << argv[0] << ": Could not open pipe " << argv[1]
-              << ": `" << std::strerror(errno) << "'\n";
+              << ": `" << strerror(errno) << "'\n";
     return 2;
   }
   char buf[4096];
