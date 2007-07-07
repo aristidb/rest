@@ -1,12 +1,12 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest-utils.hpp"
-#include <boost/thread/once.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <iostream>
-#include <signal.h> // for sig_atomic_t
 #include <unistd.h>
-#include <ctime>
+#include <time.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <iostream>
 
 #ifndef REST_LOGPIPE
 #define REST_LOGPIPE "rest-logpipe"
@@ -17,19 +17,21 @@ using namespace rest::utils;
 class logger::impl {
 public:
   int fd;
-  sig_atomic_t min_priority;
+  int min_priority;
 };
 
 logger::logger() : p(new impl) {
-  unlink(REST_LOGPIPE);
-  p->fd = ::mkfifo(REST_LOGPIPE, 0644);
+  if (::mkfifo(REST_LOGPIPE, 0644) == -1)
+    if (errno != EEXIST)
+      throw errno_error("mkfifo");
+  p->fd = open(REST_LOGPIPE, O_WRONLY);
+  ::fcntl(p->fd, F_SETFD, FD_CLOEXEC);
   if(p->fd == -1)
-    throw errno_error("mkfifo");
+    throw errno_error("open[fifo]");
   p->min_priority = INFO;
 }
 
 static logger *instance;
-//static boost::once_flag once = BOOST_ONCE_INIT;
 
 void logger::init() {
   if (!instance)
@@ -37,7 +39,6 @@ void logger::init() {
 }
 
 logger &logger::get() {
-  //boost::call_once(&init, once);
   init();
   return *instance;
 }
@@ -71,7 +72,7 @@ void logger::log(
   else if(priority >= 90 && priority < 100)
     out << priority_string[2];
   else if(priority >= 100)
-    out << priority_string[4];
+    out << priority_string[3];
 
   out << "@(" << file << ':' << func << ':' << line << "): `" << data << "'\n";
 
