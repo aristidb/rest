@@ -231,6 +231,8 @@ public:
   }
 
   int initialize_sockets();
+
+  void incoming(socket_param const &sock);
 };
 
 bool server::impl::restart = false;
@@ -308,9 +310,10 @@ namespace {
       send(r, !flags.test(NO_ENTITY));
     }
 
-    static
-    hosts_cont_t::const_iterator find_host(
+    static hosts_cont_t::const_iterator find_host(
       header_fields const &fields, hosts_cont_t const &hosts);
+
+    void serve(server::socket_param const &sock);
   };
 }
 
@@ -476,73 +479,80 @@ void server::serve() {
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
       assert(ptr);
-    
-      sockaddr_in cliaddr;
-      socklen_t clilen = sizeof(cliaddr);
-      int connfd = ::accept(ptr->fd(), (sockaddr *) &cliaddr, &clilen);
-      if(connfd == -1) {
-        REST_LOG_ERRNO(utils::CRITICAL, "accept failed");
-        continue;
-      }
 
-      std::cout << "%% ACCEPTED" << std::endl; // DEBUG
-#ifndef NO_FORK_LOOP
-      sigset_t mask, oldmask;
-      sigfillset(&mask);
-      sigprocmask(SIG_BLOCK, &mask, &oldmask);
-
-      pid_t pid = ::fork();
-      if(pid == -1) {
-        REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
-      }
-      else if(pid == 0) {
-        p->do_close_on_fork();
-        int status = 0;
-#endif
-        try {
-          connection_streambuf buf(connfd, 10);
-          http_connection conn(buf);
-          try {
-            while (conn.open()) {
-              conn.reset();
-              response r(response::empty_tag());
-              conn.handle_request(*ptr, r);
-              conn.send(r);
-            }
-          }
-          catch (utils::http::remote_close&) {
-            std::cout << "%% remote or timeout" << std::endl; // DEBUG
-          }
-          std::cout << "%% CLOSING" << std::endl; // DEBUG
-        }
-#if 0
-        catch(std::exception &e) {
-          REST_LOG_E(utils::CRITICAL,
-                     "ERROR: unexpected exception `" << e.what() << "'");
-          status = 1;
-        }
-        catch(...) {
-          REST_LOG_E(utils::CRITICAL,
-                     "ERROR: unexpected exception (unkown type)");
-          status = 1;
-        }
-#else
-        catch (int) { throw; }
-#endif
-
-#ifndef NO_FORK_LOOP
-        exit(status);
-      }
-      else {
-        close(connfd);
-        sigprocmask(SIG_SETMASK, &oldmask, 0);
-      }
-#endif
+      p->incoming(*ptr);
     }
   }
 
   ::signal(SIGHUP, oldhup);
   ::signal(SIGCHLD, oldchld);
+}
+
+void server::impl::incoming(server::socket_param const &sock)  {
+  sockaddr_in cliaddr;
+  socklen_t clilen = sizeof(cliaddr);
+  int connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
+  if(connfd == -1) {
+    REST_LOG_ERRNO(utils::CRITICAL, "accept failed");
+    return;
+  }
+
+  std::cout << "%% ACCEPTED" << std::endl; // DEBUG
+#ifndef NO_FORK_LOOP
+  sigset_t mask, oldmask;
+  sigfillset(&mask);
+  sigprocmask(SIG_BLOCK, &mask, &oldmask);
+
+  pid_t pid = ::fork();
+  if (pid == 0) {
+    do_close_on_fork();
+    int status = 0;
+#endif
+    try {
+      connection_streambuf buf(connfd, 10);
+      http_connection conn(buf);
+      conn.serve(sock);
+      std::cout << "%% CLOSING" << std::endl; // DEBUG
+    }
+#if 0
+    catch(std::exception &e) {
+      REST_LOG_E(utils::CRITICAL,
+                 "ERROR: unexpected exception `" << e.what() << "'");
+      status = 1;
+    }
+    catch(...) {
+      REST_LOG_E(utils::CRITICAL,
+                 "ERROR: unexpected exception (unkown type)");
+      status = 1;
+    }
+#else
+    catch (int) { throw; }
+#endif
+
+#ifndef NO_FORK_LOOP
+    exit(status);
+  }
+  else {
+    if (pid == -1)
+      REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
+    close(connfd);
+    sigprocmask(SIG_SETMASK, &oldmask, 0);
+  }
+#endif
+}
+
+void http_connection::serve(server::socket_param const &sock) {
+  try {
+    while (open()) {
+      reset();
+      response r(response::empty_tag());
+      handle_request(sock, r);
+      send(r);
+    }
+  }
+  catch (utils::http::remote_close&) {
+    std::cout << "%% remote or timeout" << std::endl; // DEBUG
+  }
 }
 
 namespace {
