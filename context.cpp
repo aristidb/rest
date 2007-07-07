@@ -14,7 +14,8 @@ namespace det = rest::detail;
 using namespace boost::multi_index;
 namespace uri = rest::utils::uri;
 
-namespace {
+class context::impl {
+public:
   struct keyword_info {
     keyword_info(std::string const &keyword, keyword_type type)
     : keyword(keyword), type(type) {}
@@ -102,10 +103,7 @@ namespace {
       }
     }
   };
-}
 
-class context::impl {
-public:
   keyword_info_set predeclared_keywords;
   path_resolver_node root;
 
@@ -121,13 +119,15 @@ context::~context() {
 }
 
 void context::declare_keyword(std::string const &keyword, keyword_type type) {
-  bool x = p->predeclared_keywords.insert(keyword_info(keyword, type)).second;
+  bool x =
+    p->predeclared_keywords.insert(impl::keyword_info(keyword, type)).second;
   if (!x)
     throw std::logic_error("keyword already declared");
 }
 
 keyword_type context::get_keyword_type(std::string const &keyword) const {
-  keyword_info_set::iterator it = p->predeclared_keywords.find(keyword);
+  impl::keyword_info_set::iterator it = 
+    p->predeclared_keywords.find(keyword);
   if (it == p->predeclared_keywords.end())
     return NONE;
   return it->type;
@@ -137,7 +137,7 @@ void context::enum_keywords(
   keyword_type type,
   boost::function<void (std::string const &)> const &callback) const
 {
-  for (keyword_info_set::iterator it = p->predeclared_keywords.begin();
+  for (impl::keyword_info_set::iterator it = p->predeclared_keywords.begin();
       it != p->predeclared_keywords.end();
       ++it)
     if (type == NONE || it->type == type)
@@ -145,7 +145,7 @@ void context::enum_keywords(
 }
 
 void context::prepare_keywords(keywords &kw) const {
-  for (keyword_info_set::iterator it = p->predeclared_keywords.begin();
+  for (impl::keyword_info_set::iterator it = p->predeclared_keywords.begin();
       it != p->predeclared_keywords.end();
       ++it)
     kw.declare(it->keyword, it->type);
@@ -156,7 +156,7 @@ void context::do_bind(
   det::responder_base &responder_,
   det::any_path const &associated)
 {
-  path_resolver_node *current = p->make_bindable(path);
+  impl::path_resolver_node *current = p->make_bindable(path);
   current->responder_ = &responder_;
   current->associated_path_id = associated;
 }
@@ -166,7 +166,7 @@ void context::do_bind(
   context &context_,
   det::any_path const &associated)
 {
-  path_resolver_node *current = p->make_bindable(path);
+  impl::path_resolver_node *current = p->make_bindable(path);
   current->context_ = &context_;
   current->associated_path_id = associated;
 }
@@ -217,7 +217,7 @@ void context::do_find_responder(
 {
   out_context = this;
 
-  path_resolver_node *current = &p->root;
+  impl::path_resolver_node *current = &p->root;
 
   std::string last;
 
@@ -226,7 +226,7 @@ void context::do_find_responder(
     current = current->child(text);
     if (!current)
       return;
-    if (current->type == path_resolver_node::closure) {
+    if (current->type == impl::path_resolver_node::closure) {
       out_keywords.declare(current->data, NORMAL);
       out_keywords.set(current->data, text);
     } else {
@@ -247,8 +247,9 @@ void context::do_find_responder(
         path_id, out_responder, out_context, out_keywords);
 }
 
-path_resolver_node *context::impl::make_bindable(std::string const &path) {
-  path_resolver_node *current = &root;
+context::impl::path_resolver_node *
+context::impl::make_bindable(std::string const &path) {
+  impl::path_resolver_node *current = &root;
 
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
   boost::char_separator<char> sep("/", "=", boost::keep_empty_tokens);
