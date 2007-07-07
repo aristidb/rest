@@ -528,9 +528,8 @@ public:
   void sockets_erase(sockets_iterator, sockets_iterator);
 
   void set_listen_q(int no);
-private:
-  int initialize_sockets();
 
+private:
   class impl;
   boost::scoped_ptr<impl> p;
 };

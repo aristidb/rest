@@ -177,6 +177,10 @@ public:
     : listenq(utils::get(config, DEFAULT_LISTENQ, "connections", "listenq")),
       config(config)
   {
+    read_connections();
+  }
+
+  void read_connections() {
     typedef utils::property_tree::children_iterator children_iterator;
     children_iterator end = config.children_end();
     children_iterator i = utils::get(config, end, "connections");
@@ -225,6 +229,8 @@ public:
   static void restart_handler(int) {
     restart = true;
   }
+
+  int initialize_sockets();
 };
 
 bool server::impl::restart = false;
@@ -388,20 +394,20 @@ namespace {
   }
 }
 
-int server::initialize_sockets() {
-  int epollfd = epoll::create(p->socket_params.size() + 1);
-  p->close_on_fork.insert(epollfd);
+int server::impl::initialize_sockets() {
+  int epollfd = epoll::create(socket_params.size() + 1);
+  close_on_fork.insert(epollfd);
 
   epoll_event epolle;
   epolle.events = EPOLLIN|EPOLLERR;
 
-  for(sockets_iterator i = sockets_begin();
-      i != sockets_end();
+  for(sockets_iterator i = socket_params.begin();
+      i != socket_params.end();
       ++i)
   {
-    int listenfd = create_listenfd(i, p->listenq);
+    int listenfd = create_listenfd(i, listenq);
 
-    p->close_on_fork.insert(listenfd);
+    close_on_fork.insert(listenfd);
 
     epolle.data.ptr = &*i;
     if(::epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
@@ -458,7 +464,7 @@ void server::serve() {
   sighnd_t oldhup = ::signal(SIGUSR1, &impl::restart_handler);
   ::siginterrupt(SIGUSR1, 0);
 
-  int epollfd = initialize_sockets();
+  int epollfd = p->initialize_sockets();
 
   int const EVENTS_N = 100;
 
