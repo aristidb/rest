@@ -44,8 +44,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
   }
   rest::response delete_(std::string const &path, rest::keywords &) {
     std::cout << "DELETE: " << path << '\n';
-    rest::response ok(200);
-    return ok;
+    return rest::response(200);
   }
   rest::response post(std::string const &path, rest::keywords &kw) {
     std::cout << "POST: " << path << '\n';

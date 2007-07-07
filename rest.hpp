@@ -104,6 +104,8 @@ public:
   response(response &r);
   ~response();
 
+  operator response &() { return *this; }
+
   struct empty_tag_t {};
   response(empty_tag_t);
   static empty_tag_t empty_tag() { return empty_tag_t(); }
