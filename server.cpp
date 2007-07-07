@@ -186,38 +186,38 @@ public:
     children_iterator i = utils::get(config, end, "connections");
     if(i == config.children_end()) {
       REST_LOG(utils::INFO, "no connections specified in config-file");
+      return;
     }
-    else
-      for(children_iterator j = (*i)->children_begin();
-          j != (*i)->children_end();
-          ++j)
-        {
-          std::string service = utils::get(**j, std::string(), "port");
-          if(service.empty()) {
-            service = utils::get(**j, std::string(), "service");
-            if(service.empty())
-              throw std::runtime_error("no port/service specified!");
-          }
-          algo::trim(service);
-          std::string type_ = utils::get(**j, std::string("ipv4"), "type");
-          socket_param::socket_type_t type;
-          if(algo::istarts_with(type_, "ipv4") ||
-             algo::istarts_with(type_, "ip4"))
-            type = socket_param::ip4;
-          else if(algo::istarts_with(type_, "ipv6") ||
-                  algo::istarts_with(type_, "ip6"))
-            type = socket_param::ip6;
-          else
-            throw std::runtime_error("unkown socket type specified");
-          
-          std::string bind = utils::get(**j, std::string(), "bind");
-          algo::trim(bind);
 
-          std::cout << "SOCKET " << service << ' ' << type << ' ' <<
-            bind << '\n';
+    for(children_iterator j = (*i)->children_begin();
+        j != (*i)->children_end();
+        ++j)
+    {
+      std::string service = utils::get(**j, std::string(), "port");
+      if(service.empty()) {
+        service = utils::get(**j, std::string(), "service");
+        if(service.empty())
+          throw std::runtime_error("no port/service specified!");
+      }
+      algo::trim(service);
+      std::string type_ = utils::get(**j, std::string("ipv4"), "type");
+      socket_param::socket_type_t type;
+      if(algo::istarts_with(type_, "ipv4") ||
+         algo::istarts_with(type_, "ip4"))
+        type = socket_param::ip4;
+      else if(algo::istarts_with(type_, "ipv6") ||
+              algo::istarts_with(type_, "ip6"))
+        type = socket_param::ip6;
+      else
+        throw std::runtime_error("unkown socket type specified");
           
-          socket_params.push_back(socket_param(service, type, bind));
-        }
+      std::string bind = utils::get(**j, std::string(), "bind");
+      algo::trim(bind);
+
+      std::cout << "SOCKET " << service << ' ' << type << ' ' << bind << '\n';
+          
+      socket_params.push_back(socket_param(service, type, bind));
+    }
   }
 
   static void sigchld_handler(int) {
@@ -279,8 +279,6 @@ namespace {
     enum {
       NO_ENTITY,
       HTTP_1_0_COMPAT,
-      ACCEPT_GZIP,
-      ACCEPT_BZIP2,
       X_NO_FLAG
     };
     typedef std::bitset<X_NO_FLAG> state_flags;
@@ -837,7 +835,6 @@ void http_connection::send(response const &r, bool entity) {
     std::cout << *it << (it+1 == encodings.end() ? '\n' : ',');
 
   //TODO implement partial-GET, entity data from streams
-  //TODO BUG: gzip does not work with w3m!
 
   conn->push_cork();
 
@@ -852,7 +849,7 @@ void http_connection::send(response const &r, bool entity) {
   if (code == -1)
     code = 200;
 
-  std::cout << "Send: " << code << " CE:" << (flags.test(ACCEPT_GZIP) ? "gzip" : (flags.test(ACCEPT_BZIP2) ? "bzip2" : "none")) << "\n"; //DEBUG
+  std::cout << "Send: " << code << "\n"; //DEBUG
 
   out << code << " " << response::reason(code) << "\r\n";
 
