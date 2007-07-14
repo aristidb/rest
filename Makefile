@@ -3,7 +3,10 @@ CXXFLAGS := -g -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_T
 LDFLAGS  := -static -L. -lrest -lboost_filesystem -lbz2 -lz
 BUILDDIR := build
 
-OS	:= $(shell uname)
+OS	 := $(shell uname)
+ifeq ($(OS), Darwin)
+LDFLAGS  := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem
+endif
 
 LIBREST_SOURCES := context.cpp keywords.cpp response.cpp uri.cpp \
 	host.cpp server.cpp logger.cpp datetime.cpp socket_device.cpp \
@@ -35,7 +38,7 @@ librest.a: $(LIBREST_OBJECTS) $(LIBREST_DEPS)
 	ar rcs librest.a $(LIBREST_OBJECTS)
 
 pipedump: pipedump.cpp $(BUILDDIR)/pipedump.dep
-	$(CXX) $(CXXFLAGS) pipedump.cpp -o pipedump
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) pipedump.cpp -o pipedump
 
 http-handler-test: $(LIBREST) http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
 	$(CXX) $(CXXFLAGS) http-handler-test.cpp -o http-handler-test $(LDFLAGS)
