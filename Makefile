@@ -1,6 +1,6 @@
 CXX      := g++
 CXXFLAGS := -g -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
-LDFLAGS     := -static -L. -lrest
+LDFLAGS  := -Wl,-static -static-libgcc -lz -lbz2 -lboost_filesystem -L. -lrest
 BUILDDIR := build
 
 OS	:= $(shell uname)
@@ -36,9 +36,9 @@ pipedump: pipedump.cpp $(BUILDDIR)/pipedump.dep
 	$(CXX) $(CXXFLAGS) pipedump.cpp -o pipedump
 
 http-handler-test: librest.a http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
-	$(CXX) $(CXXFLAGS) http-handler-test.cpp -o http-handler-test
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) http-handler-test.cpp -o http-handler-test
 
-unit: $(UNIT_OBJECTS) $(UNIT_DEPS)
+unit: librest.a $(UNIT_OBJECTS) $(UNIT_DEPS)
 	$(CXX) $(LDFLAGS) $(UNIT_OBJECTS) -o unit
 
 test1: librest.a test1.cpp $(BUILDDIR)/test1.dep
