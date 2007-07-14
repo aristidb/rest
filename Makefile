@@ -1,6 +1,6 @@
 CXX      := g++
 CXXFLAGS := -g -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
-LINK     := -static -L. -lrest
+LDFLAGS     := -static -L. -lrest
 BUILDDIR := build
 
 OS	:= $(shell uname)
@@ -16,28 +16,33 @@ endif
 LIBREST_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(LIBREST_SOURCES))
 LIBREST_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(LIBREST_SOURCES))
 
+UNIT_SOURCES := unit.cpp filter_tests.cpp logger_tests.cpp http_headers_tests.cpp
+UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
+UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))
+
 SOURCES  := $(wildcard *.cpp)
 OBJECTS  := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(SOURCES))
 DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
 .PHONY: all rest
-all: librest.a test1 pipedump unit http-handler-test
+all: librest.a pipedump unit http-handler-test
 
 rest: librest.a
 
 librest.a: $(LIBREST_OBJECTS) $(LIBREST_DEPS)
 	ar rcs librest.a $(LIBREST_OBJECTS)
 
-pipedump: pipedump.cpp pipedump.dep
+pipedump: pipedump.cpp $(BUILDDIR)/pipedump.dep
 	$(CXX) $(CXXFLAGS) pipedump.cpp -o pipedump
 
-http-handler-test: librest.a http-handler-test.cpp http-handler-test.dep
-	$(CXX) $(CXXFLAGS) 
+http-handler-test: librest.a http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
+	$(CXX) $(CXXFLAGS) http-handler-test.cpp -o http-handler-test
 
-unit:
+unit: $(UNIT_OBJECTS) $(UNIT_DEPS)
+	$(CXX) $(LDFLAGS) $(UNIT_OBJECTS) -o unit
 
-test1: librest.a test1.cpp test1.dep
-	$(CXX) $(CXXFLAGS) $(LINK) test1.cpp -o test 1
+test1: librest.a test1.cpp $(BUILDDIR)/test1.dep
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) test1.cpp -o test1
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(DEPS)
