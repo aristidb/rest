@@ -3,6 +3,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int epoll_create(int size) {
   (void)size; // omit warning
   return kqueue();
@@ -48,7 +52,11 @@ int epoll_wait(int epfd, struct epoll_event *events,
     timeout_ = &timeout;
   }
 
-  struct kevent *kevents = malloc(sizeof(struct kevent) * maxevents);
+  struct kevent *kevents = 
+#ifdef __cplusplus
+    (struct kevent*)
+#endif
+    malloc(sizeof(struct kevent) * maxevents);
   if(!kevents) {
     errno = EINVAL;
     return -1;
@@ -79,3 +87,6 @@ int epoll_wait(int epfd, struct epoll_event *events,
   return n;
 }
 
+#ifdef __cplusplus
+}
+#endif

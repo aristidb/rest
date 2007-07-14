@@ -169,7 +169,7 @@ enum keyword_type {
   NORMAL,
   COOKIE,
   FORM_PARAMETER,
-  NONE = -1,
+  NONE = -1
 };
 
 class keywords {

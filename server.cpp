@@ -374,7 +374,7 @@ namespace {
       listenfd = socket(i->socket_type());
 
       int const one = 1;
-      setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+      ::setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 
       if(::bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
         break;
@@ -701,6 +701,7 @@ int http_connection::set_header_options(header_fields &fields) {
         return 406;
     }
     else {
+      std::cout << "AE: " << i->first << ' ' << i->second << '\n';
       if(i->second == "gzip" || i->second == "x-gzip") {
         encodings.push_back(response::gzip);
         found = true;
