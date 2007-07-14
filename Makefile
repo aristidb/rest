@@ -24,10 +24,12 @@ SOURCES  := $(wildcard *.cpp)
 OBJECTS  := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(SOURCES))
 DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
-.PHONY: all rest
-all: librest.a pipedump unit http-handler-test test1
+LIBREST  :=librest.a
 
-rest: librest.a
+.PHONY: all rest
+all: $(LIBREST) pipedump unit http-handler-test test1
+
+rest: $(LIBREST)
 
 librest.a: $(LIBREST_OBJECTS) $(LIBREST_DEPS)
 	ar rcs librest.a $(LIBREST_OBJECTS)
@@ -35,7 +37,7 @@ librest.a: $(LIBREST_OBJECTS) $(LIBREST_DEPS)
 pipedump: pipedump.cpp $(BUILDDIR)/pipedump.dep
 	$(CXX) $(CXXFLAGS) pipedump.cpp -o pipedump
 
-http-handler-test: librest.a http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
+http-handler-test: $(LIBREST) http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
 	$(CXX) $(CXXFLAGS) http-handler-test.cpp -o http-handler-test $(LDFLAGS)
 
 unit: librest.a $(UNIT_OBJECTS) $(UNIT_DEPS)
