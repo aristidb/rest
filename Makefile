@@ -1,6 +1,6 @@
 CXX      := g++
 CXXFLAGS := -g -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
-LDFLAGS  := -Wl,-static -static-libgcc -lz -lbz2 -lboost_filesystem -L. -lrest
+LDFLAGS  := -static -L. -lrest -lboost_filesystem -lbz2 -lz
 BUILDDIR := build
 
 OS	:= $(shell uname)
@@ -25,7 +25,7 @@ OBJECTS  := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(SOURCES))
 DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
 .PHONY: all rest
-all: librest.a pipedump unit http-handler-test
+all: librest.a pipedump unit http-handler-test test1
 
 rest: librest.a
 
@@ -36,13 +36,13 @@ pipedump: pipedump.cpp $(BUILDDIR)/pipedump.dep
 	$(CXX) $(CXXFLAGS) pipedump.cpp -o pipedump
 
 http-handler-test: librest.a http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) http-handler-test.cpp -o http-handler-test
+	$(CXX) $(CXXFLAGS) http-handler-test.cpp -o http-handler-test $(LDFLAGS)
 
 unit: librest.a $(UNIT_OBJECTS) $(UNIT_DEPS)
-	$(CXX) $(LDFLAGS) $(UNIT_OBJECTS) -o unit
+	$(CXX) $(UNIT_OBJECTS) -o unit $(LDFLAGS)
 
 test1: librest.a test1.cpp $(BUILDDIR)/test1.dep
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) test1.cpp -o test1
+	$(CXX) $(CXXFLAGS) test1.cpp -o test1 $(LDFLAGS)
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(DEPS)
