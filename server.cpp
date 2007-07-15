@@ -21,6 +21,7 @@
 
 #include <boost/ref.hpp>
 
+#include <ctime>
 #include <cstring>
 #include <bitset>
 #include <map>
@@ -855,7 +856,7 @@ void http_connection::send(response r, bool entity) {
 
   out << code << " " << response::reason(code) << "\r\n";
 
-  r.set_header("Date", utils::http::current_date_time());
+  r.set_header("Date", utils::http::datetime_string(std::time(0)));
   r.set_header("Server", REST_SERVER_ID);
 
   if (!r.get_type().empty())

@@ -4,9 +4,7 @@
 #include <iomanip>
 #include <ctime>
 
-std::string rest::utils::http::current_date_time() {
-  time_t time_buf;
-  time(&time_buf);
+std::string rest::utils::http::datetime_string(time_t time_buf) {
   tm gmtime;
   gmtime_r(&time_buf, &gmtime);
 
@@ -50,4 +48,8 @@ std::string rest::utils::http::current_date_time() {
 
   out << " GMT";
   return out.str();
+}
+
+time_t rest::utils::http::datetime_value(std::string const &text) {
+  return time_t(-1);
 }

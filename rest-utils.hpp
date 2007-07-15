@@ -348,7 +348,8 @@ namespace http {
   struct remote_close {};
   struct bad_format {};
 
-  std::string current_date_time();
+  std::string datetime_string(time_t);
+  time_t datetime_value(std::string const &);
 
   // checks if `c' is a space or a h-tab (see RFC 2616 chapter 2.2)
   inline bool isspht(char c) {
