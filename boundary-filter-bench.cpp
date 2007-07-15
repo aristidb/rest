@@ -118,6 +118,20 @@ namespace {
     std::ostringstream y;
     y << s.rdbuf();
   }
+
+  void testcase2() {
+    std::ifstream x("longrnd.bin");
+    filtering_istream s(boundary_filter("\n-------------------------------END!") | boost::ref(x));
+    std::ostringstream y;
+    y << s.rdbuf();
+  }
+
+  void testcase2nofilt() {
+    std::ifstream x("longrnd.bin");
+    filtering_istream s(boost::ref(x));
+    std::ostringstream y;
+    y << s.rdbuf();
+  }
 }
 
 #define TEST(fun) \
@@ -133,4 +147,6 @@ int main() {
 
   TEST(testcase1)
   TEST(testcase1nofilt)
+  TEST(testcase2)
+  TEST(testcase2nofilt)
 }
