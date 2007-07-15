@@ -59,8 +59,7 @@ struct socket_device {
   struct category
     :
       boost::iostreams::bidirectional_device_tag,
-      boost::iostreams::closable_tag,
-      boost::iostreams::flushable_tag
+      boost::iostreams::closable_tag
   {};
 
   socket_device(int fd, long timeout);
@@ -73,9 +72,6 @@ struct socket_device {
 
   std::streamsize read(char *, std::streamsize);
   std::streamsize write(char const *, std::streamsize);
-
-  //DEBUG
-  bool flush();
 
 private:
   class impl;
