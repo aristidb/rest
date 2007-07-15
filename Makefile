@@ -1,12 +1,18 @@
-CXX      := g++
-CXXFLAGS := -g -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
-LDFLAGS  := -static -L. -lrest -lboost_filesystem -lbz2 -lz
-BUILDDIR := build
+CXX         := g++
+CXXSTDFLAGS := -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
+CXXDBGFLAGS := -g -ggdb
+CXXOPTFLAGS := -O3 -DNDEBUG
+LDFLAGS     := -static -L. -lrest -lboost_filesystem -lbz2 -lz
+BUILDDIR    := build
 
-OS	 := $(shell uname)
+OS	    := $(shell uname)
 ifeq ($(OS), Darwin)
-LDFLAGS  := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem
+LDFLAGS     := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem
+CXXOPTFLAGS := $(CXXOPTFLAGS) -mcpu=G4 -mtune=G4
+CXXSTDFLAGS := $(CXXSTDFLAGS) -DAPPLE
 endif
+
+CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
 
 LIBREST_SOURCES := context.cpp keywords.cpp response.cpp uri.cpp \
 	host.cpp server.cpp logger.cpp datetime.cpp socket_device.cpp \
@@ -14,7 +20,6 @@ LIBREST_SOURCES := context.cpp keywords.cpp response.cpp uri.cpp \
 	mapped_file.cpp
 ifeq ($(OS), Darwin)
 LIBREST_SOURCES := $(LIBREST_SOURCES) epoll.cpp
-CXXFLAGS := $(CXXFLAGS) -DAPPLE
 endif
 LIBREST_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(LIBREST_SOURCES))
 LIBREST_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(LIBREST_SOURCES))
@@ -48,6 +53,9 @@ unit: librest.a $(UNIT_OBJECTS) $(UNIT_DEPS)
 
 test1: librest.a test1.cpp $(BUILDDIR)/test1.dep
 	$(CXX) $(CXXFLAGS) test1.cpp -o test1 $(LDFLAGS)
+
+boundary-filter-bench: librest.a boundary-filter-bench.cpp $(BUILDDIR)/boundary-filter-bench.dep
+	$(CXX) $(CXXSTDFLAGS) $(CXXOPTFLAGS) $(LDFLAGS) boundary-filter-bench.cpp -o boundary-filter-bench
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(DEPS)
