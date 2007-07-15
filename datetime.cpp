@@ -51,5 +51,11 @@ std::string rest::utils::http::datetime_string(time_t time_buf) {
 }
 
 time_t rest::utils::http::datetime_value(std::string const &text) {
+  /*
+    Must understand at least these formats:
+      Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
+      Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
+      Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+  */
   return time_t(-1);
 }
