@@ -142,15 +142,15 @@ public:
   bool has_content_encoding(content_encoding_t content_encoding) const;
 
   content_encoding_t choose_content_encoding(
-      std::vector<content_encoding_t> const &encodings,
-      bool may_chunk
-    ) const;
+    std::vector<content_encoding_t> const &encodings, bool may_chunk) const;
 
   bool empty(content_encoding_t content_encoding) const;
   bool chunked(content_encoding_t content_encoding) const;
   std::size_t length(content_encoding_t content_encoding) const;
 
-  void print(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
+  void print_headers(std::ostream &out) const;
+  void print_entity(
+    std::ostream &out, content_encoding_t enc, bool may_chunk) const;
 
 private:
   void encode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;

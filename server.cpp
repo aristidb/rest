@@ -26,6 +26,7 @@
 #include <map>
 #include <limits>
 #include <fstream>
+#include <sstream>
 
 #include <netdb.h>
 #include <fcntl.h>
@@ -303,8 +304,8 @@ namespace {
     void handle_request(server::socket_param const &hosts, response &o);
     int handle_entity(keywords &kw, header_fields &fields);
 
-    void send(response const &r, bool entity);
-    void send(response const &r) {
+    void send(response r, bool entity);
+    void send(response r) {
       send(r, !flags.test(NO_ENTITY));
     }
 
@@ -788,7 +789,7 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
     if (expect != fields.end()) {
       if (!algo::iequals(expect->second, "100-continue"))
         return 417;
-      send(100, false);
+      send(response(100), false);
     }
   }
 
@@ -830,7 +831,7 @@ private:
   std::streambuf *buf;
 };
 
-void http_connection::send(response const &r, bool entity) {
+void http_connection::send(response r, bool entity) {
   std::cout << "enc ";
   for (std::vector<response::content_encoding_t>::iterator it = encodings.begin(); it != encodings.end(); ++it)
     std::cout << *it << (it+1 == encodings.end() ? '\n' : ',');
@@ -854,15 +855,13 @@ void http_connection::send(response const &r, bool entity) {
 
   out << code << " " << response::reason(code) << "\r\n";
 
-  out << "Date: " << utils::http::current_date_time()  << "\r\n";
-  out << "Server: " << REST_SERVER_ID << "\r\n";
+  r.set_header("Date", utils::http::current_date_time());
+  r.set_header("Server", REST_SERVER_ID);
 
-  if (!r.get_type().empty()) 
-    out << "Content-Type: " << r.get_type() << "\r\n";
-  if (!entity)
-    out << "\r\n";
+  if (!r.get_type().empty())
+    r.set_header("Content-Type", r.get_type());
 
-  else {
+  if (entity) {
     bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
 
     response::content_encoding_t enc = 
@@ -870,21 +869,26 @@ void http_connection::send(response const &r, bool entity) {
 
     switch (enc) {
     case response::gzip:
-      out << "Content-Encoding: gzip\r\n";
+      r.set_header("Content-Encoding", "gzip");
       break;
     case response::bzip2:
-      out << "Content-Encoding: bzip2\r\n";
+      r.set_header("Content-Encoding", "bzip2");
       break;
     default: break;
     }
 
-    if (!r.chunked(enc))
-      out << "Content-Length: " << r.length(enc) << "\r\n";
-    else if (may_chunk)
-      out << "Transfer-Encoding: chunked\r\n";
-    out << "\r\n";
+    if (!r.chunked(enc)) {
+      std::ostringstream length;
+      length << r.length(enc);
+      r.set_header("Content-Length", length.str());
+    } else if (may_chunk) {
+      r.set_header("Transfer-Encoding", "chunked");
+    }
 
-    r.print(out, enc, may_chunk);
+    r.print_headers(out);
+    r.print_entity(out, enc, may_chunk);
+  } else {
+    r.print_headers(out);
   }
 
   io::flush(out);

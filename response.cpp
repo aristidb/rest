@@ -10,6 +10,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/null.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 #include <map>
 #include <cassert>
 
@@ -158,13 +159,17 @@ void response::set_type(std::string const &type) {
   p->type = type;
 }
 
-void response::set_header(std::string const &name, std::string const &value) {
+void response::set_header(std::string const &name_, std::string const &value) {
+  std::string name = name_;
+  boost::algorithm::to_lower(name);
   p->header[name] = value;
 }
 
 void response::add_header_part(
-    std::string const &name, std::string const &value)
+    std::string const &name_, std::string const &value)
 {
+  std::string name = name_;
+  boost::algorithm::to_lower(name);
   impl::header_map::iterator i = p->header.find(name);
   if(i == p->header.end())
     set_header(name, value);
@@ -250,7 +255,15 @@ std::size_t response::length(content_encoding_t enc) const {
   return p->data[enc].length();
 }
 
-void response::print(
+void response::print_headers(std::ostream &out) const {
+  for (impl::header_map::const_iterator it = p->header.begin();
+      it != p->header.end();
+      ++it)
+    out << it->first << ": " << it->second << "\r\n";
+  out << "\r\n";
+}
+
+void response::print_entity(
     std::ostream &out, content_encoding_t enc, bool may_chunk) const
 {
   impl::data_holder &d = p->data[enc];
@@ -302,7 +315,7 @@ void response::encode(
   if (may_chunk)
     out2.push(utils::chunked_filter());
   out2.push(boost::ref(out));
-  print(out2, identity, false);
+  print_entity(out2, identity, false);
 }
 
 void response::decode(
