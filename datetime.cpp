@@ -57,5 +57,22 @@ time_t rest::utils::http::datetime_value(std::string const &text) {
       Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
       Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
   */
-  return time_t(-1);
+  static char const sample822[] = "Sun, 06 Nov 1994 08:49:37 GMT";
+  static char const sample850[] = "Sunday, 06-Nov-94 08:49:37 GMT";
+  static char const sampleASC[] = "Sun Nov  6 08:49:37 1994";
+
+  tm out;
+
+  switch (text.length() + 1) {
+  case sizeof(sample822):
+    break;
+  case sizeof(sample850):
+    break;
+  case sizeof(sampleASC):
+    break;
+  default:
+    return time_t(-1);
+  }
+
+  return mktime(&out);
 }
