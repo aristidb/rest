@@ -17,6 +17,58 @@ namespace io = boost::iostreams;
 #include <sys/time.h>
 
 namespace {
+  class boundary_filter2 : public boost::iostreams::multichar_input_filter {
+  public:
+    boundary_filter2(std::string const &boundary)
+      : boundary(boundary), buf(new char[boundary.size()]), eof(false),
+        pos(boundary.size()) {}
+    
+    boundary_filter2(boundary_filter2 const &o)
+      : boundary(o.boundary), buf(new char[boundary.size()]), eof(false),
+        pos(boundary.size()) {}
+
+    template<typename Source>
+    std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+      
+    }
+
+    template<typename Source>
+    void skip_transport_padding(Source &source) {
+      int ch;
+      // skip LWS
+      while ((ch = boost::iostreams::get(source)) == ' ' && ch == '\t')
+        ;
+      if (ch == EOF)
+        return;
+      // "--" indicates end-of-streams
+      if (ch == '-' && boost::iostreams::get(source) == '-') {
+        // soak up all the content, it is to be ignored
+        while (boost::iostreams::get(source) != EOF)
+          ;
+        return;
+      }
+      // expect CRLF
+      boost::iostreams::putback(source, ch);
+      if ((ch = boost::iostreams::get(source)) != '\r') {
+        if (ch == EOF)
+          return;
+        boost::iostreams::putback(source, ch);
+      }
+      if ((ch = boost::iostreams::get(source)) != '\n') {
+        if (ch == EOF)
+          return;
+        boost::iostreams::putback(source, ch);
+      }
+    }
+
+  private:
+    std::string boundary;
+    boost::scoped_array<char> buf;
+    bool eof;
+    std::streamsize pos;
+  };
+  BOOST_IOSTREAMS_PIPABLE(boundary_filter2, 0)
+
   unsigned long const DEFAULT_TESTS = 10000;
 
   struct tested {
