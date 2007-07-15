@@ -82,6 +82,7 @@ private:
   boost::shared_ptr<impl> p;
 };
 
+// TODO: speed
 class boundary_filter : public boost::iostreams::multichar_input_filter {
 public:
   boundary_filter(std::string const &boundary)

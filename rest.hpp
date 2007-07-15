@@ -95,6 +95,11 @@ private:
   output_stream &operator=(output_stream const &); //DUMMY
 };
 
+/*
+ * TODO:
+ * - multi-chunk output
+ * - mmap output / sendfile
+ */
 class response {
 public:
   response();
