@@ -13,4 +13,3 @@ TEST() {
   logger *l2 = &logger::get();
   Equals(l1, l2);
 }
-

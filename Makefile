@@ -1,5 +1,5 @@
 CXX         := g++
-CXXSTDFLAGS := -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
+CXXSTDFLAGS := -pipe -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
 CXXDBGFLAGS := -g -ggdb
 CXXOPTFLAGS := -O3 -DNDEBUG
 LDFLAGS     := -static -L. -lrest -lboost_filesystem -lbz2 -lz
