@@ -116,26 +116,20 @@ public:
     if (len > 0)
       memmove(buf.get(), buf.get() + pos, len);
 
-    std::streamsize c =
-      boost::iostreams::read(source, buf.get() + len, pos);
+    std::streamsize c = boost::iostreams::read(source, buf.get() + len, pos);
 
     if (c == -1) {
       eof = true;
-      return true;
     } else if (c != pos) {
       pos = boundary.size() - c;
       memmove(buf.get() + pos, buf.get(), c);
-      return true;
     } else {
       pos = 0;
-      int cmp = 
-        boundary.compare(0, boundary.size(), buf.get(), boundary.size());
-      if (cmp == 0) {
-        eof = true;
-        return true;
-      }
+      if (boundary.compare(0, boundary.size(), buf.get(), boundary.size()) != 0)
+        return false;
+      eof = true;
     }
-    return false;
+    return true;
   }
 
   template<typename Source>
