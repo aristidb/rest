@@ -78,7 +78,6 @@ private:
   boost::shared_ptr<impl> p;
 };
 
-// TODO: speed
 class boundary_filter : public boost::iostreams::multichar_input_filter {
 public:
   boundary_filter(std::string const &boundary)
@@ -170,78 +169,6 @@ private:
   std::streamsize pos;
 };
 BOOST_IOSTREAMS_PIPABLE(boundary_filter, 0)
-
-class boundary_filter2 : public boost::iostreams::multichar_input_filter {
-public:
-  boundary_filter2(std::string const &boundary)
-    : boundary(boundary), eof(false), pos(0)
-  { }
-    
-  template<typename Source>
-  std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
-    assert(outbuf);
-    if(eof)
-      return EOF;
-
-    std::streamsize const read = boost::iostreams::read(source, outbuf, n);
-    if(read <= 0)
-      return read;
-
-    std::size_t const length = boundary.size();
-    std::streamsize j = 0;
-
-    for(; j < read; ++j) {
-      if(outbuf[j] == boundary[pos]) {
-        ++pos;
-        if(static_cast<std::size_t>(pos) == length) {
-          skip_transport_padding(source);
-          eof = true;
-          return j - pos + 1;
-        }
-      }
-      else
-        pos = 0;
-    }
-    if(pos != 0)
-      return read - pos + 1;
-    return read;
-  }
-
-  template<typename Source>
-  void skip_transport_padding(Source &source) {
-    int ch;
-    // skip LWS
-    while ((ch = boost::iostreams::get(source)) == ' ' && ch == '\t')
-      ;
-    if (ch == EOF)
-      return;
-    // "--" indicates end-of-streams
-    if (ch == '-' && boost::iostreams::get(source) == '-') {
-      // soak up all the content, it is to be ignored
-      while (boost::iostreams::get(source) != EOF)
-        ;
-      return;
-    }
-    // expect CRLF
-    boost::iostreams::putback(source, ch);
-    if ((ch = boost::iostreams::get(source)) != '\r') {
-      if (ch == EOF)
-        return;
-      boost::iostreams::putback(source, ch);
-    }
-    if ((ch = boost::iostreams::get(source)) != '\n') {
-      if (ch == EOF)
-        return;
-      boost::iostreams::putback(source, ch);
-    }
-  }
-
-private:
-  std::string boundary;
-  bool eof;
-  std::streamsize pos;
-};
-BOOST_IOSTREAMS_PIPABLE(boundary_filter2, 0)
 
 class length_filter : public boost::iostreams::multichar_input_filter {
 public:
