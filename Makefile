@@ -35,7 +35,7 @@ DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 LIBREST  :=librest.a
 
 .PHONY: all rest
-all: $(LIBREST) pipedump unit http-handler-test test1
+all: $(LIBREST) pipedump unit http-handler-test test1 boundary-filter-bench
 
 rest: $(LIBREST)
 
