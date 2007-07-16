@@ -63,9 +63,9 @@ namespace {
     return ret;
   }
 
-#define MON(x,y,z) ((x) + 0x100 * (y) + 0x200 * (z))
+#define MON(x,y,z) ((x - 'A') + (y - 'a') + (z - 'a') - 9)
 
-  unsigned mon(iterator first, iterator last) {
+  int mon(iterator first, iterator last) {
     assert(first + 3 == last);
     switch (MON(*first, *(first + 1), *(first + 2))) {
     case MON('J', 'a', 'n'): return 0;
@@ -80,6 +80,7 @@ namespace {
     case MON('O', 'c', 't'): return 9;
     case MON('N', 'o', 'v'): return 10;
     case MON('D', 'e', 'c'): return 11;
+    default: return -1;
     }
   }
 #undef MON
