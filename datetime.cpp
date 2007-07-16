@@ -3,6 +3,8 @@
 #include <sstream>
 #include <iomanip>
 #include <ctime>
+#include <cassert>
+#include <algorithm>
 
 std::string rest::utils::http::datetime_string(time_t time_buf) {
   tm gmtime;
@@ -50,6 +52,39 @@ std::string rest::utils::http::datetime_string(time_t time_buf) {
   return out.str();
 }
 
+namespace {
+  typedef std::string::const_iterator iterator;
+
+  unsigned num(iterator first, iterator last) {
+    unsigned ret = 0;
+    for (; first != last; ++first)
+      if (*first >= '0' && *first <= '9')
+        ret = ret * 10 + *first - '0';
+    return ret;
+  }
+
+#define MON(x,y,z) ((x) + 0x100 * (y) + 0x200 * (z))
+
+  unsigned mon(iterator first, iterator last) {
+    assert(first + 3 == last);
+    switch (MON(*first, *(first + 1), *(first + 2))) {
+    case MON('J', 'a', 'n'): return 0;
+    case MON('F', 'e', 'b'): return 1;
+    case MON('M', 'a', 'r'): return 2;
+    case MON('A', 'p', 'r'): return 3;
+    case MON('M', 'a', 'y'): return 4;
+    case MON('J', 'u', 'n'): return 5;
+    case MON('J', 'u', 'l'): return 6;
+    case MON('A', 'u', 'g'): return 7;
+    case MON('S', 'e', 'p'): return 8;
+    case MON('O', 'c', 't'): return 9;
+    case MON('N', 'o', 'v'): return 10;
+    case MON('D', 'e', 'c'): return 11;
+    }
+  }
+#undef MON
+}
+
 time_t rest::utils::http::datetime_value(std::string const &text) {
   /*
     Must understand at least these formats:
@@ -65,8 +100,18 @@ time_t rest::utils::http::datetime_value(std::string const &text) {
 
   switch (text.length() + 1) {
   case sizeof(sample822):
+    if (!equal(text.end() - 3, text.end(), "GMT"))
+      return -1;
+    out.tm_mday = num(text.begin() + 5, text.begin() + 7);
+    out.tm_mon = mon(text.begin() + 8, text.begin() + 11);
+    out.tm_year = num(text.begin() + 12, text.begin() + 16) - 1900;
+    out.tm_hour = num(text.begin() + 17, text.begin() + 19);
+    out.tm_min = num(text.begin() + 20, text.begin() + 22);
+    out.tm_sec = num(text.begin() + 23, text.begin() + 25);
     break;
   case sizeof(sample850):
+    if (!equal(text.end() - 3, text.end(), "GMT"))
+      return -1;
     break;
   case sizeof(sampleASC):
     break;
@@ -74,5 +119,5 @@ time_t rest::utils::http::datetime_value(std::string const &text) {
     return time_t(-1);
   }
 
-  return mktime(&out);
+  return mktime(&out);//XXX localtime, must be gmt
 }
