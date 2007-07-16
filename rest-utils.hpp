@@ -94,43 +94,48 @@ public:
       return -1;
     std::streamsize i = 0;
     while (i < n && !eof) {
-      std::size_t len = boundary.size() - pos;
-      if (boundary.compare(0, len, buf.get() + pos, len) == 0) {
-        if (len == boundary.size()) {
-          eof = true;
-          break;
-        }
-
-        if (len > 0)
-          memmove(buf.get(), buf.get() + pos, len);
-
-        std::streamsize c =
-          boost::iostreams::read(source, buf.get() + len, pos);
-
-        if (c == -1) {
-          eof = true;
-          break;
-        } else if (c != pos) {
-          pos = boundary.size() - c;
-          memmove(buf.get() + pos, buf.get(), c);
-          continue;
-        } else {
-          pos = 0;
-          int cmp =
-              boundary.compare(
-                0, boundary.size(),
-                buf.get(), boundary.size());
-          if (cmp == 0) {
-            eof = true;
-            break;
-          }
-        }
-      }
-      outbuf[i++] = buf[pos++];
+      if (!update(source))
+        outbuf[i++] = buf[pos++];
     }
     if (eof)
       skip_transport_padding(source);
     return i ? i : -1;
+  }
+
+  template<typename Source>
+  bool update(Source &source) {
+    std::size_t len = boundary.size() - pos;
+    if (!boundary.compare(0, len, buf.get() + pos, len) == 0)
+      return false;
+
+    if (len == boundary.size()) {
+      eof = true;
+      return true;
+    }
+
+    if (len > 0)
+      memmove(buf.get(), buf.get() + pos, len);
+
+    std::streamsize c =
+      boost::iostreams::read(source, buf.get() + len, pos);
+
+    if (c == -1) {
+      eof = true;
+      return true;
+    } else if (c != pos) {
+      pos = boundary.size() - c;
+      memmove(buf.get() + pos, buf.get(), c);
+      return true;
+    } else {
+      pos = 0;
+      int cmp = 
+        boundary.compare(0, boundary.size(), buf.get(), boundary.size());
+      if (cmp == 0) {
+        eof = true;
+        return true;
+      }
+    }
+    return false;
   }
 
   template<typename Source>
