@@ -36,6 +36,7 @@
 #include <boost/preprocessor/seq/to_tuple.hpp>
 #include <boost/preprocessor/seq/to_array.hpp>
 #include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/tuple/elem.hpp>
 #include <boost/preprocessor/array/pop_front.hpp>
 #include <boost/preprocessor/array/data.hpp>
