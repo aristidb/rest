@@ -69,8 +69,10 @@ namespace {
 
 #define MON(x,y,z) ((x - 'A') + (y - 'a') + (z - 'a') - 9)
 
+  // month        = "Jan" | "Feb" | "Mar" | "Apr"
+  //                  | "May" | "Jun" | "Jul" | "Aug"
+  //                  | "Sep" | "Oct" | "Nov" | "Dec"
   int mon(token const &t) {
-    //assert(first + 3 == last);
     if(t.second - t.first != 3)
       return -1;
     switch (MON(*t.first, *(t.first + 1), *(t.first + 2))) {
@@ -90,6 +92,8 @@ namespace {
     }
   }
 
+  // wkday        = "Mon" | "Tue" | "Wed"
+  //                    | "Thu" | "Fri" | "Sat" | "Sun"
   int wkday(token const &t) {
     if(t.second - t.first != 3)
       return -1;
@@ -116,7 +120,7 @@ namespace {
     return !(tok == rhs);
   }
 
-#if 1
+#if 0
   std::ostream &operator<<(std::ostream &out, token const &t) {
     iterator i = t.first;
     while(i != t.second)
@@ -280,45 +284,49 @@ namespace {
       return false;
     return true;
   }
+
+  // date3        = month SP ( 2DIGIT | ( SP 1DIGIT ))
+  //                    ; month day (e.g., Jun  2)
+  bool date3(std::string const &text, token &t, tm &data) {
+    data.tm_mon = mon(t);
+    if(data.tm_mon == -1)
+      return false;
+
+    gettoken(text, t);
+    data.tm_mday = num(t);
+
+    gettoken(text, t);
+    return true;
+  }
+
+  // asctime-date = wkday SP date3 SP time SP 4DIGIT
+  bool asctime_date(std::string const &text, token t, tm &data) {
+    if(wkday(t) == -1)
+      return false;
+
+    gettoken(text, t);
+    if(!date3(text, t, data))
+      return false;
+    if(!time(text, t, data))
+      return false;
+    data.tm_year = num(t) - 1900;
+    return true;
+  }
 }
 
-time_t rest::utils::http::datetime_value(std::string const &text) {
-  /*
-    Must understand at least these formats:
-      Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
-      Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
-      Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
-
-
-      HTTP-date    = rfc1123-date | rfc850-date | asctime-date
-       
-       
-       asctime-date = wkday SP date3 SP time SP 4DIGIT
-       
-       
-       date3        = month SP ( 2DIGIT | ( SP 1DIGIT ))
-                      ; month day (e.g., Jun  2)
-       
-       wkday        = "Mon" | "Tue" | "Wed"
-                    | "Thu" | "Fri" | "Sat" | "Sun"
-       weekday      = "Monday" | "Tuesday" | "Wednesday"
-                    | "Thursday" | "Friday" | "Saturday" | "Sunday"
-       month        = "Jan" | "Feb" | "Mar" | "Apr"
-                    | "May" | "Jun" | "Jul" | "Aug"
-                    | "Sep" | "Oct" | "Nov" | "Dec"
-  */
+//     Must understand at least these formats:
+//       Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
+//       Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
+//       Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+//
+//       HTTP-date    = rfc1123-date | rfc850-date | asctime-date
+time_t rest::utils::http::datetime_value(std::string const &text) {  
   tm out;
   token t = std::make_pair(text.begin(), text.begin());
   gettoken(text, t);
   if(rfc1123_date(text, t, out) ||
-     rfc850_date(text, t, out) /*|| asctime_date(text, t, out)*/)
+     rfc850_date(text, t, out) ||
+     asctime_date(text, t, out))
     return timegm(&out);
   return -1;
 }
-
-#if 0
-int main() {
-  time_t t = rest::utils::http::datetime_value("Sunday, 06-Nov-94 08:49:37 GMT");
-  std::cout << t << ' ' << asctime(gmtime(&t)) << '\n';
-}
-#endif
