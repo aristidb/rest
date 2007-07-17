@@ -799,7 +799,7 @@ struct quote_type<void (X)> {
 #define TESTSOON_PARAM_2tuples1(x) \
   TESTSOON_PARAM_2tuples2( \
     BOOST_PP_SEQ_HEAD(x), \
-    BOOST_PP_SEQ_TO_ARRAY(BOOST_PP_SEQ_TAIL(x)) \
+    BOOST_PP_SEQ_TO_ARRAY(x) \
   )
 #define TESTSOON_PARAM_2tuples2(types, values) \
   TESTSOON_PARAM__generator( \
@@ -808,15 +808,22 @@ struct quote_type<void (X)> {
       )>::type) \
     (boost::assign::list_of \
       BOOST_PP_REPEAT( \
-        BOOST_PP_ARRAY_SIZE(values), \
+        BOOST_PP_DEC(BOOST_PP_ARRAY_SIZE(values)), \
         TESTSOON_PARAM_2tuples3, \
         values \
       ) \
     ) \
   )
 
-#define TESTSOON_PARAM_2tuples3(z, i, values) \
-  (boost::make_tuple BOOST_PP_ARRAY_ELEM(i, values))
+#define TESTSOON_PARAM_2tuples3(z, i, arr) \
+  ( \
+    ::testsoon::quote_type<void ( \
+      boost::tuple< \
+        BOOST_PP_TUPLE_REM(2) BOOST_PP_ARRAY_ELEM(0, arr) \
+      > \
+    )>::type \
+    BOOST_PP_ARRAY_ELEM(BOOST_PP_INC(i), arr) \
+  )
 
 #define TESTSOON_PARAM_INITIAL \
   ("") ((0, ~)) (0) ((0, ()))
