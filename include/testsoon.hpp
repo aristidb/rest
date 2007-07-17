@@ -781,16 +781,27 @@ private:
     (BOOST_PP_TUPLE_ELEM(3, 2, x)) \
   )
 
+
+template<typename>
+struct quote_type;
+
+template<typename X>
+struct quote_type<void (X)> {
+  typedef X type;
+};
+
 #define TESTSOON_PARAM__range(x) \
   TESTSOON_PARAM_SHORT_GENERATOR(::testsoon::range_generator, x)
 #define TESTSOON_PARAM__array(x) \
   TESTSOON_PARAM__generator( \
-    (::testsoon::array_generator<BOOST_PP_TUPLE_ELEM(2, 0, x)>) \
+    (::testsoon::array_generator< \
+      ::testsoon::quote_type<void (BOOST_PP_TUPLE_ELEM(2, 0, x))>::type \
+    >) \
     (BOOST_PP_TUPLE_ELEM(2, 1, x)) \
   )
 #define TESTSOON_PARAM__values(x) \
   TESTSOON_PARAM__generator( \
-    (std::vector<BOOST_PP_SEQ_HEAD(x)>) \
+    (std::vector< ::testsoon::quote_type<void (BOOST_PP_SEQ_HEAD(x))>::type>) \
     ( \
       (boost::assign::list_of BOOST_PP_SEQ_TAIL(x)). \
       operator std::vector<BOOST_PP_SEQ_HEAD(x)>() \
@@ -802,10 +813,11 @@ private:
 
 #define TESTSOON_PARAM_2tuples1(x) \
   TESTSOON_PARAM_2tuples2(BOOST_PP_SEQ_HEAD(x), BOOST_PP_SEQ_TAIL(x))
-
 #define TESTSOON_PARAM_2tuples2(types, values) \
   TESTSOON_PARAM__generator( \
-    (std::vector<boost::tuple<BOOST_PP_TUPLE_REM(2) types> >) \
+    (::testsoon::quote_type<void ( \
+        std::vector<boost::tuple<BOOST_PP_TUPLE_REM(2) types> > \
+      )>::type) \
     (boost::assign::list_of \
       BOOST_PP_SEQ_FOR_EACH(TESTSOON_PARAM_2tuples3, ~, values)))
 
