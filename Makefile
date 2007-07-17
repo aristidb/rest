@@ -24,7 +24,7 @@ endif
 LIBREST_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(LIBREST_SOURCES))
 LIBREST_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(LIBREST_SOURCES))
 
-UNIT_SOURCES := unit.cpp filter_tests.cpp logger_tests.cpp http_headers_tests.cpp
+UNIT_SOURCES := unit.cpp filter_tests.cpp logger_tests.cpp http_headers_tests.cpp datetime-test.cpp
 UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
 UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))
 
