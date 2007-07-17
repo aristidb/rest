@@ -786,10 +786,16 @@ struct quote_type<void (X)> {
   )
 #define TESTSOON_PARAM__values(x) \
   TESTSOON_PARAM__generator( \
-    (std::vector< ::testsoon::quote_type<void (BOOST_PP_SEQ_HEAD(x))>::type>) \
     ( \
-      (boost::assign::list_of BOOST_PP_SEQ_TAIL(x)). \
-      operator std::vector<BOOST_PP_SEQ_HEAD(x)>() \
+      std::vector< ::testsoon::quote_type<void ( \
+        BOOST_PP_SEQ_HEAD(x) \
+      )>::type> \
+    ) \
+    ( \
+      (::boost::assign::list_of BOOST_PP_SEQ_TAIL(x)). \
+      operator ::std::vector< \
+        ::testsoon::quote_type<void (BOOST_PP_SEQ_HEAD(x))>::type \
+      >() \
     ) \
   )
 
@@ -801,17 +807,25 @@ struct quote_type<void (X)> {
     BOOST_PP_SEQ_HEAD(x), \
     BOOST_PP_SEQ_TO_ARRAY(x) \
   )
-#define TESTSOON_PARAM_2tuples2(types, values) \
+#define TESTSOON_PARAM_2tuples2(types, arr) \
   TESTSOON_PARAM__generator( \
-    (::testsoon::quote_type<void ( \
-        std::vector<boost::tuple<BOOST_PP_TUPLE_REM(2) types> > \
-      )>::type) \
-    (boost::assign::list_of \
+    ( \
+      ::std::vector< \
+        ::testsoon::quote_type<void ( \
+          ::boost::tuple<BOOST_PP_TUPLE_REM(2) types>) \
+        >::type \
+      > \
+    ) \
+    (::boost::assign::list_of \
       BOOST_PP_REPEAT( \
-        BOOST_PP_DEC(BOOST_PP_ARRAY_SIZE(values)), \
+        BOOST_PP_DEC(BOOST_PP_ARRAY_SIZE(arr)), \
         TESTSOON_PARAM_2tuples3, \
-        values \
-      ) \
+        arr \
+      ).operator ::std::vector< \
+        ::testsoon::quote_type<void ( \
+          ::boost::tuple<BOOST_PP_TUPLE_REM(2) types>) \
+        >::type \
+      >() \
     ) \
   )
 
