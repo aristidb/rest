@@ -60,13 +60,6 @@ namespace {
     y << s.rdbuf();
   }
 
-  void testcase1_2() {
-    std::ifstream x("8zara10.txt");
-    filtering_istream s(boundary_filter2("\n-------------------------------END!") | boost::ref(x));
-    std::ostringstream y;
-    y << s.rdbuf();
-  }
-
   void testcase1nofilt() {
     std::ifstream x("8zara10.txt");
     filtering_istream s(boost::ref(x));
@@ -75,13 +68,6 @@ namespace {
   }
 
   void testcase2() {
-    std::ifstream x("longrnd.bin");
-    filtering_istream s(boundary_filter("\n-------------------------------END!") | boost::ref(x));
-    std::ostringstream y;
-    y << s.rdbuf();
-  }
-
-  void testcase2_2() {
     std::ifstream x("longrnd.bin");
     filtering_istream s(boundary_filter("\n-------------------------------END!") | boost::ref(x));
     std::ostringstream y;
@@ -107,7 +93,6 @@ namespace {
 int main() {
   unsigned long const tests = 100;
 
-  TEST(testcase1_2)
   TEST(testcase1)
   TEST(testcase1nofilt)
   TEST(testcase2)
