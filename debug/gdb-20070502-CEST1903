@@ -1,0 +1,1762 @@
+GNU gdb 6.4.90-debian
+Copyright (C) 2006 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB.  Type "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu"...Using host libthread_db library "/lib/libthread_db.so.1".
+
+(gdb) Breakpoint 1 at 0x454999: file /home/aristid/coding/musikdings/rest/socket_device.cpp, line 64.
+(gdb) Starting program: /home/aristid/coding/musikdings/rest/http-handler-test 
+STARTING, pid: 15871
+SOCKET 4123 2 
+SOCKET 8080 2 
+%% ACCEPTED
+,read 93 (4096) bytes:
+-{{GET / HTTP/1.1
+Host: localhost
+
+GET / HTTP/1.1
+Accept-Encoding: gzip
+Host: localhost
+
+}}-
+GET / HTTP/1.1
+?-uri /
+GET: 
+Send: 200 CE:none
+,wrote 530 (530) bytes:
++{{HTTP/1.1 200 OK
+Date: Wed, 02 May 2007 16:59:47 GMT
+Server: Musikdings.rest/0.1
+Content-Type: text/html
+Content-Length: 399
+
+<html><head><title>supi</title></head>
+<body>
+<h3>Allles Supi!!</h3>
+<blink>blink</blink>
+<form name="input" action="/" method="post" enctype="multipart/form-data" >
+<input type="text" name="user">
+<input type="text" name="bar">
+<input type="text" name="bar">
+<input name="datei" type="file" size="50" maxlength="100000" accept="text/*">
+<input type="submit" value="Submit">
+</form>
+</body>
+</html>
+}}+
+530-
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6ec1d8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ec1d8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6ec1d8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ec190)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x000000000043da57 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ecd00)
+    at /usr/include/boost/iostreams/chain.hpp:306
+#17 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#18 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#19 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#20 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#21 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#22 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6ec1d8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ec1d8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6ec1d8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ec190)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000427300 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ec190, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:264
+#17 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6ec190)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#18 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6e9030}, 
+    __last={_M_node = 0x6ecd00}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#19 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ecd00)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#20 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#21 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#22 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#23 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#24 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#25 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6ec1d8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ec1d8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6ec1d8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ec190)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000429476 in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close_impl (this=0x6ec190, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:374
+#17 0x000000000043657a in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6ec190, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:359
+#18 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ec190, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#19 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6ec190)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#20 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6e9030}, 
+    __last={_M_node = 0x6ecd00}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#21 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ecd00)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#22 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#23 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#24 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#25 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#26 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#27 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000424a65 in boost::iostreams::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x00000000004298f8 in boost::iostreams::detail::close_impl<boost::iostreams::any_tag>::close<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >
+    (t=@0x7fff5b127aa0, which=std::_S_out)
+    at /usr/include/boost/iostreams/close.hpp:87
+#14 0x0000000000429b75 in boost::iostreams::close<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6ec1d8, 
+    which=std::_S_out) at /usr/include/boost/iostreams/close.hpp:44
+#15 0x0000000000429b97 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::close<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > > (dev=@0x6ec1d8, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:152
+#16 0x0000000000429bbd in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::close<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > >
+    (this=0x6ec1d8, which=std::_S_out, dev=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:100
+#17 0x0000000000436599 in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6ec190, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:360
+#18 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ec190, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#19 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6ec190)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#20 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6e9030}, 
+    __last={_M_node = 0x6ecd00}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#21 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ecd00)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#22 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#23 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#24 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#25 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#26 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#27 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000424a65 in boost::iostreams::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x000000000041dcee in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:780
+#14 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#15 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#16 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x00000000004322d3 in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#12 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#13 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#14 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#15 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x000000000043da57 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:306
+#12 0x000000000043db02 in ~chain_impl (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#13 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6ec490)
+    at /usr/include/boost/checked_delete.hpp:34
+#14 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8f60)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#15 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8f60) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#16 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#17 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#18 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#19 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#20 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#21 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#22 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#23 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#24 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#25 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000427300 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6e8bc0, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:264
+#12 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b12760c, b=0x6e8bc0)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#13 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6e8b80}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#14 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#15 0x000000000043db02 in ~chain_impl (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#16 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6ec490)
+    at /usr/include/boost/checked_delete.hpp:34
+#17 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8f60)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#18 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8f60) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#19 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#20 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#21 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#22 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#23 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#24 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#25 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#26 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#27 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#28 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6e8c08, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x000000000042977a in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close_impl (this=0x6e8bc0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:374
+#12 0x000000000043598c in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6e8bc0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:359
+#13 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6e8bc0, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#14 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b12760c, b=0x6e8bc0)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#15 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6e8b80}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#16 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#17 0x000000000043db02 in ~chain_impl (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#18 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6ec490)
+    at /usr/include/boost/checked_delete.hpp:34
+#19 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8f60)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#20 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8f60) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#21 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#22 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#23 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#24 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#25 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#26 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#27 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#28 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#29 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#30 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a1e1 in boost::iostreams::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a214 in boost::iostreams::detail::close_impl<boost::iostreams::any_tag>::close<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (
+    t=@0x7fff5b1283b0, which=std::_S_out)
+    at /usr/include/boost/iostreams/close.hpp:87
+#9  0x000000000042a239 in boost::iostreams::close<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08, 
+    which=std::_S_out) at /usr/include/boost/iostreams/close.hpp:44
+#10 0x000000000042a25b in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::close<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:152
+#11 0x000000000042a281 in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::close<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > >
+    (this=0x6e8c08, which=std::_S_out, dev=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:100
+#12 0x00000000004359ab in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6e8bc0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:360
+#13 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6e8bc0, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#14 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b12760c, b=0x6e8bc0)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#15 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6e8b80}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#16 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#17 0x000000000043db02 in ~chain_impl (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#18 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6ec490)
+    at /usr/include/boost/checked_delete.hpp:34
+#19 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8f60)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#20 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8f60) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#21 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#22 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#23 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#24 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#25 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#26 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#27 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#28 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#29 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#30 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a1e1 in boost::iostreams::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a214 in boost::iostreams::detail::close_impl<boost::iostreams::any_tag>::close<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (
+    t=@0x7fff5b1283b0, which=std::_S_out)
+    at /usr/include/boost/iostreams/close.hpp:87
+#9  0x000000000042a239 in boost::iostreams::close<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6e8c08, 
+    which=std::_S_out) at /usr/include/boost/iostreams/close.hpp:44
+#10 0x000000000042a25b in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::close<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > > (dev=@0x6e8c08, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:152
+#11 0x000000000042a281 in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::close<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > >
+    (this=0x6e8c08, which=std::_S_out, dev=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:100
+#12 0x00000000004359ab in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6e8bc0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:360
+#13 0x0000000000435ab8 in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6e8bc0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:200
+#14 0x0000000000435b52 in ~stream_buffer (this=0x6e8bc0)
+    at /usr/include/boost/iostreams/stream_buffer.hpp:85
+#15 0x00000000004304be in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::reset (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:331
+#16 0x000000000043db0b in ~chain_impl (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#17 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6ec490)
+    at /usr/include/boost/checked_delete.hpp:34
+#18 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8f60)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#19 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8f60) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#20 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#21 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#22 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#23 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#24 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#25 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#26 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#27 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#28 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#29 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+GET / HTTP/1.1
+?-uri /
+GET: 
+Send: 200 CE:gzip
+,wrote 198 (198) bytes:
++{{HTTP/1.1 200 OK
+Date: Wed, 02 May 2007 16:59:48 GMT
+Server: Musikdings.rest/0.1
+Content-Type: text/html
+Content-Length: 399
+Transfer-Encoding: chunked
+Content-Encoding: gzip
+
+a
+ã      ˇ
+}}+
+198-
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6e8cb8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8cb8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6e8cb8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000429d1a in boost::iostreams::detail::concept_adapter<rest::utils::chunked_filter>::flush (this=0x6ea598, sb=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:106
+#17 0x000000000044c6c5 in boost::iostreams::detail::indirect_streambuf<rest::utils::chunked_filter, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (this=0x6ea550)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#18 0x000000000042a314 in boost::iostreams::detail::concept_adapter<boost::iostreams::basic_gzip_compressor<std::allocator<char> > >::flush (this=0x6ea4c8, 
+    sb=0x6ea550)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:106
+#19 0x0000000000445412 in boost::iostreams::detail::indirect_streambuf<boost::iostreams::basic_gzip_compressor<std::allocator<char> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (this=0x6ea480)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#20 0x000000000043da57 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:306
+#21 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#22 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#23 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#24 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#25 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#26 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6e8cb8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8cb8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6e8cb8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000429d1a in boost::iostreams::detail::concept_adapter<rest::utils::chunked_filter>::flush (this=0x6ea598, sb=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:106
+#17 0x000000000044c6c5 in boost::iostreams::detail::indirect_streambuf<rest::utils::chunked_filter, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (this=0x6ea550)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#18 0x000000000042a314 in boost::iostreams::detail::concept_adapter<boost::iostreams::basic_gzip_compressor<std::allocator<char> > >::flush (this=0x6ea4c8, 
+    sb=0x6ea550)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:106
+#19 0x0000000000445412 in boost::iostreams::detail::indirect_streambuf<boost::iostreams::basic_gzip_compressor<std::allocator<char> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (this=0x6ea480)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#20 0x0000000000427300 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ea480, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:264
+#21 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6ea480)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#22 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6ea530}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#23 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#24 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#25 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#26 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#27 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#28 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#29 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6e8cb8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8cb8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6e8cb8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000429d1a in boost::iostreams::detail::concept_adapter<rest::utils::chunked_filter>::flush (this=0x6ea598, sb=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:106
+#17 0x000000000044c6c5 in boost::iostreams::detail::indirect_streambuf<rest::utils::chunked_filter, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (this=0x6ea550)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#18 0x000000000042a314 in boost::iostreams::detail::concept_adapter<boost::iostreams::basic_gzip_compressor<std::allocator<char> > >::flush (this=0x6ea4c8, 
+    sb=0x6ea550)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:106
+#19 0x0000000000445412 in boost::iostreams::detail::indirect_streambuf<boost::iostreams::basic_gzip_compressor<std::allocator<char> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (this=0x6ea480)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#20 0x0000000000429016 in boost::iostreams::detail::indirect_streambuf<boost::iostreams::basic_gzip_compressor<std::allocator<char> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close_impl (this=0x6ea480, 
+    which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:374
+#21 0x0000000000445896 in boost::iostreams::detail::indirect_streambuf<boost::iostreams::basic_gzip_compressor<std::allocator<char> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (this=0x6ea480, 
+    which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:359
+#22 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ea480, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#23 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6ea480)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#24 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6ea530}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#25 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#26 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#27 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#28 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#29 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#30 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#31 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+,wrote 234 (234) bytes:
++{{80
+çQÀn!ºÔW+U§äzcë˙˘v◊)®º¥ò(È◊«@N9TÂÄ=ÃxåAY
+^+ãf”äy‘•fß‰»ïÏÃ§ñ¥›9ÿì˛ÚﬁcgVÃüÎ]¸—}WrÄI]“D4gp1WaVr)Œ A$õ∂r*L`\ÈûY™'óÕ
+5e
+N≤UøoÜˆÍbho\2åk¡˛‡ÛzqKt‘^úG≈˝r˛y‰[õõ«¯MvÜèc[m¶3[˘ˆ⁄¨‘%8nw5æ2<»¢>_ãœáï˝¶¥âòÃè  
+}}+
+234-
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6e8cb8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8cb8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6e8cb8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000429d1a in boost::iostreams::detail::concept_adapter<rest::utils::chunked_filter>::flush (this=0x6ea598, sb=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:106
+#17 0x000000000044c6c5 in boost::iostreams::detail::indirect_streambuf<rest::utils::chunked_filter, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (this=0x6ea550)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#18 0x0000000000427300 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ea550, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:264
+#19 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6ea550)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#20 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6e8c50}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#21 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#22 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#23 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#24 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#25 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#26 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#27 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6e8cb8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8cb8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6e8cb8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000429d1a in boost::iostreams::detail::concept_adapter<rest::utils::chunked_filter>::flush (this=0x6ea598, sb=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:106
+#17 0x000000000044c6c5 in boost::iostreams::detail::indirect_streambuf<rest::utils::chunked_filter, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (this=0x6ea550)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#18 0x0000000000429188 in boost::iostreams::detail::indirect_streambuf<rest::utils::chunked_filter, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close_impl (this=0x6ea550, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:374
+#19 0x000000000044ce14 in boost::iostreams::detail::indirect_streambuf<rest::utils::chunked_filter, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (this=0x6ea550, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:359
+#20 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ea550, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#21 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6ea550)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#22 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6e8c50}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#23 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#24 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#25 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#26 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#27 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#28 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#29 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+closing 0x6ea598- 0x7fff5b127680 - 16
+,wrote 5 (5) bytes:
++{{0
+
+}}+
+5-
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6e8cb8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8cb8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6e8cb8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000427300 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6e8c70, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:264
+#17 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6e8c70)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#18 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6ea5e0}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#19 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#20 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#21 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#22 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#23 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#24 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#25 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000429add in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6e8cb8)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x0000000000429afb in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6e8cb8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#14 0x0000000000429b1d in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::flush (this=0x6e8cb8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#15 0x00000000004365fd in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6e8c70)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#16 0x0000000000429476 in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close_impl (this=0x6e8c70, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:374
+#17 0x000000000043657a in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6e8c70, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:359
+#18 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6e8c70, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#19 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6e8c70)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#20 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6ea5e0}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#21 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#22 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#23 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#24 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#25 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#26 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#27 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000424a65 in boost::iostreams::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x00000000004298f8 in boost::iostreams::detail::close_impl<boost::iostreams::any_tag>::close<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >
+    (t=@0x7fff5b127aa0, which=std::_S_out)
+    at /usr/include/boost/iostreams/close.hpp:87
+#14 0x0000000000429b75 in boost::iostreams::close<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > > (t=@0x6e8cb8, 
+    which=std::_S_out) at /usr/include/boost/iostreams/close.hpp:44
+#15 0x0000000000429b97 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::close<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > > (dev=@0x6e8cb8, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:152
+#16 0x0000000000429bbd in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > >::close<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > >
+    (this=0x6e8cb8, which=std::_S_out, dev=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:100
+#17 0x0000000000436599 in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6e8c70, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:360
+#18 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6e8c70, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#19 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b1277bc, b=0x6e8c70)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#20 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6ea5e0}, 
+    __last={_M_node = 0x6ec490}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#21 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6ec490)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#22 0x000000000043de5b in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::reset (this=0x7fff5b127988) at /usr/include/boost/iostreams/chain.hpp:521
+#23 0x000000000043de8a in boost::iostreams::detail::chain_client<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> > >::reset (this=0x7fff5b127970)
+    at /usr/include/boost/iostreams/chain.hpp:476
+#24 0x000000000041dcb1 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:777
+#25 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#26 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#27 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000424a3d in boost::iostreams::detail::flush_device_impl<boost::iostreams::ostream_tag>::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0) at /usr/include/boost/iostreams/flush.hpp:68
+#12 0x0000000000424a65 in boost::iostreams::flush<boost::iostreams::filtering_stream<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::public_> > (t=@0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#13 0x000000000041dcee in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:780
+#14 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#15 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#16 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x00000000004322d3 in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#12 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#13 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#14 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#15 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x000000000043da57 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:306
+#12 0x000000000043db02 in ~chain_impl (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#13 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6e8b50)
+    at /usr/include/boost/checked_delete.hpp:34
+#14 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8b80)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#15 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8b80) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#16 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#17 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#18 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#19 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#20 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#21 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#22 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#23 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#24 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#25 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x0000000000427300 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ea0c0, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:264
+#12 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b12760c, b=0x6ea0c0)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#13 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6ecd00}, 
+    __last={_M_node = 0x6e8b50}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#14 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#15 0x000000000043db02 in ~chain_impl (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#16 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6e8b50)
+    at /usr/include/boost/checked_delete.hpp:34
+#17 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8b80)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#18 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8b80) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#19 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#20 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#21 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#22 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#23 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#24 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#25 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#26 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#27 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#28 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a14f in boost::iostreams::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a16d in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#9  0x000000000042a18f in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::flush (this=0x6ea108, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#10 0x0000000000435a0f in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::sync (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#11 0x000000000042977a in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close_impl (this=0x6ea0c0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:374
+#12 0x000000000043598c in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6ea0c0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:359
+#13 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ea0c0, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#14 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b12760c, b=0x6ea0c0)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#15 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6ecd00}, 
+    __last={_M_node = 0x6e8b50}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#16 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#17 0x000000000043db02 in ~chain_impl (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#18 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6e8b50)
+    at /usr/include/boost/checked_delete.hpp:34
+#19 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8b80)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#20 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8b80) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#21 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#22 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#23 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#24 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#25 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#26 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#27 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#28 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#29 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#30 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a1e1 in boost::iostreams::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a214 in boost::iostreams::detail::close_impl<boost::iostreams::any_tag>::close<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (
+    t=@0x7fff5b1283b0, which=std::_S_out)
+    at /usr/include/boost/iostreams/close.hpp:87
+#9  0x000000000042a239 in boost::iostreams::close<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108, 
+    which=std::_S_out) at /usr/include/boost/iostreams/close.hpp:44
+#10 0x000000000042a25b in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::close<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:152
+#11 0x000000000042a281 in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::close<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > >
+    (this=0x6ea108, which=std::_S_out, dev=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:100
+#12 0x00000000004359ab in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6ea0c0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:360
+#13 0x0000000000427317 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (b=0x6ea0c0, m=std::_S_out)
+    at /usr/include/boost/iostreams/chain.hpp:265
+#14 0x0000000000427339 in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer::operator() (this=0x7fff5b12760c, b=0x6ea0c0)
+    at /usr/include/boost/iostreams/chain.hpp:278
+#15 0x0000000000427366 in std::for_each<std::_List_iterator<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*>, boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::closer> (__first={_M_node = 0x6ecd00}, 
+    __last={_M_node = 0x6e8b50}, __f=
+      {<std::unary_function<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> >*,void>> = {<No data fields>}, mode_ = std::_S_out})
+    at /usr/lib/gcc/x86_64-linux-gnu/4.1.2/../../../../include/c++/4.1.2/bits/stl_algo.h:159
+#16 0x000000000043da8e in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::close (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:311
+#17 0x000000000043db02 in ~chain_impl (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#18 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6e8b50)
+    at /usr/include/boost/checked_delete.hpp:34
+#19 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8b80)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#20 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8b80) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#21 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#22 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#23 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#24 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#25 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#26 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#27 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#28 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#29 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#30 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x000000000042a127 in boost::iostreams::detail::flush_device_impl<boost::iostreams::streambuf_tag>::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0) at /usr/include/boost/iostreams/flush.hpp:75
+#7  0x000000000042a1e1 in boost::iostreams::flush<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (t=@0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/flush.hpp:40
+#8  0x000000000042a214 in boost::iostreams::detail::close_impl<boost::iostreams::any_tag>::close<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > (
+    t=@0x7fff5b1283b0, which=std::_S_out)
+    at /usr/include/boost/iostreams/close.hpp:87
+#9  0x000000000042a239 in boost::iostreams::close<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > > (t=@0x6ea108, 
+    which=std::_S_out) at /usr/include/boost/iostreams/close.hpp:44
+#10 0x000000000042a25b in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::close<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > > (dev=@0x6ea108, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:152
+#11 0x000000000042a281 in boost::iostreams::detail::concept_adapter<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> > >::close<boost::iostreams::detail::linked_streambuf<char, std::char_traits<char> > >
+    (this=0x6ea108, which=std::_S_out, dev=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:100
+#12 0x00000000004359ab in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6ea0c0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:360
+#13 0x0000000000435ab8 in boost::iostreams::detail::indirect_streambuf<boost::reference_wrapper<boost::iostreams::stream_buffer<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional> >, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::close (
+    this=0x6ea0c0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:200
+#14 0x0000000000435b52 in ~stream_buffer (this=0x6ea0c0)
+    at /usr/include/boost/iostreams/stream_buffer.hpp:85
+#15 0x00000000004304be in boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl::reset (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:331
+#16 0x000000000043db0b in ~chain_impl (this=0x6e8b50)
+    at /usr/include/boost/iostreams/chain.hpp:297
+#17 0x000000000043db8c in boost::checked_delete<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl> (x=0x6e8b50)
+    at /usr/include/boost/checked_delete.hpp:34
+#18 0x000000000043de3b in boost::detail::sp_counted_impl_p<boost::iostreams::detail::chain_base<boost::iostreams::chain<boost::iostreams::output, char, std::char_traits<char>, std::allocator<char> >, char, std::char_traits<char>, std::allocator<char>, boost::iostreams::output>::chain_impl>::dispose (this=0x6e8b80)
+    at /usr/include/boost/detail/sp_counted_impl.hpp:76
+#19 0x000000000040b864 in boost::detail::sp_counted_base::release (
+    this=0x6e8b80) at /usr/include/boost/detail/sp_counted_base_gcc_x86.hpp:145
+#20 0x000000000040b894 in ~shared_count (this=0x7fff5b127ac0)
+    at /usr/include/boost/detail/shared_count.hpp:159
+#21 0x00000000004240e9 in ~shared_ptr (this=0x7fff5b127ab8)
+    at /usr/include/boost/shared_ptr.hpp:106
+#22 0x0000000000424101 in ~chain_base (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:121
+#23 0x0000000000424119 in ~chain (this=0x7fff5b127ab8)
+    at /usr/include/boost/iostreams/chain.hpp:393
+#24 0x0000000000430666 in ~filtering_stream_base (this=0x7fff5b127aa0, 
+    __vtt_parm=0x558f88)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:63
+#25 0x00000000004322fc in ~filtering_stream (this=0x7fff5b127aa0)
+    at /usr/include/boost/iostreams/filtering_stream.hpp:134
+#26 0x000000000041dd11 in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0, entity=true)
+    at /home/aristid/coding/musikdings/rest/server.cpp:781
+#27 0x00000000004462af in (anonymous namespace)::http_connection::send (
+    this=0x7fff5b128340, r=@0x7fff5b1281d0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:318
+#28 0x0000000000422954 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:473
+#29 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush 9
+,closing 9
+%% remote or timeout
+%% CLOSING
+,closing -1
+
+Breakpoint 1, rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+64	  std::cout << ",flush " << p->fd << std::endl;
+(gdb) #0  rest::utils::socket_device::flush (this=0x7fff5b1283f8)
+    at /home/aristid/coding/musikdings/rest/socket_device.cpp:64
+#1  0x0000000000451981 in boost::iostreams::detail::flush_device_impl<boost::iostreams::flushable_tag>::flush<rest::utils::socket_device> (t=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/flush.hpp:81
+#2  0x00000000004519a3 in boost::iostreams::flush<rest::utils::socket_device> (
+    t=@0x7fff5b1283f8) at /usr/include/boost/iostreams/flush.hpp:40
+#3  0x00000000004519c1 in boost::iostreams::detail::device_wrapper_impl<boost::iostreams::any_tag>::flush<rest::utils::socket_device, std::basic_streambuf<char, std::char_traits<char> > > (dev=@0x7fff5b1283f8)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:156
+#4  0x00000000004519e3 in boost::iostreams::detail::concept_adapter<rest::utils::socket_device>::flush (this=0x7fff5b1283f8, sb=0x0)
+    at /usr/include/boost/iostreams/detail/adapter/concept_adapter.hpp:105
+#5  0x0000000000451ac1 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::sync (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:307
+#6  0x00000000004263ec in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::close_impl (this=0x7fff5b1283b0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:374
+#7  0x0000000000451ba8 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::close (this=0x7fff5b1283b0, which=std::_S_out)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:359
+#8  0x0000000000450dd8 in boost::iostreams::detail::indirect_streambuf<rest::utils::socket_device, std::char_traits<char>, std::allocator<char>, boost::iostreams::bidirectional>::close (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/detail/streambuf/indirect_streambuf.hpp:200
+#9  0x0000000000451148 in ~stream_buffer (this=0x7fff5b1283b0)
+    at /usr/include/boost/iostreams/stream_buffer.hpp:85
+#10 0x0000000000422a65 in rest::server::serve (this=0x7fff5b1284f0)
+    at /home/aristid/coding/musikdings/rest/server.cpp:479
+#11 0x00000000004007f8 in main (argc=1, argv=0x7fff5b128878)
+    at /home/aristid/coding/musikdings/rest/http-handler-test.cpp:89
+(gdb) Continuing.
+,flush -1
+,closing -1
