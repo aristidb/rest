@@ -1,6 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest-utils.hpp"
 #include <testsoon.hpp>
+#include <boost/tuple/tuple_io.hpp>
 
 using namespace rest::utils::http;
 
