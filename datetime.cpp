@@ -222,6 +222,64 @@ namespace {
       return false;
     return true;
   }
+
+  // weekday      = "Monday" | "Tuesday" | "Wednesday"
+  //                | "Thursday" | "Friday" | "Saturday" | "Sunday"
+  bool weekday(token const &t) {
+    return
+      t == "Monday" || t == "Tuesday" || t == "Wednesday" ||
+      t == "Thursday" || t == "Friday" || t == "Saturday" || t == "Sunday";
+  }
+
+  // date2        = 2DIGIT "-" month "-" 2DIGIT
+  //                    ; day-month-year (e.g., 02-Jun-82)
+  bool date2(std::string const &text, token &t, tm &data) {
+    if(t.second - t.first > 2)
+      return false;
+    data.tm_mday = num(t);
+
+    gettoken(text, t);
+    if(*t.first != '-')
+      return false;
+
+    gettoken(text, t);
+    data.tm_mon = mon(t);
+    if(data.tm_mon == -1)
+      return false;
+
+    gettoken(text, t);
+    if(*t.first != '-')
+      return false;
+
+    gettoken(text, t);
+    if(t.second - t.first > 2)
+      return false;
+    data.tm_year = num(t);
+    if(data.tm_year < 60) // everything below 60 ist 20xx, everything above 19xx
+      data.tm_year += 100;
+
+    gettoken(text, t);
+    return true;
+  }
+
+  // rfc850-date  = weekday "," SP date2 SP time SP "GMT"
+  bool rfc850_date(std::string const &text, token t, tm &data) {
+    if(!weekday(t))
+      return false;
+
+    gettoken(text, t);
+    if(*t.first != ',')
+      return false;
+
+    gettoken(text, t);
+    if(!date2(text, t, data))
+      return false;
+    if(!time(text, t, data))
+      return false;
+    if(t != "GMT")
+      return false;
+    return true;
+  }
 }
 
 time_t rest::utils::http::datetime_value(std::string const &text) {
@@ -234,11 +292,10 @@ time_t rest::utils::http::datetime_value(std::string const &text) {
 
       HTTP-date    = rfc1123-date | rfc850-date | asctime-date
        
-       rfc850-date  = weekday "," SP date2 SP time SP "GMT"
+       
        asctime-date = wkday SP date3 SP time SP 4DIGIT
        
-       date2        = 2DIGIT "-" month "-" 2DIGIT
-                      ; day-month-year (e.g., 02-Jun-82)
+       
        date3        = month SP ( 2DIGIT | ( SP 1DIGIT ))
                       ; month day (e.g., Jun  2)
        
@@ -253,15 +310,15 @@ time_t rest::utils::http::datetime_value(std::string const &text) {
   tm out;
   token t = std::make_pair(text.begin(), text.begin());
   gettoken(text, t);
-  if(rfc1123_date(text, t, out)
-     /* || rfc850_date(text, t, out) || asctime_date(text, t, out)*/)
+  if(rfc1123_date(text, t, out) ||
+     rfc850_date(text, t, out) /*|| asctime_date(text, t, out)*/)
     return timegm(&out);
   return -1;
 }
 
 #if 0
 int main() {
-  time_t t = rest::utils::http::datetime_value("Sun, 06 Nov 1994 08:49:37 GMT");
+  time_t t = rest::utils::http::datetime_value("Sunday, 06-Nov-94 08:49:37 GMT");
   std::cout << t << ' ' << asctime(gmtime(&t)) << '\n';
 }
 #endif
