@@ -29,23 +29,7 @@
 #ifndef TESTSOON_HPP
 #define TESTSOON_HPP
 
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
-#include <boost/preprocessor/seq/fold_left.hpp>
-#include <boost/preprocessor/seq/replace.hpp>
-#include <boost/preprocessor/seq/to_tuple.hpp>
-#include <boost/preprocessor/seq/to_array.hpp>
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
-#include <boost/preprocessor/tuple/elem.hpp>
-#include <boost/preprocessor/array/pop_front.hpp>
-#include <boost/preprocessor/array/data.hpp>
-#include <boost/preprocessor/array/size.hpp>
-#include <boost/preprocessor/control/iif.hpp>
-#include <boost/preprocessor/control/expr_iif.hpp>
-#include <boost/preprocessor/facilities/empty.hpp>
-#include <boost/preprocessor/comparison/equal.hpp>
-#include <boost/preprocessor/punctuation/comma_if.hpp>
+#include <boost/preprocessor.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
 
@@ -813,17 +797,26 @@ struct quote_type<void (X)> {
   TESTSOON_PARAM_2tuples1(TESTSOON_GEN_TUPLE2SEQ(x))
 
 #define TESTSOON_PARAM_2tuples1(x) \
-  TESTSOON_PARAM_2tuples2(BOOST_PP_SEQ_HEAD(x), BOOST_PP_SEQ_TAIL(x))
+  TESTSOON_PARAM_2tuples2( \
+    BOOST_PP_SEQ_HEAD(x), \
+    BOOST_PP_SEQ_TO_ARRAY(BOOST_PP_SEQ_TAIL(x)) \
+  )
 #define TESTSOON_PARAM_2tuples2(types, values) \
   TESTSOON_PARAM__generator( \
     (::testsoon::quote_type<void ( \
         std::vector<boost::tuple<BOOST_PP_TUPLE_REM(2) types> > \
       )>::type) \
     (boost::assign::list_of \
-      BOOST_PP_SEQ_FOR_EACH(TESTSOON_PARAM_2tuples3, ~, values)))
+      BOOST_PP_REPEAT( \
+        BOOST_PP_ARRAY_SIZE(values), \
+        TESTSOON_PARAM_2tuples3, \
+        values \
+      ) \
+    ) \
+  )
 
-#define TESTSOON_PARAM_2tuples3(r, x, value) \
-  (boost::make_tuple value)
+#define TESTSOON_PARAM_2tuples3(z, i, values) \
+  (boost::make_tuple BOOST_PP_ARRAY_ELEM(i, values))
 
 #define TESTSOON_PARAM_INITIAL \
   ("") ((0, ~)) (0) ((0, ()))
