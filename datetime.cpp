@@ -6,6 +6,8 @@
 #include <cassert>
 #include <algorithm>
 
+#include <iostream> //DEBUG
+
 std::string rest::utils::http::datetime_string(time_t time_buf) {
   tm gmtime;
   gmtime_r(&time_buf, &gmtime);
@@ -54,20 +56,24 @@ std::string rest::utils::http::datetime_string(time_t time_buf) {
 
 namespace {
   typedef std::string::const_iterator iterator;
+  typedef std::pair<iterator, iterator> token;
 
-  unsigned num(iterator first, iterator last) {
+  unsigned num(token const &t) {
     unsigned ret = 0;
-    for (; first != last; ++first)
-      if (*first >= '0' && *first <= '9')
-        ret = ret * 10 + *first - '0';
+    iterator i = t.first;
+    for (; i != t.second; ++i)
+      if (*i >= '0' && *i <= '9')
+        ret = ret * 10 + *i - '0';
     return ret;
   }
 
 #define MON(x,y,z) ((x - 'A') + (y - 'a') + (z - 'a') - 9)
 
-  int mon(iterator first, iterator last) {
-    assert(first + 3 == last);
-    switch (MON(*first, *(first + 1), *(first + 2))) {
+  int mon(token const &t) {
+    //assert(first + 3 == last);
+    if(t.second - t.first != 3)
+      return -1;
+    switch (MON(*t.first, *(t.first + 1), *(t.first + 2))) {
     case MON('J', 'a', 'n'): return 0;
     case MON('F', 'e', 'b'): return 1;
     case MON('M', 'a', 'r'): return 2;
@@ -83,7 +89,139 @@ namespace {
     default: return -1;
     }
   }
+
+  int wkday(token const &t) {
+    if(t.second - t.first != 3)
+      return -1;
+    switch (MON(*t.first, *(t.first + 1), *(t.first + 2))) {
+    case MON('M', 'o', 'n'): return 0;
+    case MON('T', 'u', 'e'): return 1;
+    case MON('W', 'e', 'd'): return 2;
+    case MON('T', 'h', 'u'): return 3;
+    case MON('F', 'r', 'i'): return 4;
+    case MON('S', 'a', 't'): return 5;
+    case MON('S', 'u', 'n'): return 6;
+    default: return -1;
+    }
+  }
 #undef MON
+  bool operator==(token const &tok, char const *rhs) {
+    iterator i = tok.first;
+    while( i != tok.second && *rhs )
+      if( *i++ != *rhs++ )
+        return false;
+    return i == tok.second && !*rhs;
+  }
+  bool operator!=(token const &tok, char const *rhs) {
+    return !(tok == rhs);
+  }
+
+#if 1
+  std::ostream &operator<<(std::ostream &out, token const &t) {
+    iterator i = t.first;
+    while(i != t.second)
+      out << *i++;
+    return out;
+  }
+#endif
+
+  bool gettoken(std::string const &txt, token &tok) {
+    iterator begin = tok.second;
+    if(begin == txt.end()) {
+      tok = std::make_pair(begin, begin);
+      return false;
+    }
+
+    if(isspace(*begin))
+      while(isspace(*begin))
+        ++begin;
+    else if(*begin == ',' || *begin == '-' || *begin == ':') {
+      tok = std::make_pair(begin, begin + 1);
+      return true;
+    }
+
+    iterator i = begin;
+    for(;i != txt.end(); ++i) {
+      if(isalnum(*i))
+        ;
+      else if(isspace(*i) || *i == ',' || *i == '-' || *i == ':')
+        break;
+      else {
+        // error!
+        return false;
+      }
+    }
+
+    tok = std::make_pair(begin, i);
+    return true;
+  }
+
+  // time         = 2DIGIT ":" 2DIGIT ":" 2DIGIT
+  //                    ; 00:00:00 - 23:59:59
+  bool time(std::string const &text, token &t, tm &data) {
+    if(t.second - t.first > 2)
+      return false;
+    data.tm_hour = num(t);
+
+    gettoken(text, t);
+    if(*t.first != ':')
+      return false;
+
+    gettoken(text, t);
+    if(t.second - t.first > 2)
+      return false;
+    data.tm_min = num(t);
+
+    gettoken(text, t);
+    if(*t.first != ':')
+      return false;
+
+    gettoken(text, t);
+    if(t.second - t.first > 2)
+      return false;
+    data.tm_sec = num(t);
+
+    gettoken(text, t);
+    return true;
+  }
+
+  // date1        = 2DIGIT SP month SP 4DIGIT
+  //                    ; day month year (e.g., 02 Jun 1982)
+  bool date1(std::string const &text, token &t, tm &data) {
+    if(t.second - t.first > 2)
+      return false;
+    data.tm_mday = num(t);
+    
+    gettoken(text, t);
+    data.tm_mon = mon(t);
+    if(data.tm_mon == -1)
+      return false;
+
+    gettoken(text, t);
+    data.tm_year = num(t) - 1900;
+
+    gettoken(text, t);
+    return true;
+  }
+
+  // rfc1123-date = wkday "," SP date1 SP time SP "GMT"
+  bool rfc1123_date(std::string const &text, token t, tm &data) {
+    if(wkday(t) == -1)
+      return false;
+
+    gettoken(text, t);
+    if(*t.first != ',')
+      return false;
+
+    gettoken(text, t);
+    if(!date1(text, t, data))
+      return false;
+    if(!time(text, t, data))
+      return false;
+    if(t != "GMT")
+      return false;
+    return true;
+  }
 }
 
 time_t rest::utils::http::datetime_value(std::string const &text) {
@@ -92,33 +230,38 @@ time_t rest::utils::http::datetime_value(std::string const &text) {
       Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
       Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
       Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+
+
+      HTTP-date    = rfc1123-date | rfc850-date | asctime-date
+       
+       rfc850-date  = weekday "," SP date2 SP time SP "GMT"
+       asctime-date = wkday SP date3 SP time SP 4DIGIT
+       
+       date2        = 2DIGIT "-" month "-" 2DIGIT
+                      ; day-month-year (e.g., 02-Jun-82)
+       date3        = month SP ( 2DIGIT | ( SP 1DIGIT ))
+                      ; month day (e.g., Jun  2)
+       
+       wkday        = "Mon" | "Tue" | "Wed"
+                    | "Thu" | "Fri" | "Sat" | "Sun"
+       weekday      = "Monday" | "Tuesday" | "Wednesday"
+                    | "Thursday" | "Friday" | "Saturday" | "Sunday"
+       month        = "Jan" | "Feb" | "Mar" | "Apr"
+                    | "May" | "Jun" | "Jul" | "Aug"
+                    | "Sep" | "Oct" | "Nov" | "Dec"
   */
-  static char const sample822[] = "Sun, 06 Nov 1994 08:49:37 GMT";
-  static char const sample850[] = "Sunday, 06-Nov-94 08:49:37 GMT";
-  static char const sampleASC[] = "Sun Nov  6 08:49:37 1994";
-
   tm out;
-
-  switch (text.length() + 1) {
-  case sizeof(sample822):
-    if (!equal(text.end() - 3, text.end(), "GMT"))
-      return -1;
-    out.tm_mday = num(text.begin() + 5, text.begin() + 7);
-    out.tm_mon = mon(text.begin() + 8, text.begin() + 11);
-    out.tm_year = num(text.begin() + 12, text.begin() + 16) - 1900;
-    out.tm_hour = num(text.begin() + 17, text.begin() + 19);
-    out.tm_min = num(text.begin() + 20, text.begin() + 22);
-    out.tm_sec = num(text.begin() + 23, text.begin() + 25);
-    break;
-  case sizeof(sample850):
-    if (!equal(text.end() - 3, text.end(), "GMT"))
-      return -1;
-    break;
-  case sizeof(sampleASC):
-    break;
-  default:
-    return time_t(-1);
-  }
-
-  return mktime(&out);//XXX localtime, must be gmt
+  token t = std::make_pair(text.begin(), text.begin());
+  gettoken(text, t);
+  if(rfc1123_date(text, t, out)
+     /* || rfc850_date(text, t, out) || asctime_date(text, t, out)*/)
+    return timegm(&out);
+  return -1;
 }
+
+#if 0
+int main() {
+  time_t t = rest::utils::http::datetime_value("Sun, 06 Nov 1994 08:49:37 GMT");
+  std::cout << t << ' ' << asctime(gmtime(&t)) << '\n';
+}
+#endif
