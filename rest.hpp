@@ -292,7 +292,12 @@ namespace detail {
     virtual putter_base *x_putter() = 0;
     virtual poster_base *x_poster() = 0;
     virtual deleter_base *x_deleter() = 0;
+
     virtual bool x_exists(any_path const &, keywords &) const = 0;
+
+    virtual std::string etag() const { return std::string(); }
+    virtual time_t last_modified() const { return time_t(-1); }
+
     virtual ~responder_base() {}
   };
 
