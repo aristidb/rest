@@ -727,9 +727,19 @@ response http_connection::handle_delete(
 int http_connection::set_header_options() {
   utils::http::header_fields::iterator connect_header =
     header_fields.find("connection");
-  if (connect_header != header_fields.end())
-    if (algo::iequals(connect_header->second, "close"))
-      open_ = false;
+  if (connect_header != header_fields.end()) {
+    std::vector<std::string> tokens;
+    utils::http::parse_list(connect_header->second, tokens);
+    for (std::vector<std::string>::iterator it = tokens.begin();
+        it != tokens.end();
+        ++it) {
+      algo::to_lower(*it);
+      if (*it == "close")
+        open_ = false;
+      if (flags.test(HTTP_1_0_COMPAT))
+        header_fields.erase(*it);
+    }
+  }
 
   typedef std::multimap<int, std::string> qlist_t;
 
