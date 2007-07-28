@@ -856,6 +856,9 @@ void http_connection::send(response r, bool entity) {
 
   out << code << " " << response::reason(code) << "\r\n";
 
+  if (!open_)
+    r.add_header_part("Connection", "close");
+
   r.set_header("Date", utils::http::datetime_string(std::time(0)));
   r.set_header("Server", REST_SERVER_ID);
 
