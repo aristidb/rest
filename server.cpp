@@ -8,8 +8,9 @@
 #include <boost/multi_index/key_extractors.hpp>
 
 #include <boost/lexical_cast.hpp>
-
 #include <boost/algorithm/string.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/concepts.hpp>
@@ -286,6 +287,7 @@ namespace {
     typedef std::bitset<X_NO_FLAG> state_flags;
     state_flags flags;
     std::vector<response::content_encoding_t> encodings;
+    utils::http::header_fields header_fields;
 
   public:
     http_connection(connection_streambuf &conn)
@@ -293,9 +295,7 @@ namespace {
 
     bool open() const { return open_; }
 
-    typedef utils::http::header_fields header_fields;
-
-    int set_header_options(header_fields &fields);
+    int set_header_options();
 
     void reset() {
       flags.reset();
@@ -303,7 +303,7 @@ namespace {
     }
 
     void handle_request(server::socket_param const &hosts, response &o);
-    int handle_entity(keywords &kw, header_fields &fields);
+    int handle_entity(keywords &kw);
 
     void send(response r, bool entity);
     void send(response r) {
@@ -311,10 +311,50 @@ namespace {
     }
 
     static hosts_cont_t::const_iterator find_host(
-      header_fields const &fields, hosts_cont_t const &hosts);
+      utils::http::header_fields const &fields, hosts_cont_t const &hosts);
 
     void serve(server::socket_param const &sock);
+
+    response handle_get(det::responder_base*, det::any_path const&, keywords&);
+    response handle_head(det::responder_base*, det::any_path const&, keywords&);
+    response handle_post(det::responder_base*, det::any_path const&, keywords&);
+    response handle_put(det::responder_base*, det::any_path const&, keywords&);
+    response handle_delete(
+      det::responder_base*, det::any_path const&, keywords&);
   };
+
+  typedef boost::function<
+    response (
+      http_connection *,
+      det::responder_base *,
+      det::any_path const &,
+      keywords &
+    )
+  > method_handler;
+
+  method_handler H(
+      response (http_connection::*fun)(
+        det::responder_base *, det::any_path const &, keywords &
+      )
+    )
+  {
+    return boost::bind(fun, _1, _2, _3, _4);
+  }
+  typedef std::map<std::string, method_handler> method_handler_map;
+
+  static std::pair<std::string, method_handler> method_handlers_raw[] = {
+    std::make_pair("GET", H(&http_connection::handle_get)),
+    std::make_pair("HEAD", H(&http_connection::handle_head)),
+    std::make_pair("POST", H(&http_connection::handle_post)),
+    std::make_pair("PUT", H(&http_connection::handle_put)),
+    std::make_pair("DELETE", H(&http_connection::handle_delete)),
+  };
+
+  static method_handler_map const method_handlers(
+    method_handlers_raw,
+    method_handlers_raw + 
+      sizeof(method_handlers_raw) / sizeof(*method_handlers_raw)
+  );
 }
 
 namespace {
@@ -576,21 +616,26 @@ void http_connection::handle_request(
 
     std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
 
+    assure_relative_uri(uri);
+    std::cout << "?-uri " << uri << '\n';//DEBUG
+
     if(version == "HTTP/1.0") {
       flags.set(HTTP_1_0_COMPAT);
       open_ = false;
     }
-    else if(version != "HTTP/1.1")
+    else if(version != "HTTP/1.1") {
       throw 505; // HTTP Version not Supported
+    }
 
-    header_fields fields = utils::http::read_headers(conn);
+    header_fields = utils::http::read_headers(conn);
 
-    int ret = set_header_options(fields);
+    int ret = set_header_options();
     if(ret != 200)
       throw ret;
 
-    header_fields::const_iterator host_header = fields.find("host");
-    if(host_header == fields.end())
+    utils::http::header_fields::const_iterator host_header = 
+      header_fields.find("host");
+    if (host_header == header_fields.end())
       throw utils::http::bad_format();
 
     host const *h = sock.get_host(host_header->second);
@@ -603,85 +648,16 @@ void http_connection::handle_request(
     det::any_path path_id;
     det::responder_base *responder;
     context *local;
-    assure_relative_uri(uri);
-    std::cout << "?-uri " << uri << '\n';//DEBUG
     global.find_responder(uri, path_id, responder, local, kw);
 
     if (!responder)
       throw 404;
 
-    if(!flags.test(HTTP_1_0_COMPAT)) {
-      header_fields::iterator connect_header = fields.find("connection");
-      if(connect_header != fields.end() && connect_header->second == "close")
-        open_ = false;
-    }
-
-    if (method == "GET") {
-      det::getter_base *getter = responder->x_getter();
-      if (!getter || !responder->x_exists(path_id, kw))
-        throw 404;
-      getter->x_get(path_id, kw).move(out);
-      return;
-    }
-    else if(method == "HEAD") {
-      flags.set(NO_ENTITY);
-      det::getter_base *getter = responder->x_getter();
-      if (!getter || !responder->x_exists(path_id, kw))
-        throw 404;
-
-      getter->x_get(path_id, kw).move(out);
-      return;
-    }
-    else if(method == "POST") {
-      det::poster_base *poster = responder->x_poster();
-      if (!poster || !responder->x_exists(path_id, kw))
-        throw 404;
-
-      int ret = handle_entity(kw, fields);
-      if(ret != 0)
-        throw ret;
-
-      poster->x_post(path_id, kw).move(out);
-      return;
-    }
-    else if(method == "PUT") {
-      det::putter_base *putter = responder->x_putter();
-      if (!putter)
-        throw 404;
-
-      int ret = handle_entity(kw, fields);
-      if(ret != 0)
-        throw ret;
-
-      putter->x_put(path_id, kw).move(out);
-      return;
-    }
-    else if (method == "DELETE") {
-      det::deleter_base *deleter = responder->x_deleter();
-      if (!deleter || !responder->x_exists(path_id, kw))
-        throw 404;
-      deleter->x_delete(path_id, kw).move(out);
-      return;
-    }
-    else if (method == "TRACE") {
-#ifndef NO_HTTP_TRACE
-      rest::response ret("message/http");
-      std::string data = method + " " + uri + " " + version + "\r\n";
-      for (header_fields::iterator i = fields.begin();
-           i != fields.end();
-           ++i)
-        data += i->first + ": " + i->second + "\r\n";
-      data += "\r\nEntity-Data not included!\r\n";
-      ret.set_data(data);
-      ret.move(out);
-#else
+    method_handler_map::const_iterator m = method_handlers.find(method);
+    if (m == method_handlers.end())
       throw 501;
-#endif
-    }
-    else if (method == "CONNECT" || method == "OPTIONS")
-      throw 501; // Not Supported
-    else
-      throw 400; // Bad Request
+    m->second(this, responder, path_id, kw).move(out);
+    return;
   } catch (utils::http::bad_format &) {
     response(400).move(out); // Bad Request
   } catch (int i) {
@@ -689,11 +665,76 @@ void http_connection::handle_request(
   }
 }
 
-int http_connection::set_header_options(header_fields &fields) {
+response http_connection::handle_get(
+  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+{
+  det::getter_base *getter = responder->x_getter();
+  if (!getter || !responder->x_exists(path_id, kw))
+    return response(404);
+  return getter->x_get(path_id, kw);
+}
+
+response http_connection::handle_head(
+  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+{
+  //TODO: better implementation
+  flags.set(NO_ENTITY);
+  det::getter_base *getter = responder->x_getter();
+  if (!getter || !responder->x_exists(path_id, kw))
+    return response(404);
+
+  return getter->x_get(path_id, kw);
+}
+
+
+response http_connection::handle_post(
+  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+{
+  det::poster_base *poster = responder->x_poster();
+  if (!poster || !responder->x_exists(path_id, kw))
+    return response(404);
+
+  int ret = handle_entity(kw);
+  if (ret != 0)
+    return response(ret);
+
+  return poster->x_post(path_id, kw);
+}
+
+response http_connection::handle_put(
+  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+{
+  det::putter_base *putter = responder->x_putter();
+  if (!putter)
+    throw 404;
+
+  int ret = handle_entity(kw);
+  if(ret != 0)
+    throw ret;
+
+  return putter->x_put(path_id, kw);
+}
+
+response http_connection::handle_delete(
+  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+{
+  det::deleter_base *deleter = responder->x_deleter();
+  if (!deleter || !responder->x_exists(path_id, kw))
+    throw 404;
+  return deleter->x_delete(path_id, kw);
+}
+
+int http_connection::set_header_options() {
+  utils::http::header_fields::iterator connect_header =
+    header_fields.find("connection");
+  if (connect_header != header_fields.end())
+    if (algo::iequals(connect_header->second, "close"))
+      open_ = false;
+
   typedef std::multimap<int, std::string> qlist_t;
 
   qlist_t qlist;
-  utils::http::parse_qlist(fields["accept-encoding"], qlist);
+  utils::http::parse_qlist(header_fields["accept-encoding"], qlist);
 
   qlist_t::const_reverse_iterator const rend = qlist.rend();
   bool found = false;
@@ -752,10 +793,10 @@ namespace {
   };
 }
 
-int http_connection::handle_entity(keywords &kw, header_fields &fields) {
-  header_fields::iterator transfer_encoding =
-    fields.find("transfer-encoding");
-  bool has_transfer_encoding = transfer_encoding != fields.end();
+int http_connection::handle_entity(keywords &kw) {
+  utils::http::header_fields::iterator transfer_encoding =
+    header_fields.find("transfer-encoding");
+  bool has_transfer_encoding = (transfer_encoding != header_fields.end());
 
   pop_filt_stream fin;
 
@@ -766,18 +807,22 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
       return 501;
   }
 
-  header_fields::iterator content_encoding = fields.find("content-encoding");
-  if(content_encoding != fields.end()) {
-    if(algo::iequals(content_encoding->second, "gzip") ||
-       (flags.test(HTTP_1_0_COMPAT) &&
-        algo::iequals(content_encoding->second, "x-gzip")))
+  utils::http::header_fields::iterator content_encoding =
+    header_fields.find("content-encoding");
+
+  if (content_encoding != header_fields.end()) {
+    if (algo::iequals(content_encoding->second, "gzip") ||
+         (flags.test(HTTP_1_0_COMPAT) &&
+           algo::iequals(content_encoding->second, "x-gzip")))
       fin.filt().push(io::gzip_decompressor());
-    else if(algo::iequals(content_encoding->second, "bzip2"))
+    else if (algo::iequals(content_encoding->second, "bzip2"))
       fin.filt().push(io::bzip2_decompressor());
   }
 
-  header_fields::iterator content_length = fields.find("content-length");
-  if(content_length == fields.end() && !has_transfer_encoding)
+  utils::http::header_fields::iterator content_length =
+    header_fields.find("content-length");
+
+  if(content_length == header_fields.end() && !has_transfer_encoding)
     return 411; // Content-length required
   else {
     std::size_t const length =
@@ -786,8 +831,8 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
   }
 
   if(!flags.test(HTTP_1_0_COMPAT)) {
-    header_fields::iterator expect = fields.find("expect");
-    if (expect != fields.end()) {
+    utils::http::header_fields::iterator expect = header_fields.find("expect");
+    if (expect != header_fields.end()) {
       if (!algo::iequals(expect->second, "100-continue"))
         return 417;
       send(response(100), false);
@@ -796,12 +841,13 @@ int http_connection::handle_entity(keywords &kw, header_fields &fields) {
 
   fin.filt().push(boost::ref(conn), 0, 0);
 
-  header_fields::iterator content_type = fields.find("content-type");
+  utils::http::header_fields::iterator content_type =
+    header_fields.find("content-type");
 
   std::auto_ptr<std::istream> pstream(new pop_filt_stream(fin.reset()));
   kw.set_entity(
       pstream,
-      content_type == fields.end() ?
+      content_type == header_fields.end() ?
         "application/octet-stream" :
         content_type->second
   );
@@ -856,7 +902,7 @@ void http_connection::send(response r, bool entity) {
 
   out << code << " " << response::reason(code) << "\r\n";
 
-  if (!open_)
+  if (!flags.test(HTTP_1_0_COMPAT) && !open_)
     r.add_header_part("Connection", "close");
 
   r.set_header("Date", utils::http::datetime_string(std::time(0)));
