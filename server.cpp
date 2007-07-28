@@ -657,12 +657,13 @@ void http_connection::handle_request(
     if (m == method_handlers.end())
       throw 501;
     m->second(this, responder, path_id, kw).move(out);
-    return;
   } catch (utils::http::bad_format &) {
     response(400).move(out); // Bad Request
   } catch (int i) {
     response(i).move(out);
   }
+
+  header_fields.clear();
 }
 
 response http_connection::handle_get(
