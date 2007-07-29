@@ -24,8 +24,7 @@ logger::logger() : p(new impl) {
   if (::mkfifo(REST_LOGPIPE, 0644) == -1)
     if (errno != EEXIST)
       throw errno_error("mkfifo");
-  p->fd = open(REST_LOGPIPE, O_WRONLY);
-  ::fcntl(p->fd, F_SETFD, FD_CLOEXEC);
+  p->fd = open(REST_LOGPIPE, O_RDWR);//TODO: decide if this should be O_WRONLY
   if(p->fd == -1)
     throw errno_error("open[fifo]");
   p->min_priority = INFO;
