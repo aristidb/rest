@@ -64,7 +64,7 @@ void logger::log(
     return;
   // may be we should pipe binary data and pipedump should fix it?
   std::stringstream out;
-  out << '[' << std::time(0x0) << "] ";
+  out << '[' << ::getpid() << ':' << std::time(0) << "] ";
   if(priority == 0)
     out << priority_string[0];
   else if(priority > 0 && priority < 90)

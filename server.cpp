@@ -503,10 +503,10 @@ void server::serve() {
 
   typedef void(*sighnd_t)(int);
 
-  sighnd_t oldchld = ::signal(SIGCHLD, &impl::sigchld_handler);
+  ::signal(SIGCHLD, &impl::sigchld_handler);
   ::siginterrupt(SIGCHLD, 0);
 
-  sighnd_t oldhup = ::signal(SIGUSR1, &impl::restart_handler);
+  ::signal(SIGUSR1, &impl::restart_handler);
   ::siginterrupt(SIGUSR1, 0);
 
   int epollfd = p->initialize_sockets();
@@ -544,6 +544,8 @@ void server::impl::incoming(server::socket_param const &sock)  {
   pid_t pid = ::fork();
   if (pid == 0) {
     do_close_on_fork();
+    REST_LOG_E(utils::INFO,
+      "Accept connection from " << inet_ntoa(cliaddr.sin_addr));
     int status = 0;
 #endif
     try {
