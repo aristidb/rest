@@ -81,20 +81,17 @@ using namespace boost::lambda;
 
 int main(int argc, char **argv) {
   std::cout << "STARTING, pid: " << getpid() << std::endl;
-  try {
-    rest::host h("");
-    tester t;
-    h.get_context().bind("/", t);
-    h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
-    h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
-    h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
-    rest::server s(*rest::config(argc, argv));
-    for(rest::server::sockets_iterator i = s.sockets_begin();
-        i != s.sockets_end();
-        ++i)
-      i->add_host(h);
 
-    s.serve();
-  } catch(rest::utils::end &e) {
-  }
+  tester t;
+
+  rest::host h("");
+  h.get_context().bind("/", t);
+  h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
+  h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
+  h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
+
+  rest::server s(*rest::config(argc, argv));
+  std::for_each(s.sockets_begin(), s.sockets_end(), rest::host::add(h));
+
+  s.serve();
 }

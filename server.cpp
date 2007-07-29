@@ -499,6 +499,8 @@ namespace {
 }
 
 void server::serve() {
+  REST_LOG(utils::INFO, "Server started");
+
   typedef void(*sighnd_t)(int);
 
   sighnd_t oldchld = ::signal(SIGCHLD, &impl::sigchld_handler);
@@ -519,13 +521,9 @@ void server::serve() {
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
       assert(ptr);
-
       p->incoming(*ptr);
     }
   }
-
-  ::signal(SIGHUP, oldhup);
-  ::signal(SIGCHLD, oldchld);
 }
 
 void server::impl::incoming(server::socket_param const &sock)  {
@@ -554,7 +552,6 @@ void server::impl::incoming(server::socket_param const &sock)  {
       conn.serve(sock);
       std::cout << "%% CLOSING" << std::endl; // DEBUG
     }
-#if 0
     catch(std::exception &e) {
       REST_LOG_E(utils::CRITICAL,
                  "ERROR: unexpected exception `" << e.what() << "'");
@@ -565,9 +562,6 @@ void server::impl::incoming(server::socket_param const &sock)  {
                  "ERROR: unexpected exception (unkown type)");
       status = 1;
     }
-#else
-    catch (int) { throw; }
-#endif
 
 #ifndef NO_FORK_LOOP
     exit(status);

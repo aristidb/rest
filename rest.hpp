@@ -454,32 +454,7 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
-class host : boost::noncopyable {
-public:
-  host(std::string const &);
-  ~host();
-
-  void set_host(std::string const &);
-  std::string get_host() const;
-
-  context &get_context() const;
-
-private:
-  template<class T>
-  static void delete_helper(void *p) { delete static_cast<T *>(p); }
-
-public:
-  template<class T>
-  void store(T *p) {
-    do_store(p, &delete_helper<T>);
-  }
-
-private:
-  void do_store(void *, void (*)(void*));
-
-  class impl;
-  boost::scoped_ptr<impl> p;
-};
+class host;
 
 namespace utils {
   class property_tree;
@@ -542,6 +517,43 @@ public:
   void set_listen_q(int no);
 
 private:
+  class impl;
+  boost::scoped_ptr<impl> p;
+};
+
+class host : boost::noncopyable {
+public:
+  host(std::string const &);
+  ~host();
+
+  void set_host(std::string const &);
+  std::string get_host() const;
+
+  context &get_context() const;
+
+  struct add {
+    add(host const &h) : h(h) {}
+
+    void operator() (server::socket_param &s) const {
+      s.add_host(h);
+    }
+
+    host const &h;
+  };
+
+private:
+  template<class T>
+  static void delete_helper(void *p) { delete static_cast<T *>(p); }
+
+public:
+  template<class T>
+  void store(T *p) {
+    do_store(p, &delete_helper<T>);
+  }
+
+private:
+  void do_store(void *, void (*)(void*));
+
   class impl;
   boost::scoped_ptr<impl> p;
 };

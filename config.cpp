@@ -2,6 +2,7 @@
 #include "rest-config.hpp"
 
 #include <cassert>
+#include <cstdlib>
 #include <iterator>
 #include <iostream>
 #include <algorithm>
@@ -148,21 +149,33 @@ namespace utils {
     #define DEFAULT_CONFIG_PATH "etc/musikdings/rest"
 #endif
 
+  static void usage(int /*argc*/, char **argv) {
+    std::cerr << "usage: " << argv[0] << " -c <config> -h\n"
+      "\n-c\tsets path to config\n";
+    std::exit(3);
+  }
+
   std::auto_ptr<utils::property_tree> config(int argc, char **argv) {
     char const * config_path = DEFAULT_CONFIG_PATH;
     for(int i = 1; i < argc; ++i)
       if(argv[i][0] == '-') {
         if(argv[i][1] == 'h' && argv[i][2] == 0) {
-          std::cerr << "usage: " << argv[0] << " -c <config> -h\n"
-            "\n-c\tsets path to config\n";
-          throw utils::end();
+          usage(argc, argv);
         }
         else if(argv[i][1] == 'c' && argv[i][2] == 0) {
-          if(i+1 < argc)
+          if(i+1 < argc) {
             config_path = argv[++i];
-          else
+          } else {
             std::cerr << "error: no path to config given\n";
+            usage(argc, argv);
+          }
+        } else {
+          std::cerr << "error: invalid option\n";
+          usage(argc, argv);
         }
+      } else {
+        std::cerr << "error: invalid parameter\n";
+        usage(argc, argv);
       }
 
     std::auto_ptr<utils::property_tree> tree(new utils::property_tree);

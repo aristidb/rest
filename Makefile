@@ -34,8 +34,10 @@ DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
 LIBREST  :=librest.a
 
+BINARIES := $(LIBREST) pipedump unit http-handler-test test1 boundary-filter-bench
+
 .PHONY: all rest
-all: $(LIBREST) pipedump unit http-handler-test test1 boundary-filter-bench
+all: $(BINARIES)
 
 rest: $(LIBREST)
 
@@ -73,4 +75,4 @@ $(DEPS): $(BUILDDIR)/%.dep: %.cpp $(BUILDDIR)/.tag
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf $(BUILDDIR) $(BINARIES)
