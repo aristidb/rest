@@ -236,6 +236,7 @@ public:
   int initialize_sockets();
 
   void incoming(socket_param const &sock);
+  int connection(socket_param const &sock, int connfd);
 };
 
 bool server::impl::restart = false;
@@ -544,26 +545,11 @@ void server::impl::incoming(server::socket_param const &sock)  {
   pid_t pid = ::fork();
   if (pid == 0) {
     do_close_on_fork();
+#endif
     REST_LOG_E(utils::INFO,
       "Accept connection from " << inet_ntoa(cliaddr.sin_addr));
-    int status = 0;
-#endif
-    try {
-      connection_streambuf buf(connfd, 10);
-      http_connection conn(buf);
-      conn.serve(sock);
-      std::cout << "%% CLOSING" << std::endl; // DEBUG
-    }
-    catch(std::exception &e) {
-      REST_LOG_E(utils::CRITICAL,
-                 "ERROR: unexpected exception `" << e.what() << "'");
-      status = 1;
-    }
-    catch(...) {
-      REST_LOG_E(utils::CRITICAL,
-                 "ERROR: unexpected exception (unkown type)");
-      status = 1;
-    }
+    int status = connection(sock, connfd);
+    (void) status;
 
 #ifndef NO_FORK_LOOP
     exit(status);
@@ -575,6 +561,26 @@ void server::impl::incoming(server::socket_param const &sock)  {
     sigprocmask(SIG_SETMASK, &oldmask, 0);
   }
 #endif
+}
+
+int server::impl::connection(socket_param const &sock, int connfd) {
+  try {
+    connection_streambuf buf(connfd, 10);
+    http_connection conn(buf);
+    conn.serve(sock);
+    std::cout << "%% CLOSING" << std::endl; // DEBUG
+  }
+  catch(std::exception &e) {
+    REST_LOG_E(utils::CRITICAL,
+               "ERROR: unexpected exception `" << e.what() << "'");
+    return 1;
+  }
+  catch(...) {
+    REST_LOG_E(utils::CRITICAL,
+               "ERROR: unexpected exception (unkown type)");
+    return 1;
+  }
+  return 0;
 }
 
 void http_connection::serve(server::socket_param const &sock) {
