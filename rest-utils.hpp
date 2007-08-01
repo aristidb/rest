@@ -212,6 +212,10 @@ public:
     namespace io = boost::iostreams;
 
     assert(n >= 0);
+
+    if (n == 0)
+      return 0;
+
     boost::format length("%1$x");
     length % n;
 
@@ -321,7 +325,7 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
-enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DEBUG = 0 };
+enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DBG = 0 };
 
 #define REST_LOG(prio, data)                           \
     ::rest::utils::logger::get().log((prio), __FILE__, \
