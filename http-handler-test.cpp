@@ -11,11 +11,13 @@
 
 struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                                 rest::POST> {
-  std::string etag() const {
-    return "\"zxyl\"";
+  std::string etag(std::string const &path) const {
+    if (path == "/")
+      return "\"zxyl\"";
+    return "";
   }
 
-  time_t last_modified(time_t now) const {
+  time_t last_modified(std::string const &path, time_t now) const {
     return now;
   }
 

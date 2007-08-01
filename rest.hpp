@@ -295,8 +295,8 @@ namespace detail {
 
     virtual bool x_exists(any_path const &, keywords &) const = 0;
 
-    virtual std::string etag() const { return std::string(); }
-    virtual time_t last_modified(time_t /*now*/) const { return time_t(-1); }
+    virtual std::string x_etag(any_path const &) const = 0;
+    virtual time_t x_last_modified(any_path const &, time_t) const = 0;
 
     virtual ~responder_base() {}
   };
@@ -385,9 +385,25 @@ protected:
     return true;
   }
 
+  virtual time_t last_modified(path_parameter, time_t) const {
+    return time_t(-1);
+  }
+
+  virtual std::string etag(path_parameter) const {
+    return std::string();
+  }
+
 private:
   bool x_exists(detail::any_path const &path, keywords &kw) const {
     return exists(detail::unpack<path_type>(path), kw);
+  }
+
+  time_t x_last_modified(detail::any_path const &path, time_t now) const {
+    return last_modified(detail::unpack<path_type>(path), now);
+  }
+
+  std::string x_etag(detail::any_path const &path) const {
+    return etag(detail::unpack<path_type>(path));
   }
 
 private:

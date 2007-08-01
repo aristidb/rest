@@ -658,10 +658,10 @@ void http_connection::handle_request(
     time_t now;
     std::time(&now);
 
-    time_t last_modified = responder->last_modified(now);
+    time_t last_modified = responder->x_last_modified(path_id, now);
     if (last_modified != time_t(-1) && last_modified > now)
       last_modified = now;
-    std::string etag = responder->etag();
+    std::string etag = responder->x_etag(path_id);
 
     int mod_code = handle_modification_tags(
         last_modified == time_t(-1) ? now : last_modified,
