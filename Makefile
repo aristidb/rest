@@ -67,11 +67,14 @@ $(OBJECTS): $(BUILDDIR)/%.o: %.cpp $(BUILDDIR)/%.dep $(BUILDDIR)/.tag
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(DEPS): $(BUILDDIR)/%.dep: %.cpp $(BUILDDIR)/.tag
-	$(CXX) $(CXXFLAGS) -MM $< -MT $@ -MT $(<:.cpp=.o) -o $@
+	@echo Dep: $<
+	@$(CXX) $(CXXFLAGS) -MM $< -MT $@ -MT $(<:.cpp=.o) -o $@ || \
+		echo $@ $(<:.cpp=.o): $< > $@
 
 %.tag:
-	mkdir -p $(dir $(@))
-	touch $@
+	@echo Create build-directory
+	@mkdir -p $(dir $(@))
+	@touch $@
 
 .PHONY: clean
 clean:
