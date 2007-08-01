@@ -700,34 +700,40 @@ int http_connection::handle_modification_tags(
   it = header_fields.find("if-modified-since");
   if (it != header_fields.end()) {
     time_t if_modified_since = utils::http::datetime_value(it->second);
-    return (if_modified_since >= last_modified) ? 304 : 0;
+    if (if_modified_since >= last_modified)
+      return 304;
   }
   it = header_fields.find("if-unmodified-since");
   if (it != header_fields.end()) {
     time_t if_unmodified_since = utils::http::datetime_value(it->second);
-    return (if_unmodified_since < last_modified) ? 412 : 0;
+    if (if_unmodified_since < last_modified)
+      return 412;
   }
   it = header_fields.find("if-match");
   if (it != header_fields.end()) {
-    if (it->second == "*")
-      return etag.empty() ? 412 : 0;
-    std::vector<std::string> if_match;
-    utils::http::parse_list(it->second, if_match);
-    if (std::find(if_match.begin(), if_match.end(), etag) != if_match.end())
-      return 0;
-    return 412;
+    if (it->second == "*") {
+      if (etag.empty())
+        return 412;
+    } else {
+      std::vector<std::string> if_match;
+      utils::http::parse_list(it->second, if_match);
+      if (std::find(if_match.begin(), if_match.end(), etag) == if_match.end())
+        return 412;
+    }
   }
   it = header_fields.find("if-none-match");
   if (it != header_fields.end()) {
     int const fail = (method == "GET" || method == "HEAD") ? 304 : 412;
-    if (it->second == "*")
-      return etag.empty() ? 0 : fail;
-    std::vector<std::string> if_none_match;
-    utils::http::parse_list(it->second, if_none_match);
-    if (std::find(if_none_match.begin(), if_none_match.end(), etag) ==
-        if_none_match.end())
-      return 0;
-    return fail;
+    if (it->second == "*") {
+      if (!etag.empty())
+        return fail;
+    } else {
+      std::vector<std::string> if_none_match;
+      utils::http::parse_list(it->second, if_none_match);
+      if (std::find(if_none_match.begin(), if_none_match.end(), etag) !=
+          if_none_match.end())
+        return fail;
+    }
   }
   //TODO: If-Range
   return 0;
