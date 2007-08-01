@@ -170,10 +170,7 @@ public:
   utils::property_tree const &config;
 
   void do_close_on_fork() {
-    for(std::set<int>::const_iterator i = close_on_fork.begin();
-        i != close_on_fork.end();
-        ++i)
-      ::close(*i);
+    std::for_each(close_on_fork.begin(), close_on_fork.end(), &::close);
   }
 
   impl(utils::property_tree const &config)
@@ -181,46 +178,6 @@ public:
       config(config)
   {
     read_connections();
-  }
-
-  void read_connections() {
-    typedef utils::property_tree::children_iterator children_iterator;
-    children_iterator end = config.children_end();
-    children_iterator i = utils::get(config, end, "connections");
-    if(i == config.children_end()) {
-      REST_LOG(utils::INFO, "no connections specified in config-file");
-      return;
-    }
-
-    for(children_iterator j = (*i)->children_begin();
-        j != (*i)->children_end();
-        ++j)
-    {
-      std::string service = utils::get(**j, std::string(), "port");
-      if(service.empty()) {
-        service = utils::get(**j, std::string(), "service");
-        if(service.empty())
-          throw std::runtime_error("no port/service specified!");
-      }
-      algo::trim(service);
-      std::string type_ = utils::get(**j, std::string("ipv4"), "type");
-      socket_param::socket_type_t type;
-      if(algo::istarts_with(type_, "ipv4") ||
-         algo::istarts_with(type_, "ip4"))
-        type = socket_param::ip4;
-      else if(algo::istarts_with(type_, "ipv6") ||
-              algo::istarts_with(type_, "ip6"))
-        type = socket_param::ip6;
-      else
-        throw std::runtime_error("unkown socket type specified");
-          
-      std::string bind = utils::get(**j, std::string(), "bind");
-      algo::trim(bind);
-
-      std::cout << "SOCKET " << service << ' ' << type << ' ' << bind << '\n';
-          
-      socket_params.push_back(socket_param(service, type, bind));
-    }
   }
 
   static void sigchld_handler(int) {
@@ -233,8 +190,8 @@ public:
     restart = true;
   }
 
+  void read_connections();
   int initialize_sockets();
-
   void incoming(socket_param const &sock);
   int connection(socket_param const &sock, int connfd);
 };
@@ -435,6 +392,46 @@ namespace {
     i->fd(listenfd);
 
     return listenfd;
+  }
+}
+
+void server::impl::read_connections() {
+  typedef utils::property_tree::children_iterator children_iterator;
+  children_iterator end = config.children_end();
+  children_iterator i = utils::get(config, end, "connections");
+  if(i == config.children_end()) {
+    REST_LOG(utils::INFO, "no connections specified in config-file");
+    return;
+  }
+
+  for(children_iterator j = (*i)->children_begin();
+      j != (*i)->children_end();
+      ++j)
+  {
+    std::string service = utils::get(**j, std::string(), "port");
+    if(service.empty()) {
+      service = utils::get(**j, std::string(), "service");
+      if(service.empty())
+        throw std::runtime_error("no port/service specified!");
+    }
+    algo::trim(service);
+    std::string type_ = utils::get(**j, std::string("ipv4"), "type");
+    socket_param::socket_type_t type;
+    if(algo::istarts_with(type_, "ipv4") ||
+       algo::istarts_with(type_, "ip4"))
+      type = socket_param::ip4;
+    else if(algo::istarts_with(type_, "ipv6") ||
+            algo::istarts_with(type_, "ip6"))
+      type = socket_param::ip6;
+    else
+      throw std::runtime_error("unkown socket type specified");
+          
+    std::string bind = utils::get(**j, std::string(), "bind");
+    algo::trim(bind);
+
+    std::cout << "SOCKET " << service << ' ' << type << ' ' << bind << '\n';
+          
+    socket_params.push_back(socket_param(service, type, bind));
   }
 }
 
