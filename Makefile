@@ -1,6 +1,6 @@
 CXX         := g++
 CXXSTDFLAGS := -pipe -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
-CXXDBGFLAGS := -g -ggdb
+CXXDBGFLAGS := -g -ggdb -DDEBUG
 CXXOPTFLAGS := -O3 -DNDEBUG
 LDFLAGS     := -static -L. -lrest -lboost_filesystem -lbz2 -lz
 BUILDDIR    := build
@@ -12,7 +12,7 @@ CXXOPTFLAGS := $(CXXOPTFLAGS) -mcpu=G4 -mtune=G4
 CXXSTDFLAGS := $(CXXSTDFLAGS) -DAPPLE
 endif
 
-CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
+CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 
 LIBREST_SOURCES := context.cpp keywords.cpp response.cpp uri.cpp \
 	host.cpp server.cpp logger.cpp datetime.cpp socket_device.cpp \
