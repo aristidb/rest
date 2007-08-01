@@ -125,6 +125,7 @@ public:
 
   enum content_encoding_t {
     identity,
+    deflate,
     gzip,
     bzip2,
     X_NO_OF_ENCODINGS

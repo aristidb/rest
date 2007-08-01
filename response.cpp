@@ -302,6 +302,9 @@ void response::encode(
   namespace io = boost::iostreams;
   io::filtering_ostream out2;
   switch (enc) {
+  case deflate:
+    out2.push(io::zlib_compressor());
+    break;
   case gzip:
     out2.push(io::gzip_compressor());
     break;
@@ -324,6 +327,9 @@ void response::decode(
   namespace io = boost::iostreams;
   io::filtering_istream in;
   switch (enc) {
+  case deflate:
+    in.push(io::zlib_decompressor());
+    break;
   case gzip:
     in.push(io::gzip_decompressor());
     break;

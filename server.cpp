@@ -735,7 +735,17 @@ int http_connection::handle_modification_tags(
         return fail;
     }
   }
-  //TODO: If-Range
+  it = header_fields.find("if-range");
+  if (it != header_fields.end()) {
+    time_t v = utils::http::datetime_value(it->second);
+    if (v == time_t(-1)) {
+      if (it->second != etag) 
+        header_fields.erase("range");
+    } else {
+      if (v <= last_modified)
+        header_fields.erase("range");
+    }
+  }
   return 0;
 }
 
@@ -837,6 +847,10 @@ int http_connection::set_header_options() {
         encodings.push_back(response::bzip2);
         found = true;
       }
+      else if(i->second == "deflate") {
+        encodings.push_back(response::deflate);
+        found = true;
+      }
       else if(i->second == "identity")
         found = true;
     }
@@ -878,37 +892,64 @@ namespace {
 }
 
 int http_connection::handle_entity(keywords &kw) {
-  utils::http::header_fields::iterator transfer_encoding =
-    header_fields.find("transfer-encoding");
-  bool has_transfer_encoding = (transfer_encoding != header_fields.end());
-
   pop_filt_stream fin;
-
-  if(has_transfer_encoding) {
-    if(algo::iequals(transfer_encoding->second, "chunked"))
-      fin.filt().push(utils::chunked_filter());
-    else
-      return 501;
-  }
 
   utils::http::header_fields::iterator content_encoding =
     header_fields.find("content-encoding");
 
   if (content_encoding != header_fields.end()) {
-    if (algo::iequals(content_encoding->second, "gzip") ||
-         (flags.test(HTTP_1_0_COMPAT) &&
-           algo::iequals(content_encoding->second, "x-gzip")))
-      fin.filt().push(io::gzip_decompressor());
-    else if (algo::iequals(content_encoding->second, "bzip2"))
-      fin.filt().push(io::bzip2_decompressor());
+    std::vector<std::string> ce;
+    utils::http::parse_list(content_encoding->second, ce);
+    for (std::vector<std::string>::iterator it = ce.begin();
+        it != ce.end();
+        ++it)
+    {
+      if (algo::iequals(content_encoding->second, "gzip") ||
+           (flags.test(HTTP_1_0_COMPAT) &&
+             algo::iequals(content_encoding->second, "x-gzip")))
+        fin.filt().push(io::gzip_decompressor());
+      else if (algo::iequals(content_encoding->second, "bzip2"))
+        fin.filt().push(io::bzip2_decompressor());
+      else if (algo::iequals(content_encoding->second, "deflate"))
+        fin.filt().push(io::zlib_decompressor());
+      else if (!algo::iequals(content_encoding->second, "identity"))
+        return 415;
+    }
+  }
+
+  utils::http::header_fields::iterator transfer_encoding =
+    header_fields.find("transfer-encoding");
+
+  bool chunked = false;
+
+  if(transfer_encoding != header_fields.end()) {
+    std::vector<std::string> te;
+    utils::http::parse_list(transfer_encoding->second, te);
+    for (std::vector<std::string>::iterator it = te.begin();
+        it != te.end();
+        ++it)
+    {
+      if(algo::iequals(*it, "chunked")) {
+        if (it != --te.end())
+          return 400;
+        chunked = true;
+        fin.filt().push(utils::chunked_filter());
+      } else if (algo::iequals(*it, "gzip")) {
+        fin.filt().push(io::gzip_decompressor());
+      } else if (algo::iequals(*it, "deflate")) {
+        fin.filt().push(io::zlib_decompressor());
+      } else if (!algo::iequals(*it, "identity")) {
+        return 501;
+      }
+    }
   }
 
   utils::http::header_fields::iterator content_length =
     header_fields.find("content-length");
 
-  if(content_length == header_fields.end() && !has_transfer_encoding)
+  if(content_length == header_fields.end() && !chunked)
     return 411; // Content-length required
-  else {
+  else if (!chunked) {
     std::size_t const length =
       boost::lexical_cast<std::size_t>(content_length->second);
     fin.filt().push(utils::length_filter(length));
@@ -986,7 +1027,7 @@ void http_connection::send(response r, bool entity) {
 
   out << code << " " << response::reason(code) << "\r\n";
 
-  if (!flags.test(HTTP_1_0_COMPAT) && !open_)
+  if (!flags.test(HTTP_1_0_COMPAT) && !open_ && code != 100)
     r.add_header_part("Connection", "close");
 
   r.set_header("Server", REST_SERVER_ID);
@@ -1006,6 +1047,9 @@ void http_connection::send(response r, bool entity) {
       break;
     case response::bzip2:
       r.set_header("Content-Encoding", "bzip2");
+      break;
+    case response::deflate:
+      r.set_header("Content-Encoding", "deflate");
       break;
     default: break;
     }
