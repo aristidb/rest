@@ -417,8 +417,7 @@ namespace http {
   // see RFC 2616 chapter 4.2
   // Warning: Field names are converted to all lower-case!
   template<class Source>
-  std::pair<header_fields::iterator, bool> 
-  get_header_field(Source &in, header_fields &fields) {
+  void get_header_field(Source &in, header_fields &fields) {
     namespace io = boost::iostreams;
     std::string name;
     int t = 0;
@@ -435,7 +434,15 @@ namespace http {
       else
         name += std::tolower(t);
     }
-    std::string value;
+    header_fields::iterator it = fields.find(name);
+    if (it == fields.end())
+      it = fields.insert(std::make_pair(name, "")).first;
+    else if (std::find(detail::csv_header, detail::csv_header_end, name)
+             != detail::csv_header_end)
+      it->second += ", ";
+    else
+      it->second = "";
+    std::string &value = it->second;
     for(;;) {
       t = io::get(in);
       if(t == '\n' || t == '\r') {
@@ -456,13 +463,16 @@ namespace http {
       else
         value += t;
     }
-    std::pair<header_fields::iterator, bool> ret =
-      fields.insert(std::make_pair(name, value));
-    if (!ret.second && 
-        std::find(detail::csv_header, detail::csv_header_end, name)
-          != detail::csv_header_end)
-      fields[name] += std::string(", ") + value;
-    return ret;
+
+    std::string::reverse_iterator xend = value.rbegin();
+    while (isspht(*xend))
+      ++xend;
+    value.erase(xend.base(), value.end());
+
+    std::string::iterator xbegin = value.begin();
+    while (isspht(*xbegin))
+      ++xbegin;
+    value.erase(value.begin(), xbegin);
   }
 
   template<class Source>

@@ -273,6 +273,9 @@ namespace {
 
     void serve(server::socket_param const &sock);
 
+    int handle_modification_tags(
+      time_t, std::string const &, std::string const &);
+
     response handle_get(det::responder_base*, det::any_path const&, keywords&);
     response handle_head(det::responder_base*, det::any_path const&, keywords&);
     response handle_post(det::responder_base*, det::any_path const&, keywords&);
@@ -652,10 +655,35 @@ void http_connection::handle_request(
     if (!responder)
       throw 404;
 
-    method_handler_map::const_iterator m = method_handlers.find(method);
-    if (m == method_handlers.end())
-      throw 501;
-    m->second(this, responder, path_id, kw).move(out);
+    time_t now;
+    std::time(&now);
+
+    time_t last_modified = responder->last_modified(now);
+    if (last_modified != time_t(-1) && last_modified > now)
+      last_modified = now;
+    std::string etag = responder->etag();
+
+    int mod_code = handle_modification_tags(
+        last_modified == time_t(-1) ? now : last_modified,
+        etag,
+        method);
+
+    if (!mod_code) {
+      method_handler_map::const_iterator m = method_handlers.find(method);
+      if (m == method_handlers.end())
+        throw 501;
+      m->second(this, responder, path_id, kw).move(out);
+    } else {
+      response(mod_code).move(out);
+    }
+
+    out.set_header("Date", utils::http::datetime_string(now));
+    if (last_modified != time_t(-1))
+      out.set_header(
+          "Last-modified",
+          utils::http::datetime_string(last_modified));
+    if (!etag.empty())
+      out.set_header("ETag", etag);
   } catch (utils::http::bad_format &) {
     response(400).move(out); // Bad Request
   } catch (int i) {
@@ -663,6 +691,46 @@ void http_connection::handle_request(
   }
 
   header_fields.clear();
+}
+
+int http_connection::handle_modification_tags(
+  time_t last_modified, std::string const &etag, std::string const &method)
+{
+  utils::http::header_fields::iterator it;
+  it = header_fields.find("if-modified-since");
+  if (it != header_fields.end()) {
+    time_t if_modified_since = utils::http::datetime_value(it->second);
+    return (if_modified_since >= last_modified) ? 304 : 0;
+  }
+  it = header_fields.find("if-unmodified-since");
+  if (it != header_fields.end()) {
+    time_t if_unmodified_since = utils::http::datetime_value(it->second);
+    return (if_unmodified_since < last_modified) ? 412 : 0;
+  }
+  it = header_fields.find("if-match");
+  if (it != header_fields.end()) {
+    if (it->second == "*")
+      return etag.empty() ? 412 : 0;
+    std::vector<std::string> if_match;
+    utils::http::parse_list(it->second, if_match);
+    if (std::find(if_match.begin(), if_match.end(), etag) != if_match.end())
+      return 0;
+    return 412;
+  }
+  it = header_fields.find("if-none-match");
+  if (it != header_fields.end()) {
+    int const fail = (method == "GET" || method == "HEAD") ? 304 : 412;
+    if (it->second == "*")
+      return etag.empty() ? 0 : fail;
+    std::vector<std::string> if_none_match;
+    utils::http::parse_list(it->second, if_none_match);
+    if (std::find(if_none_match.begin(), if_none_match.end(), etag) ==
+        if_none_match.end())
+      return 0;
+    return fail;
+  }
+  //TODO: If-Range
+  return 0;
 }
 
 response http_connection::handle_get(
@@ -915,7 +983,6 @@ void http_connection::send(response r, bool entity) {
   if (!flags.test(HTTP_1_0_COMPAT) && !open_)
     r.add_header_part("Connection", "close");
 
-  r.set_header("Date", utils::http::datetime_string(std::time(0)));
   r.set_header("Server", REST_SERVER_ID);
 
   if (!r.get_type().empty())

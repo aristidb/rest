@@ -296,7 +296,7 @@ namespace detail {
     virtual bool x_exists(any_path const &, keywords &) const = 0;
 
     virtual std::string etag() const { return std::string(); }
-    virtual time_t last_modified() const { return time_t(-1); }
+    virtual time_t last_modified(time_t /*now*/) const { return time_t(-1); }
 
     virtual ~responder_base() {}
   };

@@ -11,6 +11,14 @@
 
 struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                                 rest::POST> {
+  std::string etag() const {
+    return "\"zxyl\"";
+  }
+
+  time_t last_modified(time_t now) const {
+    return now;
+  }
+
   rest::response get(std::string const &path, rest::keywords &) {
     std::cout << "GET: " << path << '\n';
 
