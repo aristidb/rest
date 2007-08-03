@@ -729,6 +729,10 @@ void http_connection::handle_request(response &out)
     response(i).move(out);
   }
 
+  //TODO: instead of clearing the whole header structure, delete all analyzed
+  //      headers and explicitly delete ignored headers
+  //      - warn about unhandled headers (maybe even give a 400 or so?)
+
   header_fields.clear();
 }
 
