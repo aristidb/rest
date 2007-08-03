@@ -472,11 +472,6 @@ namespace http {
     while (isspht(*xend))
       ++xend;
     value.erase(xend.base(), value.end());
-
-    std::string::iterator xbegin = value.begin();
-    while (isspht(*xbegin))
-      ++xbegin;
-    value.erase(value.begin(), xbegin);
   }
 
   template<class Source>
