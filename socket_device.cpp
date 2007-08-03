@@ -29,14 +29,19 @@ public:
   int fd;
 };
 
-socket_device::socket_device(int fd, long timeout_s)
+socket_device::socket_device(int fd, long timeout_rd, long timeout_wr)
 : p(new impl(fd))
 {
-  struct timeval timeout;
-  timeout.tv_sec = timeout_s;
-  timeout.tv_usec = 0;
-  ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-  ::setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  struct timeval rd, wr;
+
+  rd.tv_sec = timeout_rd;
+  rd.tv_usec = 0;
+
+  wr.tv_sec = timeout_wr;
+  wr.tv_usec = 0;
+
+  ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &rd, sizeof(rd));
+  ::setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, &wr, sizeof(wr));
 }
 
 socket_device::~socket_device() {

@@ -235,7 +235,10 @@ typedef io::stream_buffer<utils::socket_device> connection_streambuf;
 
 namespace {
   class http_connection {
-    connection_streambuf &conn;
+    server::socket_param const &sock;
+    int connfd;
+    connection_streambuf conn;
+
     bool open_;
     enum {
       NO_ENTITY,
@@ -248,8 +251,9 @@ namespace {
     utils::http::header_fields header_fields;
 
   public:
-    http_connection(connection_streambuf &conn)
-      : conn(conn), open_(true) {}
+    http_connection(
+        server::socket_param const &sock, int connfd, long tmo_rd, long tmo_wr)
+    : sock(sock), connfd(connfd), conn(connfd, tmo_rd, tmo_wr), open_(true) {}
 
     bool open() const { return open_; }
 
@@ -260,7 +264,7 @@ namespace {
       encodings.clear();
     }
 
-    void handle_request(server::socket_param const &hosts, response &o);
+    void handle_request(response &o);
     int handle_entity(keywords &kw);
 
     void send(response r, bool entity);
@@ -271,7 +275,7 @@ namespace {
     static hosts_cont_t::const_iterator find_host(
       utils::http::header_fields const &fields, hosts_cont_t const &hosts);
 
-    void serve(server::socket_param const &sock);
+    void serve();
 
     int handle_modification_tags(
       time_t, std::string const &, std::string const &);
@@ -565,9 +569,8 @@ void server::impl::incoming(server::socket_param const &sock)  {
 
 int server::impl::connection(socket_param const &sock, int connfd) {
   try {
-    connection_streambuf buf(connfd, 10);
-    http_connection conn(buf);
-    conn.serve(sock);
+    http_connection conn(sock, connfd, 10, 10);
+    conn.serve();
     std::cout << "%% CLOSING" << std::endl; // DEBUG
   }
   catch(std::exception &e) {
@@ -583,12 +586,12 @@ int server::impl::connection(socket_param const &sock, int connfd) {
   return 0;
 }
 
-void http_connection::serve(server::socket_param const &sock) {
+void http_connection::serve() {
   try {
     while (open()) {
       reset();
       response r(response::empty_tag());
-      handle_request(sock, r);
+      handle_request(r);
       send(r);
     }
   }
@@ -609,8 +612,7 @@ namespace {
   }
 }
 
-void http_connection::handle_request(
-    server::socket_param const &sock, response &out)
+void http_connection::handle_request(response &out)
 {
   try {
     std::string method, uri, version;

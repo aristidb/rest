@@ -62,7 +62,7 @@ struct socket_device {
       boost::iostreams::closable_tag
   {};
 
-  socket_device(int fd, long timeout);
+  socket_device(int fd, long timeout_rd, long timeout_wr);
   ~socket_device();
 
   void close(std::ios_base::open_mode);
