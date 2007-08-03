@@ -32,18 +32,20 @@ public:
 socket_device::socket_device(int fd, long timeout_rd, long timeout_wr)
 : p(new impl(fd))
 {
-  struct timeval rd, wr;
+  struct timeval timeout;
+  timeout.tv_usec = 0;
 
   std::cout << "tmo: " << timeout_rd << ',' << timeout_wr << std::endl;
 
-  rd.tv_sec = timeout_rd > 0 ? timeout_rd : 0;
-  rd.tv_usec = 0;
+  if (timeout_rd > 0) {
+    timeout.tv_sec = timeout_rd;
+    ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+  }
 
-  wr.tv_sec = timeout_wr > 0 ? timeout_wr : 0;
-  wr.tv_usec = 0;
-
-  ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &rd, sizeof(rd));
-  ::setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, &wr, sizeof(wr));
+  if (timeout_wr > 0) {
+    timeout.tv_sec = timeout_wr;
+    ::setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  }
 }
 
 socket_device::~socket_device() {
