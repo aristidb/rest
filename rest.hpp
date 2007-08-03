@@ -488,11 +488,12 @@ public:
   public:
     enum socket_type_t { ip4 = AF_INET, ip6 = AF_INET6 };
 
-    socket_param(short port, socket_type_t type, std::string const &bind = "");
-    socket_param(std::string const &service, socket_type_t type,
-                 std::string const &bind = "");
-    //socket_param(socket_param const &);
-    ~socket_param();
+    socket_param(
+        std::string const &service,
+        socket_type_t type,
+        std::string const &bind,
+        long timeout_read,
+        long timeout_write);
 
     socket_param &operator=(socket_param o) {
       o.swap(*this);
@@ -507,8 +508,12 @@ public:
     socket_type_t socket_type() const;
     std::string const &bind() const;
 
+    long timeout_read() const;
+    long timeout_write() const;
+
     void add_host(host const &);
     host const *get_host(std::string const &name) const;
+
   public: // internal
     int fd() const;
     void fd(int f);

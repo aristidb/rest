@@ -34,10 +34,12 @@ socket_device::socket_device(int fd, long timeout_rd, long timeout_wr)
 {
   struct timeval rd, wr;
 
-  rd.tv_sec = timeout_rd;
+  std::cout << "tmo: " << timeout_rd << ',' << timeout_wr << std::endl;
+
+  rd.tv_sec = timeout_rd > 0 ? timeout_rd : 0;
   rd.tv_usec = 0;
 
-  wr.tv_sec = timeout_wr;
+  wr.tv_sec = timeout_wr > 0 ? timeout_wr : 0;
   wr.tv_usec = 0;
 
   ::setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, &rd, sizeof(rd));

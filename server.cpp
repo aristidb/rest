@@ -78,38 +78,45 @@ typedef
 
 class server::socket_param::impl {
 public:
-  impl(short port, socket_type_t type, std::string const &bind)
-    : service(boost::lexical_cast<std::string>(port)), socket_type(type),
-      bind(bind), fd(-1)
-  { }
-  impl(std::string const &service, socket_type_t type, std::string const &bind)
-    : service(service), socket_type(type), bind(bind), fd(-1)
+  impl(
+      std::string const &service,
+      socket_type_t type,
+      std::string const &bind,
+      long timeout_read,
+      long timeout_write)
+  : service(service),
+    socket_type(type),
+    bind(bind),
+    timeout_read(timeout_read),
+    timeout_write(timeout_write),
+    fd(-1)
   { }
 
   std::string service;
   socket_type_t socket_type;
   std::string bind;
+  long timeout_read;
+  long timeout_write;
+
   hosts_cont_t hosts;
   
   int fd;
 };
 
-server::socket_param::socket_param(short port, socket_type_t type,
-                                   std::string const &bind)
-  : p(new impl(port, type, bind))
+server::socket_param::socket_param(
+    std::string const &service,
+    socket_type_t type,
+    std::string const &bind,
+    long timeout_read,
+    long timeout_write
+  )
+: p(new impl(service, type, bind, timeout_read, timeout_write))
 { }
-
-server::socket_param::socket_param(std::string const &service,
-                                   socket_type_t type,
-                                   std::string const &bind)
-  : p(new impl(service, type, bind))
-{ }
-
-server::socket_param::~socket_param() { }
 
 int server::socket_param::fd() const {
   return p->fd;
 }
+
 void server::socket_param::fd(int f) {
   p->fd = f;
 } 
@@ -125,6 +132,14 @@ std::string const &server::socket_param::bind() const {
 server::socket_param::socket_type_t
 server::socket_param::socket_type() const {
   return p->socket_type;
+}
+
+long server::socket_param::timeout_read() const {
+  return p->timeout_read;
+}
+
+long server::socket_param::timeout_write() const {
+  return p->timeout_write;
 }
 
 void server::socket_param::add_host(host const &h) {
@@ -165,7 +180,10 @@ public:
   std::set<int> close_on_fork;
 
   static int const DEFAULT_LISTENQ;
+  static long const DEFAULT_TIMEOUT;
   int listenq;
+  long timeout_read;
+  long timeout_write;
 
   utils::property_tree const &config;
 
@@ -175,6 +193,10 @@ public:
 
   impl(utils::property_tree const &config)
     : listenq(utils::get(config, DEFAULT_LISTENQ, "connections", "listenq")),
+      timeout_read(utils::get(config, DEFAULT_TIMEOUT,
+          "connections", "timeout", "read")),
+      timeout_write(utils::get(config, DEFAULT_TIMEOUT,
+          "connections", "timeout", "write")),
       config(config)
   {
     read_connections();
@@ -198,6 +220,7 @@ public:
 
 bool server::impl::restart = false;
 int const server::impl::DEFAULT_LISTENQ = 5;
+long const server::impl::DEFAULT_TIMEOUT = 10;
 
 server::sockets_iterator server::add_socket(socket_param const &s) {
   p->socket_params.push_back(s);
@@ -252,8 +275,12 @@ namespace {
 
   public:
     http_connection(
-        server::socket_param const &sock, int connfd, long tmo_rd, long tmo_wr)
-    : sock(sock), connfd(connfd), conn(connfd, tmo_rd, tmo_wr), open_(true) {}
+        server::socket_param const &sock, int connfd)
+    : sock(sock),
+      connfd(connfd),
+      conn(connfd, sock.timeout_read(), sock.timeout_write()),
+      open_(true)
+    {}
 
     bool open() const { return open_; }
 
@@ -415,6 +442,9 @@ void server::impl::read_connections() {
       j != (*i)->children_end();
       ++j)
   {
+    if ((*j)->name() == "timeout")
+      continue;
+
     std::string service = utils::get(**j, std::string(), "port");
     if(service.empty()) {
       service = utils::get(**j, std::string(), "service");
@@ -422,6 +452,7 @@ void server::impl::read_connections() {
         throw std::runtime_error("no port/service specified!");
     }
     algo::trim(service);
+
     std::string type_ = utils::get(**j, std::string("ipv4"), "type");
     socket_param::socket_type_t type;
     if(algo::istarts_with(type_, "ipv4") ||
@@ -437,8 +468,14 @@ void server::impl::read_connections() {
     algo::trim(bind);
 
     std::cout << "SOCKET " << service << ' ' << type << ' ' << bind << '\n';
+
+    long timeout_read =
+      utils::get(**j, this->timeout_read, "timeout", "read");
+    long timeout_write =
+      utils::get(**j, this->timeout_write, "timeout", "write");
           
-    socket_params.push_back(socket_param(service, type, bind));
+    socket_params.push_back(socket_param(
+      service, type, bind, timeout_read, timeout_write));
   }
 }
 
@@ -569,7 +606,7 @@ void server::impl::incoming(server::socket_param const &sock)  {
 
 int server::impl::connection(socket_param const &sock, int connfd) {
   try {
-    http_connection conn(sock, connfd, 10, 10);
+    http_connection conn(sock, connfd);
     conn.serve();
     std::cout << "%% CLOSING" << std::endl; // DEBUG
   }

@@ -38,23 +38,24 @@ namespace utils {
     ~property_tree();
 
     std::string const &name() const;
+
   private:
     typedef boost::multi_index_container<
-    property_tree*,
-    boost::multi_index::indexed_by<
-      boost::multi_index::hashed_unique<
-        ref_const_mem_fun_const<property_tree, std::string,
-                                &property_tree::name>
+      property_tree*,
+      boost::multi_index::indexed_by<
+        boost::multi_index::hashed_unique<
+          ref_const_mem_fun_const<property_tree, std::string,
+                                  &property_tree::name>
         >
       >
     > children_t;
 
     typedef boost::multi_index_container<
-      property,
-      boost::multi_index::indexed_by<
-        boost::multi_index::hashed_unique<
-          ref_const_mem_fun_const<property, std::string,
-                                  &property::name>
+        property,
+        boost::multi_index::indexed_by<
+          boost::multi_index::hashed_unique<
+            ref_const_mem_fun_const<property, std::string,
+                                    &property::name>
           >
         >
       > property_t;
@@ -66,6 +67,7 @@ namespace utils {
     void add_property(property const &p);
     friend void read_config(boost::filesystem::path const &path,
                             property_tree &);
+
   public:
     typedef property_t::const_iterator property_iterator;
     property_iterator property_begin() const;
@@ -76,6 +78,7 @@ namespace utils {
     children_iterator children_begin() const;
     children_iterator children_end() const;
     children_iterator find_children(std::string const &name) const;
+
   private:
     property_tree(property_tree const &);
     void operator=(property_tree const &);
