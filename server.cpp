@@ -23,6 +23,7 @@
 #include <boost/ref.hpp>
 
 #include <ctime>
+#include <cstdlib>
 #include <cstring>
 #include <bitset>
 #include <map>
@@ -48,8 +49,6 @@
 #else
 #include <sys/epoll.h>
 #endif
-
-#include <iostream>//DEBUG
 
 #ifndef NDEBUG //whatever
 #define NO_FORK_LOOP
@@ -425,6 +424,12 @@ namespace {
 
     i->fd(listenfd);
 
+    utils::log(LOG_NOTICE,
+               "created %s socket on %s:%s (timeouts r: %ld w: %ld)",
+               i->socket_type() == server::socket_param::ip4 ? "IPv4" : "IPv6",
+               i->bind().c_str(), i->service().c_str(), i->timeout_read(),
+               i->timeout_write());
+
     return listenfd;
   }
 }
@@ -466,8 +471,6 @@ void server::impl::read_connections() {
           
     std::string bind = utils::get(**j, std::string(), "bind");
     algo::trim(bind);
-
-    std::cout << "SOCKET " << service << ' ' << type << ' ' << bind << '\n';
 
     long timeout_read =
       utils::get(**j, this->timeout_read, "timeout", "read");
@@ -545,6 +548,11 @@ namespace {
 void server::serve() {
   utils::log(LOG_NOTICE, "server started");
 
+#ifndef DEBUG
+  if(::daemon(0, 0) == -1)
+    utils::log(LOG_ERR, "daemonize failed: %m");
+#endif
+
   typedef void(*sighnd_t)(int);
 
   ::signal(SIGCHLD, &impl::sigchld_handler);
@@ -579,7 +587,6 @@ void server::impl::incoming(server::socket_param const &sock)  {
     return;
   }
 
-  std::cout << "%% ACCEPTED" << std::endl; // DEBUG
 #ifndef NO_FORK_LOOP
   sigset_t mask, oldmask;
   sigfillset(&mask);
@@ -611,7 +618,6 @@ int server::impl::connection(socket_param const &sock, int connfd) {
   try {
     http_connection conn(sock, connfd);
     conn.serve();
-    std::cout << "%% CLOSING" << std::endl; // DEBUG
   }
   catch(std::exception &e) {
     utils::log(LOG_ERR, "unexpected exception: %s", e.what());
@@ -634,7 +640,7 @@ void http_connection::serve() {
     }
   }
   catch (utils::http::remote_close&) {
-    std::cout << "%% remote or timeout" << std::endl; // DEBUG
+    //std::cout << "%% remote or timeout" << std::endl; // DEBUG
   }
 }
 
@@ -656,10 +662,10 @@ void http_connection::handle_request(response &out)
     std::string method, uri, version;
     boost::tie(method, uri, version) = utils::http::get_request_line(conn);
 
-    std::cout << method << " " << uri << " " << version << "\n"; // DEBUG
+    utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
+               uri.c_str(), version.c_str());
 
     assure_relative_uri(uri);
-    std::cout << "?-uri " << uri << '\n';//DEBUG
 
     if(version == "HTTP/1.0") {
       flags.set(HTTP_1_0_COMPAT);
@@ -882,7 +888,6 @@ int http_connection::set_header_options() {
         return 406;
     }
     else {
-      std::cout << "AE: " << i->first << ' ' << i->second << '\n';
       if(i->second == "gzip" || i->second == "x-gzip") {
         encodings.push_back(response::gzip);
         found = true;
@@ -1048,10 +1053,6 @@ private:
 };
 
 void http_connection::send(response r, bool entity) {
-  std::cout << "enc ";
-  for (std::vector<response::content_encoding_t>::iterator it = encodings.begin(); it != encodings.end(); ++it)
-    std::cout << *it << (it+1 == encodings.end() ? '\n' : ',');
-
   //TODO implement partial-GET, entity data from streams
 
   conn->push_cork();
@@ -1067,14 +1068,14 @@ void http_connection::send(response r, bool entity) {
   if (code == -1)
     code = 200;
 
-  std::cout << "Send: " << code << "\n"; //DEBUG
+  utils::log(LOG_NOTICE, "response: %d", code);
 
   out << code << " " << response::reason(code) << "\r\n";
 
   if (!flags.test(HTTP_1_0_COMPAT) && !open_ && code != 100)
     r.add_header_part("Connection", "close");
 
-  r.set_header("Server", REST_SERVER_ID);
+  r.set_header("Server", REST_SERVER_ID); // TODO
 
   if (!r.get_type().empty())
     r.set_header("Content-Type", r.get_type());
