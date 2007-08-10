@@ -434,7 +434,7 @@ void server::impl::read_connections() {
   children_iterator end = config.children_end();
   children_iterator i = utils::get(config, end, "connections");
   if(i == config.children_end()) {
-    REST_LOG(utils::INFO, "no connections specified in config-file");
+    utils::log(LOG_WARNING, "no connections container");
     return;
   }
 
@@ -521,7 +521,7 @@ namespace {
   }
 
   void do_restart() {
-    REST_LOG(utils::IMPORTANT, "server restart");
+    utils::log(LOG_NOTICE, "server restart");
 
     std::string cmdbuffer;
     std::string envbuffer;
@@ -529,19 +529,21 @@ namespace {
     char resolved_cmd[8192];
     int n = readlink("/proc/self/exe", resolved_cmd, sizeof(resolved_cmd) - 1);
     if (n < 0) {
-      REST_LOG_ERRNO(utils::CRITICAL, "restart failed (readlink)");
+      utils::log(LOG_ERR, "restart failed: readlink: %m");
       return;
     }
     resolved_cmd[n] = '\0';
 
     if(::execve(resolved_cmd, &getargs("/proc/self/cmdline", cmdbuffer)[0],
                 &getargs("/proc/self/environ", envbuffer)[0]) == -1)
-      REST_LOG_ERRNO(utils::CRITICAL, "restart failed (execve)");
+    {
+      utils::log(LOG_ERR, "restart failed: execve: %m");
+    }
   }
 }
 
 void server::serve() {
-  REST_LOG(utils::INFO, "Server started");
+  utils::log(LOG_NOTICE, "server started");
 
   typedef void(*sighnd_t)(int);
 
@@ -573,7 +575,7 @@ void server::impl::incoming(server::socket_param const &sock)  {
   socklen_t clilen = sizeof(cliaddr);
   int connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
   if(connfd == -1) {
-    REST_LOG_ERRNO(utils::CRITICAL, "accept failed");
+    utils::log(LOG_ERR, "accept failed: %m");
     return;
   }
 
@@ -587,8 +589,9 @@ void server::impl::incoming(server::socket_param const &sock)  {
   if (pid == 0) {
     do_close_on_fork();
 #endif
-    REST_LOG_E(utils::INFO,
-      "Accept connection from " << inet_ntoa(cliaddr.sin_addr));
+    utils::log(LOG_INFO,
+      "accept connection from %s", inet_nto(cliaddr.sin_addr));
+
     int status = connection(sock, connfd);
     (void) status;
 
@@ -597,7 +600,7 @@ void server::impl::incoming(server::socket_param const &sock)  {
   }
   else {
     if (pid == -1)
-      REST_LOG_ERRNO(utils::CRITICAL, "fork failed");
+      utils::log(LOG_ERR, "fork failed: %m");
     close(connfd);
     sigprocmask(SIG_SETMASK, &oldmask, 0);
   }
@@ -611,13 +614,11 @@ int server::impl::connection(socket_param const &sock, int connfd) {
     std::cout << "%% CLOSING" << std::endl; // DEBUG
   }
   catch(std::exception &e) {
-    REST_LOG_E(utils::CRITICAL,
-               "ERROR: unexpected exception `" << e.what() << "'");
+    utils::log(LOG_ERR, "unexpected exception: %s", e.what());
     return 1;
   }
   catch(...) {
-    REST_LOG_E(utils::CRITICAL,
-               "ERROR: unexpected exception (unkown type)");
+    utils::log(LOG_ERR, "unexpected exception");
     return 1;
   }
   return 0;

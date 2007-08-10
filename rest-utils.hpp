@@ -305,46 +305,7 @@ private:
   std::streamsize pending;
 };
 
-class logger : boost::noncopyable {
-public: // thread safe
-  static logger &get();
-
-  void set_minimum_priority(int priority);
-
-  void log(int priority, char const *file, char const *func,
-           int line, std::string const &data);
-
-private:
-  logger();
-  ~logger();
-
-  static void init();
-
-private:
-  class impl;
-  boost::scoped_ptr<impl> p;
-};
-
-enum { CRITICAL = 100, IMPORTANT = 90, INFO=50, DBG = 0 };
-
-#define REST_LOG(prio, data)                           \
-    ::rest::utils::logger::get().log((prio), __FILE__, \
-    BOOST_CURRENT_FUNCTION, __LINE__, (data))
-
-#define REST_LOG_E(prio, data)                                          \
-  do {                                                                  \
-    ::std::stringstream sstr; sstr << data;                             \
-    ::rest::utils::logger::get().log((prio), __FILE__,                  \
-    BOOST_CURRENT_FUNCTION, __LINE__, sstr.str());                      \
-  } while (0)
-
-#define REST_LOG_ERRNO(prio, data)                       \
-  do {                                                   \
-   ::std::stringstream sstr;                             \
-   sstr << data << ": `" << ::strerror(errno) << '\'';   \
-   ::rest::utils::logger::get().log((prio), __FILE__,    \
-    BOOST_CURRENT_FUNCTION, __LINE__, sstr.str());       \
-  } while (0)
+void log(int priority, char const *message, ...);
 
 namespace http {
   struct remote_close {};

@@ -32,6 +32,9 @@ namespace utils {
         return data_;
       }
 
+      void data(std::string const &d) {
+        data_ = d;
+      }
     private:
       std::string data_;
     };
@@ -64,8 +67,16 @@ namespace utils {
     return impl_->name;
   }
 
+  void property::name(std::string const &n) {
+    impl_->name = n;
+  }
+
   std::string const &property::data() const {
     return impl_->data.data();
+  }
+
+  void property::data(std::string const &d) {
+    impl_->data.data(d);
   }
 
   class property_tree::impl_ {
@@ -155,7 +166,9 @@ namespace utils {
     std::exit(3);
   }
 
-  std::auto_ptr<utils::property_tree> config(int argc, char **argv) {
+  config::config() {}
+
+  void config::load(int argc, char **argv) {
     char const * config_path = DEFAULT_CONFIG_PATH;
     for(int i = 1; i < argc; ++i)
       if(argv[i][0] == '-') {
@@ -178,8 +191,17 @@ namespace utils {
         usage(argc, argv);
       }
 
-    std::auto_ptr<utils::property_tree> tree(new utils::property_tree);
-    utils::read_config(config_path, *tree);
-    return tree;
+    utils::read_config(config_path, tree_);
+  }
+
+  config &config::get() {
+    static config *instance = 0;
+    if (!instance)
+      instance = new config;
+    return *instance;
+  }
+
+  property_tree &config::tree() {
+    return tree_;
   }
 }

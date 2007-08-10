@@ -28,7 +28,9 @@ namespace utils {
     property(std::string const &name, std::string const &data);
 
     std::string const &name() const;
+    void name(std::string const &n);
     std::string const &data() const;
+    void data(std::string const &d);
   };
 
   class property_tree {
@@ -63,19 +65,17 @@ namespace utils {
     class impl_;
     boost::scoped_ptr<impl_> impl;
 
+  public:
     void add_child(property_tree *child);
     void add_property(property const &p);
-    friend void read_config(boost::filesystem::path const &path,
-                            property_tree &);
 
-  public:
     typedef property_t::const_iterator property_iterator;
     property_iterator property_begin() const;
     property_iterator property_end() const;
     property_iterator find_property(std::string const &name) const;
-    
+
     typedef children_t::const_iterator children_iterator;
-    children_iterator children_begin() const;
+    children_iterator children_begin() const
     children_iterator children_end() const;
     children_iterator find_children(std::string const &name) const;
 
@@ -88,7 +88,7 @@ namespace utils {
   inline T get(property_tree const &tree, T const &default_value,
         std::string const &node0)
   {
-    property_tree::property_iterator i = tree.find_property(node0);
+    property_tree::cproperty_iterator i = tree.find_property(node0);
     if(i == tree.property_end())
       return default_value;
     else {
@@ -111,13 +111,16 @@ namespace utils {
       return i;
   }
 
-#define ARG_FUN(z, i, _) BOOST_PP_COMMA_IF(i) std::string const &node ## i
+#define ARG_FUN(z, i, _) , std::string const &node ## i
 #define ARG_NAME(z, i, _) , node ## i
 
 #define DEF_GET_FUN(z, i, _)                                            \
     template<typename T>                                                \
-    inline T get(property_tree const &tree, T const &default_value,     \
-                 BOOST_PP_REPEAT(i, ARG_FUN, __)) {                     \
+    inline T get(                                                       \
+        property_tree const &tree,                                      \
+        T const &default_value                                          \
+        BOOST_PP_REPEAT(i, ARG_FUN, __))                                \
+    {                                                                   \
       property_tree::children_iterator j = tree.find_children(node0);   \
       if(j == tree.children_end())                                      \
         return default_value;                                           \
@@ -128,11 +131,96 @@ namespace utils {
 
   BOOST_PP_REPEAT_FROM_TO(2, 10, DEF_GET_FUN, _)
 
+  inline property_tree &add_path(
+    property_tree &tree, std::string const &node0)
+  {
+    property_tree::children_iterator j = tree.find_children(node0);
+    if(j == tree.children_end()) {
+      property_tree *child = new property_tree(node0);
+      tree.add_child(child);
+      return *child;
+    }
+  }
+
+#define DEF_ADD_PATH_FUN(z, i, _)                                             \
+    inline property_tree &add_path(                                           \
+        property_tree &tree                                                   \
+        BOOST_PP_REPEAT(i, ARG_FUN, ~))                                       \
+    {                                                                         \
+      property_tree::children_iterator j = tree.find_children(node0);         \
+      if(j == tree.children_end()) {                                          \
+        property_tree *child = new property_tree(node0);                      \
+        tree.add_child(child);                                                \
+        return add_path(*child BOOST_PP_REPEAT_FROM_TO(1, i, ARG_NAME, ~));   \
+      } else {                                                                \
+        return add_path(**j BOOST_PP_REPEAT_FROM_TO(1, i, ARG_NAME, ~));      \
+      }                                                                       \
+    }                                                                         \
+    /**/
+
+  BOOST_PP_REPEAT_FROM_TO(2, 10, DEF_ADD_PATH_FUN, _)
+
+  template<typename T>
+  inline void set(
+    property_tree &tree, T const &value, std::string const &node0)
+  {
+    std::stringstream sstr;
+    sstr << value;
+    rest::utils::set(tree, sstr.str(), node0);
+  }
+
+  inline void set(
+      property_tree &tree,
+      std::string const &value,
+      std::string const &node0)
+  {
+    property_tree::property_iterator j = tree.find_property(node0);
+    if(j == tree.property_end())
+      tree.add_property(property(node0, value));
+    else
+      j->data(value);
+  }
+
+#define DEF_SET_FUN(z, i, _)                                              \
+    template<typename T>                                                  \
+    inline void set(                                                      \
+        property_tree const &tree,                                        \
+        T const &value                                                    \
+        BOOST_PP_REPEAT(i, ARG_FUN, ~))                                   \
+    {                                                                     \
+      property_tree::children_iterator j = tree.find_children(node0);     \
+      if(j == tree.children_end()) {                                      \
+        property_tree &child =                                            \
+          add_path(tree BOOST_PP_REPEAT_FROM_TO(1, i-1, ARG_NAME, ~));    \
+        rest::utils::set(child, value ARG_NAME(z, i, ~));                 \
+      }                                                                   \
+      else {                                                              \
+        rest::utils::set(**j, value                                       \
+           BOOST_PP_REPEAT_FROM_TO(1, i, ARG_NAME, ~));                   \
+      }                                                                   \
+    }                                                                     \
+    /**/
+
+  BOOST_PP_REPEAT_FROM_TO(2, 10, DEF_SET_FUN, _)
+
+#undef DEF_SET_FUN
+#undef DEF_ADD_PATH_FUN
 #undef DEF_GET_FUN
 #undef ARG_NAME
 #undef ARG_FUN
 }  
-  std::auto_ptr<utils::property_tree> config(int argc, char **argv);
+
+  class config {
+  public:
+    static config &get();
+    void load(int argc, char **argv);
+    property_tree &tree();
+
+  private:
+    config();
+
+    utils::property_tree tree_;
+  }
 }
 
 #endif
