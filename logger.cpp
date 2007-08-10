@@ -12,9 +12,8 @@ void rest::utils::log(int priority, char const *message, ...) {
 #ifndef NDEBUG
     opt |= LOG_PERROR;
 #endif
-    std::string const &name = rest::utils::get
-      (rest::config::get().tree(), std::string("httpd(musikdings.rest)"),
-       "general", "name");
+    rest::utils::property_tree &tree = rest::config::get().tree();
+    std::string const &name = rest::utils::get(tree, "general", "name");
     ::openlog(name.c_str(), opt, LOG_DAEMON);
     open = true;
   }
