@@ -549,10 +549,8 @@ void server::serve() {
   utils::log(LOG_NOTICE, "server started");
 
 #ifndef DEBUG
-  if(::daemon(0, 0) == -1) {
-    utils::log(LOG_ERR, "daemonize failed: %m");
-    exit(1);
-  }
+  if(::daemon(0, 0) == -1)
+    throw utils::errno_error("daemonizing the server failed (daemon)");
 #endif
 
   typedef void(*sighnd_t)(int);
