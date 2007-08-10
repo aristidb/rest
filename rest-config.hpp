@@ -13,8 +13,14 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
+#include <boost/preprocessor/punctuation/paren.hpp>
+#include <boost/preprocessor/facilities/expand.hpp>
+#include <boost/preprocessor/comparison/greater.hpp>
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 #include <boost/preprocessor/repetition/repeat_from_to.hpp>
+#include <boost/preprocessor/arithmetic/dec.hpp>
+#include <boost/preprocessor/control/iif.hpp>
+#include <boost/preprocessor/cat.hpp>
 
 namespace rest {
 namespace utils {  
@@ -74,8 +80,12 @@ namespace utils {
     property_iterator property_end() const;
     property_iterator find_property(std::string const &name) const;
 
+    template<typename Modifier>
+    bool modify_property(property_iterator i, Modifier m);
+    bool replace_property(property_iterator i, property const &p);
+
     typedef children_t::const_iterator children_iterator;
-    children_iterator children_begin() const
+    children_iterator children_begin() const;
     children_iterator children_end() const;
     children_iterator find_children(std::string const &name) const;
 
@@ -86,9 +96,9 @@ namespace utils {
 
   template<typename T>
   inline T get(property_tree const &tree, T const &default_value,
-        std::string const &node0)
+               std::string const &node0)
   {
-    property_tree::cproperty_iterator i = tree.find_property(node0);
+    property_tree::property_iterator i = tree.find_property(node0);
     if(i == tree.property_end())
       return default_value;
     else {
@@ -97,6 +107,17 @@ namespace utils {
       str >> ret;
       return ret;
     }
+  }
+
+  inline std::string const &get(property_tree const &tree,
+                                std::string const &default_value,
+                                std::string const &node0)
+  {
+    property_tree::property_iterator i = tree.find_property(node0);
+    if(i == tree.property_end())
+      return default_value;
+    else
+      return i->data();
   }
 
   inline property_tree::children_iterator
@@ -169,6 +190,18 @@ namespace utils {
     rest::utils::set(tree, sstr.str(), node0);
   }
 
+  /*namespace {
+    class data_setter {
+      std::string const &new_data;
+    public:
+      data_setter(std::string const &new_data) : new_data(new_data) { }
+
+      operator()(property &p) {
+        p.data(new_data);
+      }
+    };
+    }*/
+
   inline void set(
       property_tree &tree,
       std::string const &value,
@@ -177,28 +210,35 @@ namespace utils {
     property_tree::property_iterator j = tree.find_property(node0);
     if(j == tree.property_end())
       tree.add_property(property(node0, value));
-    else
-      j->data(value);
+    else {
+      property p = *j;
+      p.data(value);
+      tree.replace_property(j, p);
+      //tree.modify_property(j, data_setter(value));
+    }
   }
 
-#define DEF_SET_FUN(z, i, _)                                              \
-    template<typename T>                                                  \
-    inline void set(                                                      \
-        property_tree const &tree,                                        \
-        T const &value                                                    \
-        BOOST_PP_REPEAT(i, ARG_FUN, ~))                                   \
-    {                                                                     \
-      property_tree::children_iterator j = tree.find_children(node0);     \
-      if(j == tree.children_end()) {                                      \
-        property_tree &child =                                            \
-          add_path(tree BOOST_PP_REPEAT_FROM_TO(1, i-1, ARG_NAME, ~));    \
-        rest::utils::set(child, value ARG_NAME(z, i, ~));                 \
-      }                                                                   \
-      else {                                                              \
-        rest::utils::set(**j, value                                       \
-           BOOST_PP_REPEAT_FROM_TO(1, i, ARG_NAME, ~));                   \
-      }                                                                   \
-    }                                                                     \
+#define DEF_SET_FUN(z, i, _)                                                   \
+    template<typename T>                                                       \
+    inline void set(                                                           \
+        property_tree &tree,                                                   \
+        T const &value                                                         \
+        BOOST_PP_REPEAT(i, ARG_FUN, ~))                                        \
+    {                                                                          \
+      property_tree::children_iterator j = tree.find_children(node0);          \
+      if(j == tree.children_end()) {                                           \
+        property_tree &child =                                                 \
+        BOOST_PP_IIF(BOOST_PP_GREATER(i, 2),                                   \
+          add_path(tree BOOST_PP_REPEAT_FROM_TO(0, BOOST_PP_DEC(i),            \
+             ARG_NAME, ~)),                                                    \
+            tree);                                                             \
+        rest::utils::set(child, value, BOOST_PP_CAT(node, BOOST_PP_DEC(i)));   \
+      }                                                                        \
+      else {                                                                   \
+        rest::utils::set(**j, value                                            \
+           BOOST_PP_REPEAT_FROM_TO(1, i, ARG_NAME, ~));                        \
+      }                                                                        \
+    }                                                                          \
     /**/
 
   BOOST_PP_REPEAT_FROM_TO(2, 10, DEF_SET_FUN, _)
@@ -208,19 +248,19 @@ namespace utils {
 #undef DEF_GET_FUN
 #undef ARG_NAME
 #undef ARG_FUN
-}  
+}
 
   class config {
   public:
     static config &get();
     void load(int argc, char **argv);
-    property_tree &tree();
+    utils::property_tree &tree();
 
   private:
     config();
 
     utils::property_tree tree_;
-  }
+  };
 }
 
 #endif

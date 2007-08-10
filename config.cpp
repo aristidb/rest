@@ -112,6 +112,12 @@ namespace utils {
     impl->properties.insert(p);
   }
 
+  bool property_tree::replace_property(property_tree::property_iterator i,
+                                       property const &p)
+  {
+    return impl->properties.replace(i, p);
+  }
+
   property_tree::property_iterator property_tree::property_begin() const {
     return impl->properties.begin();
   }
@@ -166,7 +172,9 @@ namespace utils {
     std::exit(3);
   }
 
-  config::config() {}
+  config::config() {
+    // TODO Should we set some standard defaults? (e.g. general/name)
+  }
 
   void config::load(int argc, char **argv) {
     char const * config_path = DEFAULT_CONFIG_PATH;
@@ -201,7 +209,7 @@ namespace utils {
     return *instance;
   }
 
-  property_tree &config::tree() {
+  utils::property_tree &config::tree() {
     return tree_;
   }
 }

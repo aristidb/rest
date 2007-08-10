@@ -17,7 +17,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     return "";
   }
 
-  time_t last_modified(std::string const &path, time_t now) const {
+  time_t last_modified(std::string const &, time_t now) const {
     return now;
   }
 
@@ -100,7 +100,10 @@ int main(int argc, char **argv) {
   h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
   h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
 
-  rest::server s(*rest::config(argc, argv));
+  rest::utils::set(rest::config::get().tree(), "musikdings.rest/1.1",
+                   "general", "name");
+  rest::config::get().load(argc, argv);
+  rest::server s(rest::config::get().tree());
   std::for_each(s.sockets_begin(), s.sockets_end(), rest::host::add(h));
 
   s.serve();

@@ -24,6 +24,8 @@
 #include <boost/format.hpp>
 #include <boost/ref.hpp>
 
+#include <syslog.h>
+
 namespace rest { namespace utils {
 
 namespace uri {

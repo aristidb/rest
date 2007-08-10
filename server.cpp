@@ -590,7 +590,7 @@ void server::impl::incoming(server::socket_param const &sock)  {
     do_close_on_fork();
 #endif
     utils::log(LOG_INFO,
-      "accept connection from %s", inet_nto(cliaddr.sin_addr));
+      "accept connection from %s", inet_ntoa(cliaddr.sin_addr));
 
     int status = connection(sock, connfd);
     (void) status;
