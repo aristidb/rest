@@ -249,11 +249,15 @@ namespace utils {
     {                                                                          \
       property_tree::children_iterator j = tree.find_children(node0);          \
       if(j == tree.children_end()) {                                           \
-        property_tree &child =                                                 \
-        BOOST_PP_IIF(BOOST_PP_GREATER(i, 2),                                   \
-          add_path(tree BOOST_PP_REPEAT_FROM_TO(0, BOOST_PP_DEC(i),            \
-             ARG_NAME, ~)),                                                    \
-            tree);                                                             \
+        property_tree &child = add_path(                                       \
+            tree                                                               \
+            BOOST_PP_REPEAT_FROM_TO(                                           \
+              0,                                                               \
+              BOOST_PP_DEC(i),                                                 \
+              ARG_NAME,                                                        \
+              ~                                                                \
+            )                                                                  \
+          );                                                                   \
         rest::utils::set(child, value, BOOST_PP_CAT(node, BOOST_PP_DEC(i)));   \
       }                                                                        \
       else {                                                                   \

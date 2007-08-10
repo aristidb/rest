@@ -100,4 +100,12 @@ TEST_GROUP(config) {
       Equals(got, 112433);
     }
   }
+
+  TEST_GROUP(misc) {
+    TEST() {
+      property_tree t;
+      set(t, "4", "x",  "a");
+      Equals(get(t, "x", "a"), "x");
+    }
+  }
 }

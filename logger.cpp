@@ -13,7 +13,8 @@ void rest::utils::log(int priority, char const *message, ...) {
     opt |= LOG_PERROR;
 #endif
     rest::utils::property_tree &tree = rest::config::get().tree();
-    std::string const &name = rest::utils::get(tree, "general", "name");
+    std::string const &name = 
+      rest::utils::get(tree, std::string("REST-UNNAMED"), "general", "name");
     ::openlog(name.c_str(), opt, LOG_DAEMON);
     open = true;
   }
