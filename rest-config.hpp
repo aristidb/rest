@@ -181,15 +181,6 @@ namespace utils {
 
   BOOST_PP_REPEAT_FROM_TO(2, 10, DEF_ADD_PATH_FUN, _)
 
-  template<typename T>
-  inline void set(
-    property_tree &tree, T const &value, std::string const &node0)
-  {
-    std::stringstream sstr;
-    sstr << value;
-    rest::utils::set(tree, sstr.str(), node0);
-  }
-
   /*namespace {
     class data_setter {
       std::string const &new_data;
@@ -216,6 +207,15 @@ namespace utils {
       tree.replace_property(j, p);
       //tree.modify_property(j, data_setter(value));
     }
+  }
+
+  template<typename T>
+  inline void set(
+    property_tree &tree, T const &value, std::string const &node0)
+  {
+    std::stringstream sstr;
+    sstr << value;
+    rest::utils::set(tree, sstr.str(), node0);
   }
 
 #define DEF_SET_FUN(z, i, _)                                                   \
