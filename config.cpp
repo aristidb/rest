@@ -79,70 +79,9 @@ namespace utils {
     impl_->data.data(d);
   }
 
-  class property_tree::impl_ {
-  public:
-    children_t children;
-    property_t properties;
-    std::string const name;
-
-    impl_(std::string const &name)
-      : name(name)
-    { }
-    impl_() { }
-  };
-
-  property_tree::property_tree()
-    : impl(new impl_)
-  { }
-
-  property_tree::property_tree(std::string const &name)
-    : impl(new impl_(name))
-  { }
-
-  std::string const &property_tree::name() const {
-    return impl->name;
-  }
-
-  void property_tree::add_child(property_tree *child) {
-    assert(child);
-    impl->children.insert(child);
-  }
-
-  void property_tree::add_property(property const &p) {
-    impl->properties.insert(p);
-  }
-
-  bool property_tree::replace_property(property_tree::property_iterator i,
-                                       property const &p)
-  {
-    return impl->properties.replace(i, p);
-  }
-
-  property_tree::property_iterator property_tree::property_begin() const {
-    return impl->properties.begin();
-  }
-  property_tree::property_iterator property_tree::property_end() const {
-    return impl->properties.end();
-  }
-  property_tree::property_iterator
-  property_tree::find_property(std::string const &name) const {
-    return impl->properties.find(name);
-  }
-
-  property_tree::children_iterator property_tree::children_begin() const {
-    return impl->children.begin();
-  }
-  property_tree::children_iterator property_tree::children_end() const {
-    return impl->children.end();
-  }
-  property_tree::children_iterator
-  property_tree::find_children(std::string const &name) const {
-    return impl->children.find(name);
-  }
-
   property_tree::~property_tree() {
-    for(children_iterator i = impl->children.begin();
-        i != impl->children.end();
+    for(children_iterator i = children.begin();
+        i != children.end();
         ++i)
       delete *i;
   }

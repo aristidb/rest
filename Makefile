@@ -24,7 +24,7 @@ endif
 LIBREST_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(LIBREST_SOURCES))
 LIBREST_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(LIBREST_SOURCES))
 
-UNIT_SOURCES := unit.cpp filter_tests.cpp logger_tests.cpp http_headers_tests.cpp datetime-test.cpp
+UNIT_SOURCES := unit.cpp filter_tests.cpp http_headers_tests.cpp datetime-test.cpp config_tests.cpp
 UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
 UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))
 
@@ -34,7 +34,7 @@ DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
 LIBREST  :=librest.a
 
-BINARIES := $(LIBREST) pipedump unit http-handler-test test1 boundary-filter-bench
+BINARIES := $(LIBREST) unit http-handler-test test1 boundary-filter-bench
 
 .PHONY: all rest
 all: $(BINARIES)
@@ -43,9 +43,6 @@ rest: $(LIBREST)
 
 librest.a: $(LIBREST_OBJECTS) $(LIBREST_DEPS)
 	ar rcs librest.a $(LIBREST_OBJECTS)
-
-pipedump: pipedump.cpp $(BUILDDIR)/pipedump.dep
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) pipedump.cpp -o pipedump
 
 http-handler-test: $(LIBREST) http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
 	$(CXX) $(CXXFLAGS) http-handler-test.cpp -o http-handler-test $(LDFLAGS)

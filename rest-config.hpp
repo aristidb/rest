@@ -6,6 +6,7 @@
 
 #include <string>
 #include <memory>
+#include <cassert>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/filesystem/path.hpp>
@@ -41,12 +42,11 @@ namespace utils {
 
   class property_tree {
   public:
-    property_tree();
-    explicit property_tree(std::string const &name);
+    property_tree() { }
+    explicit property_tree(std::string const &name) : name_(name) { }
     ~property_tree();
 
-    std::string const &name() const;
-
+    std::string const &name() const { return name_; }
   private:
     typedef boost::multi_index_container<
       property_tree*,
@@ -68,26 +68,47 @@ namespace utils {
         >
       > property_t;
 
-    class impl_;
-    boost::scoped_ptr<impl_> impl;
-
+    children_t children;
+    property_t properties;
+    std::string const name_;
   public:
-    void add_child(property_tree *child);
-    void add_property(property const &p);
+    void add_child(property_tree *child) {
+      assert(child);
+      children.insert(child);
+    }
+    void add_property(property const &p) {
+      properties.insert(p);
+    }
 
     typedef property_t::const_iterator property_iterator;
-    property_iterator property_begin() const;
-    property_iterator property_end() const;
-    property_iterator find_property(std::string const &name) const;
+    property_iterator property_begin() const {
+      return properties.begin();
+    }
+    property_iterator property_end() const {
+      return properties.end();
+    }
+    property_iterator find_property(std::string const &name) const {
+      return properties.find(name);
+    }
 
     template<typename Modifier>
-    bool modify_property(property_iterator i, Modifier m);
-    bool replace_property(property_iterator i, property const &p);
+    bool modify_property(property_iterator i, Modifier m) {
+      return properties.modify(i, m);
+    }
+    bool replace_property(property_iterator i, property const &p) {
+      return properties.replace(i, p);
+    }
 
     typedef children_t::const_iterator children_iterator;
-    children_iterator children_begin() const;
-    children_iterator children_end() const;
-    children_iterator find_children(std::string const &name) const;
+    children_iterator children_begin() const {
+      return children.begin();
+    }
+    children_iterator children_end() const {
+      return children.end();
+    }
+    children_iterator find_children(std::string const &name) const {
+      return children.find(name);
+    }
 
   private:
     property_tree(property_tree const &);
@@ -161,6 +182,7 @@ namespace utils {
       tree.add_child(child);
       return *child;
     }
+    return **j;
   }
 
 #define DEF_ADD_PATH_FUN(z, i, _)                                             \
@@ -181,17 +203,17 @@ namespace utils {
 
   BOOST_PP_REPEAT_FROM_TO(2, 10, DEF_ADD_PATH_FUN, _)
 
-  /*namespace {
+  namespace {
     class data_setter {
       std::string const &new_data;
     public:
       data_setter(std::string const &new_data) : new_data(new_data) { }
 
-      operator()(property &p) {
+      void operator()(property &p) const {
         p.data(new_data);
       }
     };
-    }*/
+  }
 
   inline void set(
       property_tree &tree,
@@ -202,10 +224,10 @@ namespace utils {
     if(j == tree.property_end())
       tree.add_property(property(node0, value));
     else {
-      property p = *j;
-      p.data(value);
-      tree.replace_property(j, p);
-      //tree.modify_property(j, data_setter(value));
+      //property p = *j;
+      //p.data(value);
+      //tree.replace_property(j, p);
+      tree.modify_property(j, data_setter(value));
     }
   }
 
