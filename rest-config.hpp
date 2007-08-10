@@ -281,6 +281,10 @@ namespace utils {
   private:
     config();
 
+    //DUMMY
+    config(config const &);
+    config &operator =(config const &);
+
     utils::property_tree tree_;
   };
 }

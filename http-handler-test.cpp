@@ -100,10 +100,13 @@ int main(int argc, char **argv) {
   h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
   h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
 
-  rest::utils::set(rest::config::get().tree(), "musikdings.rest/1.1",
-                   "general", "name");
-  rest::config::get().load(argc, argv);
-  rest::server s(rest::config::get().tree());
+  rest::config &conf = rest::config::get();
+  rest::utils::property_tree &tree = conf.tree();
+
+  rest::utils::set(tree, "musikdings.rest/1.1", "general", "name");
+  conf.load(argc, argv);
+
+  rest::server s(tree);
   std::for_each(s.sockets_begin(), s.sockets_end(), rest::host::add(h));
 
   s.serve();
