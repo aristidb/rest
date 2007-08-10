@@ -9,7 +9,7 @@ void rest::utils::log(int priority, char const *message, ...) {
   static bool open = false;
   if (!open) {
     int opt = LOG_PID | LOG_CONS;
-#ifndef NDEBUG
+#ifdef DEBUG
     opt |= LOG_PERROR;
 #endif
     rest::utils::property_tree &tree = rest::config::get().tree();
