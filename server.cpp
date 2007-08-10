@@ -549,8 +549,10 @@ void server::serve() {
   utils::log(LOG_NOTICE, "server started");
 
 #ifndef DEBUG
-  if(::daemon(0, 0) == -1)
+  if(::daemon(0, 0) == -1) {
     utils::log(LOG_ERR, "daemonize failed: %m");
+    exit(1);
+  }
 #endif
 
   typedef void(*sighnd_t)(int);
@@ -563,7 +565,7 @@ void server::serve() {
 
   int epollfd = p->initialize_sockets();
 
-  int const EVENTS_N = 100;
+  int const EVENTS_N = 8;
 
   for(;;) {
     epoll_event events[EVENTS_N];
