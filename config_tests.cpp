@@ -23,7 +23,7 @@ TEST_GROUP(config) {
       Equals(j->data(), "10");
     }
 
-    TEST(depth) {
+    TEST(deep) {
       property_tree t;
       set(t, 10, "foo", "bar", "baz", "bam");
       property_tree::children_iterator j0 = t.find_children("foo");
@@ -49,5 +49,55 @@ TEST_GROUP(config) {
       Equals(j->data(), "10");
     }
   }
-}
 
+  TEST_GROUP(add_path) {
+    TEST(flat) {
+      property_tree t;
+      add_path(t, "foo");
+      property_tree::children_iterator j = t.find_children("foo");
+      Check(j != t.children_end());
+    }
+
+    TEST(deep) {
+      property_tree t;
+      add_path(t, "foo", "bar", "baz");
+      property_tree::children_iterator j0 = t.find_children("foo");
+      Check(j0 != t.children_end());
+      property_tree::children_iterator j1 = (*j0)->find_children("bar");
+      Check(j1 != (*j0)->children_end());
+      property_tree::children_iterator j2 = (*j1)->find_children("baz");
+      Check(j2 != (*j1)->children_end());
+    }
+
+    TEST() {
+      property_tree t;
+      add_path(t, "foo", "fou");
+      property_tree::children_iterator j = t.find_children("foo");
+      Check(j != t.children_end());
+      property_tree::children_iterator k = (*j)->find_children("fou");
+      Check(k != t.children_end());
+      add_path(t, "foo", "bar", "baz");
+      property_tree::children_iterator j0 = t.find_children("foo");
+      Check(j0 != t.children_end());
+      property_tree::children_iterator j1 = (*j0)->find_children("bar");
+      Check(j1 != (*j0)->children_end());
+      property_tree::children_iterator j2 = (*j1)->find_children("baz");
+      Check(j2 != (*j1)->children_end());
+    }
+  }
+
+  TEST_GROUP(get) {
+    TEST() {
+      property_tree t;
+      set(t, 10, "foo");
+      int got = get(t, 0, "foo");
+      Equals(got, 10);
+    }
+
+    TEST() {
+      property_tree t;
+      int got = get(t, 112433, "foo", "bar", "baz");
+      Equals(got, 112433);
+    }
+  }
+}
