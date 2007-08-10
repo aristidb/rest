@@ -2,6 +2,7 @@
 
 #include "rest.hpp"
 #include "rest-config.hpp"
+#include "rest-utils.hpp"
 #include <boost/lambda/lambda.hpp>
 #include <fstream>
 #include <algorithm>
@@ -79,22 +80,31 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 using namespace boost::lambda;
 
 int main(int argc, char **argv) {
-  tester t;
+  try {
+    tester t;
 
-  rest::host h("");
-  h.get_context().bind("/", t);
-  h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
-  h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
-  h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
+    rest::host h("");
+    h.get_context().bind("/", t);
+    h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
+    h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
+    h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
 
-  rest::config &conf = rest::config::get();
-  rest::utils::property_tree &tree = conf.tree();
+    rest::config &conf = rest::config::get();
+    rest::utils::property_tree &tree = conf.tree();
 
-  rest::utils::set(tree, "musikdings.rest/1.1", "general", "name");
-  conf.load(argc, argv);
+    rest::utils::set(tree, "musikdings.rest/1.1", "general", "name");
+    conf.load(argc, argv);
 
-  rest::server s(tree);
-  std::for_each(s.sockets_begin(), s.sockets_end(), rest::host::add(h));
+    rest::server s(tree);
+    std::for_each(s.sockets_begin(), s.sockets_end(), rest::host::add(h));
 
-  s.serve();
+    s.serve();
+    return 0;
+  } catch (std::exception &e) {
+    rest::utils::log(LOG_CRIT, "unexpected critical exception: %s", e.what());
+    return 1;
+  } catch (...) {
+    rest::utils::log(LOG_CRIT, "unexpected critical exception");
+    return 1;
+  }
 }
