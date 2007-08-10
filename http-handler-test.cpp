@@ -3,7 +3,6 @@
 #include "rest.hpp"
 #include "rest-config.hpp"
 #include <boost/lambda/lambda.hpp>
-#include <iostream>
 #include <fstream>
 #include <algorithm>
 #include <sys/types.h>
@@ -22,8 +21,6 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
   }
 
   rest::response get(std::string const &path, rest::keywords &) {
-    std::cout << "GET: " << path << '\n';
-
     rest::response resp("text/html");
     #if 0
     resp.set_data("<html><head><title>supi</title></head>\n"
@@ -48,17 +45,13 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     return resp;
   }
   rest::response put(std::string const &path, rest::keywords &) {
-    std::cout << "PUT: " << path << '\n';
     rest::response ok(200);
     return ok;
   }
   rest::response delete_(std::string const &path, rest::keywords &) {
-    std::cout << "DELETE: " << path << '\n';
     return rest::response(200);
   }
   rest::response post(std::string const &path, rest::keywords &kw) {
-    std::cout << "POST: " << path << '\n';
-
     rest::response resp("text/plain");
 
     std::ostringstream out;
@@ -66,21 +59,17 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     for (int i = 0; kw.exists("bar", i); ++i) {
       std::string bar = kw.access("bar", i);
       out << "bar: " << bar << std::endl;
-      std::cout << "bar: " << bar << std::endl;
     }
 
     std::string fln;
     std::getline(kw.read("datei"), fln);
     out << "file: " << fln << '\n';
-    std::cout << "file: " << fln << std::endl;
 
     std::string user = kw["user"];
     out << "user: " << user << '\n';
-    std::cout << "user: " << user << std::endl;
 
     std::string file = kw["datei"];
     out << "file (oh we read() it): " << file << std::endl;
-    std::cout << "file (oh we read() it): " << file << std::endl;
 
     resp.set_data(out.str());
     return resp;
@@ -90,8 +79,6 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 using namespace boost::lambda;
 
 int main(int argc, char **argv) {
-  std::cout << "STARTING, pid: " << getpid() << std::endl;
-
   tester t;
 
   rest::host h("");
