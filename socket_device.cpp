@@ -6,7 +6,6 @@
 #include <netinet/tcp.h>
 #include <unistd.h>
 #include <errno.h>
-#include <iostream>//DEBUG
 
 #ifdef APPLE
 #define TCP_CORK TCP_NOPUSH
@@ -20,7 +19,6 @@ public:
   ~impl() { if (fd >= 0) close(); }
 
   void close() {
-    std::cout << ",closing " << fd << std::endl;
     if (fd >= 0)
       ::close(fd);
     fd = -1;
@@ -34,8 +32,6 @@ socket_device::socket_device(int fd, long timeout_rd, long timeout_wr)
 {
   struct timeval timeout;
   timeout.tv_usec = 0;
-
-  std::cout << "tmo: " << timeout_rd << ',' << timeout_wr << std::endl;
 
   if (timeout_rd > 0) {
     timeout.tv_sec = timeout_rd;
@@ -81,9 +77,6 @@ std::streamsize socket_device::read(char *buf, std::streamsize length) {
     p->close();
     return -1;
   }
-  std::cout << ",read " << n << " (" << length << ") bytes:\n-{{";
-  std::cout.write(buf, n);
-  std::cout << "}}-\n" << std::flush;
   return n;
 }
 
@@ -91,14 +84,9 @@ std::streamsize socket_device::write(char const *buf, std::streamsize length) {
   if (p->fd < 0)
     return -1;
 
-  std::cout << ",wrote " << length << " (" << length << ") bytes:\n+{{";
-  std::cout.write(buf, length);
-  std::cout << "}}+\n" << std::flush;
-
   std::streamsize n;
   for (;;) {
     n = ::write(p->fd, buf, size_t(length));
-    std::cout << n << "-";
     if (n == length)
       break;
     if (n >= 0) {
@@ -107,7 +95,6 @@ std::streamsize socket_device::write(char const *buf, std::streamsize length) {
     } else if (errno != EINTR)
       break;
   }
-  std::cout << std::endl;
   if (n <= 0) {
     p->close();
     return -1;

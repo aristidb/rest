@@ -7,7 +7,6 @@
 #include <boost/tokenizer.hpp>
 #include <stdexcept>
 #include <algorithm>
-#include <iostream>//FIXME
 
 using namespace rest;
 namespace det = rest::detail;
@@ -73,7 +72,7 @@ public:
         return *it;
       return unconditional_child.get();
     }
-
+#if 0
     void print(int level) {
       for (int i = 0; i < level; ++i)
         std::cout << "  ";
@@ -102,6 +101,7 @@ public:
           (*it)->print(level + 1);
       }
     }
+#endif
   };
 
   keyword_info_set predeclared_keywords;
@@ -113,10 +113,7 @@ public:
 context::context() : p(new impl) {
 }
 
-context::~context() {
-  std::cout << this << ":\n";
-  p->root.print(1);
-}
+context::~context() { }
 
 void context::declare_keyword(std::string const &keyword, keyword_type type) {
   bool x =

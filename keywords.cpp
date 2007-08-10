@@ -15,7 +15,6 @@
 #include <cstdio>
 #include <cctype>
 #include <memory>
-#include <iostream>//DEBUG
 
 using namespace rest;
 using namespace boost::multi_index;
@@ -34,9 +33,7 @@ public:
     : keyword(o.keyword), index(o.index), type(o.type), state(s_normal) {}
 
     void read() const {
-      std::cout << "read(e) " << keyword << ',' << index << std::endl;
       if (stream.get()) {
-        std::cout << "\tstream" << std::endl;
         if (output.get()) {
           *output << stream->rdbuf();
           output.reset();
@@ -53,7 +50,6 @@ public:
     }
 
     void write() const {
-      std::cout << "write(e) " << keyword << ',' << index << std::endl;
       if (!stream.get())
         input_stream(new std::istringstream(data)).move(stream);
     }
@@ -86,7 +82,6 @@ public:
   data_t data;
 
   data_t::iterator find(std::string const &keyword, int index) {
-    std::cout << "FIND KEYWORD " << keyword << ',' << index << std::endl;
     data_t::iterator it = data.find(boost::make_tuple(keyword, index));
     if (it == data.end())
       throw std::logic_error("invalid keyword");
@@ -108,8 +103,6 @@ public:
       last = 0;
     }
 
-    std::cout << "start_element" << std::endl;
-
     if (entity->peek() == EOF)
       return false;
 
@@ -122,7 +115,6 @@ public:
   }
 
   void read_headers() {
-    std::cout << "read_headers" << std::endl;
     using utils::http::header_fields;
 
     header_fields headers = utils::http::read_headers(*element);
@@ -136,10 +128,6 @@ public:
       else
         next_filetype = "application/octet-stream";
     }
-
-    std::cout << "\tname: " << next_name << std::endl;
-    std::cout << "\tfilename: " << next_filename << std::endl;
-    std::cout << "\tfiletype: " << next_filetype << std::endl;
   }
 
   void parse_content_disposition(std::string const &disp) {
@@ -155,7 +143,6 @@ public:
   }
 
   void prepare_element(bool read) {
-    std::cout << "prepare_element " << read << std::endl;
     data_t::iterator it = find_next_form(next_name);
 
     if (it == data.end()) {
@@ -178,7 +165,6 @@ public:
   }
 
   bool read_until(std::string const &next) {
-    std::cout << "read until: " << next << std::endl;
     if (!entity)
       return false;
     while (start_element()) {
@@ -315,8 +301,6 @@ void keywords::set_entity(
 
   utils::http::parse_parametrised(content_type, type, pset, params);
 
-  std::cout << "~~ " << type << " ; " << params["boundary"] << std::endl;
-
   if (type == "multipart/form-data") {
     p->entity.reset(entity.release());
 
@@ -332,8 +316,6 @@ void keywords::set_entity(
 
     p->unread_form();
   } else if (type == "application/x-www-form-urlencoded") {
-    std::cout << "~~ urlencoded" << std::endl;
-
     std::string data;
     data.assign(
       std::istreambuf_iterator<char>(entity->rdbuf()),

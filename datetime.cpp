@@ -6,8 +6,6 @@
 #include <cassert>
 #include <algorithm>
 
-#include <iostream> //DEBUG
-
 std::string rest::utils::http::datetime_string(time_t time_buf) {
   tm gmtime;
   gmtime_r(&time_buf, &gmtime);
