@@ -14,7 +14,8 @@ void rest::utils::log(int priority, char const *message, ...) {
 #endif
     rest::utils::property_tree &tree = rest::config::get().tree();
     std::string const &name = 
-      rest::utils::get(tree, std::string("REST-UNNAMED"), "general", "name");
+      rest::utils::get(tree, std::string(), "general", "name");
+    assert(!name.empty());
     ::openlog(name.c_str(), opt, LOG_DAEMON);
     open = true;
   }

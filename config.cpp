@@ -112,7 +112,8 @@ namespace utils {
   }
 
   config::config() {
-    // TODO Should we set some standard defaults? (e.g. general/name)
+    // set defaults
+    utils::set(tree_, "musikdings.rest/0.1", "general", "name");
   }
 
   void config::load(int argc, char **argv) {

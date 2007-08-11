@@ -66,8 +66,6 @@ namespace algo = boost::algorithm;
  * - see below (for more)
  */
 
-#define REST_SERVER_ID "Musikdings.rest/0.1"
-
 typedef
   boost::multi_index_container<
     boost::reference_wrapper<host const>,
@@ -565,8 +563,10 @@ void server::serve() {
   ::siginterrupt(SIGUSR1, 0);
 
   utils::property_tree &tree = config::get().tree();
-  std::string const &servername = utils::get(tree, std::string(REST_SERVER_ID),
-                                             "general", "name");
+  std::string const &servername =
+    utils::get(tree, std::string(), "general", "name");
+  // shouldn't require a default value (see config::config())
+  assert(!servername.empty());
 
   int epollfd = p->initialize_sockets();
 
