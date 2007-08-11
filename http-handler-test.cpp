@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
     rest::config &conf = rest::config::get();
     rest::utils::property_tree &tree = conf.tree();
 
-    rest::utils::set(tree, "musikdings.rest/1.1", "general", "name");
+    rest::utils::set(tree, "musikdings.rest/0.1", "general", "name");
     conf.load(argc, argv);
 
     rest::server s(tree);
