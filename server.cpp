@@ -213,8 +213,8 @@ public:
 
   void read_connections();
   int initialize_sockets();
-  void incoming(socket_param const &sock);
-  int connection(socket_param const &sock, int connfd);
+  void incoming(socket_param const &sock, std::string const &severname);
+  int connection(socket_param const &sock, int connfd, std::string const &name);
 };
 
 bool server::impl::restart = false;
@@ -261,6 +261,8 @@ namespace {
     int connfd;
     connection_streambuf conn;
 
+    std::string const &servername;
+
     bool open_;
     enum {
       NO_ENTITY,
@@ -273,13 +275,14 @@ namespace {
     utils::http::header_fields header_fields;
 
   public:
-    http_connection(
-        server::socket_param const &sock, int connfd)
+    http_connection(server::socket_param const &sock, int connfd,
+                    std::string const &servername)
     : sock(sock),
       connfd(connfd),
       conn(connfd, sock.timeout_read(), sock.timeout_write()),
+      servername(servername),
       open_(true)
-    {}
+    { }
 
     bool open() const { return open_; }
 
@@ -549,7 +552,7 @@ void server::serve() {
   utils::log(LOG_NOTICE, "server started");
 
 #ifndef DEBUG
-  if(::daemon(0, 0) == -1)
+  if(::daemon(1, 1) == -1)
     throw utils::errno_error("daemonizing the server failed (daemon)");
 #endif
 
@@ -560,6 +563,10 @@ void server::serve() {
 
   ::signal(SIGUSR1, &impl::restart_handler);
   ::siginterrupt(SIGUSR1, 0);
+
+  utils::property_tree &tree = config::get().tree();
+  std::string const &servername = utils::get(tree, std::string(REST_SERVER_ID),
+                                             "general", "name");
 
   int epollfd = p->initialize_sockets();
 
@@ -573,12 +580,14 @@ void server::serve() {
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
       assert(ptr);
-      p->incoming(*ptr);
+      p->incoming(*ptr, servername);
     }
   }
 }
 
-void server::impl::incoming(server::socket_param const &sock)  {
+void server::impl::incoming(server::socket_param const &sock,
+                            std::string const &servername)
+{
   sockaddr_in cliaddr;
   socklen_t clilen = sizeof(cliaddr);
   int connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
@@ -599,7 +608,7 @@ void server::impl::incoming(server::socket_param const &sock)  {
     utils::log(LOG_INFO,
       "accept connection from %s", inet_ntoa(cliaddr.sin_addr));
 
-    int status = connection(sock, connfd);
+    int status = connection(sock, connfd, servername);
     (void) status;
 
 #ifndef NO_FORK_LOOP
@@ -614,9 +623,11 @@ void server::impl::incoming(server::socket_param const &sock)  {
 #endif
 }
 
-int server::impl::connection(socket_param const &sock, int connfd) {
+int server::impl::connection(socket_param const &sock, int connfd,
+                             std::string const &servername)
+{
   try {
-    http_connection conn(sock, connfd);
+    http_connection conn(sock, connfd, servername);
     conn.serve();
   }
   catch(std::exception &e) {
@@ -1075,7 +1086,7 @@ void http_connection::send(response r, bool entity) {
   if (!flags.test(HTTP_1_0_COMPAT) && !open_ && code != 100)
     r.add_header_part("Connection", "close");
 
-  r.set_header("Server", REST_SERVER_ID); // TODO
+  r.set_header("Server", servername);
 
   if (!r.get_type().empty())
     r.set_header("Content-Type", r.get_type());

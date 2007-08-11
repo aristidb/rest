@@ -21,7 +21,7 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     return now;
   }
 
-  rest::response get(std::string const &path, rest::keywords &) {
+  rest::response get(std::string const &, rest::keywords &) {
     rest::response resp("text/html");
     #if 0
     resp.set_data("<html><head><title>supi</title></head>\n"
@@ -45,14 +45,14 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 
     return resp;
   }
-  rest::response put(std::string const &path, rest::keywords &) {
+  rest::response put(std::string const &, rest::keywords &) {
     rest::response ok(200);
     return ok;
   }
-  rest::response delete_(std::string const &path, rest::keywords &) {
+  rest::response delete_(std::string const &, rest::keywords &) {
     return rest::response(200);
   }
-  rest::response post(std::string const &path, rest::keywords &kw) {
+  rest::response post(std::string const &, rest::keywords &kw) {
     rest::response resp("text/plain");
 
     std::ostringstream out;
