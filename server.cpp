@@ -576,6 +576,11 @@ namespace {
     else
       utils::log(LOG_WARNING, "no uid set: user privilieges not droped");
   }
+
+  void term_handler(int sig) {
+    utils::log(LOG_NOTICE, "server is going down (SIG %d)", sig);
+    exit(4);
+  }
 }
 
 void server::serve() {
@@ -596,6 +601,9 @@ void server::serve() {
 #endif
 
   typedef void(*sighnd_t)(int);
+
+  ::signal(SIGTERM, &term_handler);
+  ::siginterrupt(SIGTERM, 0);
 
   ::signal(SIGCHLD, &impl::sigchld_handler);
   ::siginterrupt(SIGCHLD, 0);
