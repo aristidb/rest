@@ -544,12 +544,53 @@ namespace {
       utils::log(LOG_ERR, "restart failed: execve: %m");
     }
   }
+
+  bool set_gid(gid_t gid) {
+    if(::setgroups(1, &gid) == -1) {
+      if(errno != EPERM)
+        throw utils::errno_error("setgroups failed");
+      return false;
+    }
+    return true;
+  }
+
+  bool set_uid(uid_t uid) {
+    if(::setuid(uid) == -1) {
+      if(errno != EPERM)
+        throw utils::errno_error("setuid failed");
+      return false;
+    }
+    return true;
+  }
+
+  void drop_privileges(utils::property_tree const &tree) {
+    long gid = utils::get(tree, -1, "general", "gid");
+    if(gid != -1)
+      set_gid(gid);
+    else
+      utils::log(LOG_WARNING, "no gid set: group privileges not droped");
+
+    long uid = utils::get(tree, -1, "general", "uid");
+    if(uid != -1)
+      set_uid(uid);
+    else
+      utils::log(LOG_WARNING, "no uid set: user privilieges not droped");
+  }
 }
 
 void server::serve() {
   utils::log(LOG_NOTICE, "server started");
 
 #ifndef DEBUG
+  if(::chroot(".") == -1) {
+    if(errno != EPERM)
+      throw utils::errno_error("chroot failed");
+    else
+      utils::log(LOG_WARNING, "could not chroot: insufficient permissions");
+  }
+  utils::property_tree &tree = config::get().tree();
+  drop_privileges(tree);
+
   if(::daemon(1, 1) == -1)
     throw utils::errno_error("daemonizing the server failed (daemon)");
 #endif
@@ -562,7 +603,8 @@ void server::serve() {
   ::signal(SIGUSR1, &impl::restart_handler);
   ::siginterrupt(SIGUSR1, 0);
 
-  utils::property_tree &tree = config::get().tree();
+  // TODO SIGPIPE auf ignore setzen?
+
   std::string const &servername =
     utils::get(tree, std::string(), "general", "name");
   // shouldn't require a default value (see config::config())
