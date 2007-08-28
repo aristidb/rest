@@ -126,17 +126,12 @@ namespace utils {
         else if(argv[i][1] == 'c' && argv[i][2] == 0) {
           if(i+1 < argc) {
             config_path = argv[++i];
-          } else {
+          }
+          else {
             std::cerr << "error: no path to config given\n";
             usage(argc, argv);
           }
-        } else {
-          std::cerr << "error: invalid option\n";
-          usage(argc, argv);
         }
-      } else {
-        std::cerr << "error: invalid parameter\n";
-        usage(argc, argv);
       }
 
     utils::read_config(config_path, tree_);
