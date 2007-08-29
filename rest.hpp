@@ -164,14 +164,6 @@ private:
   response &operator=(response const &); //DUMMY
 };
 
-enum response_type {
-  GET = 1U,
-  PUT = 2U,
-  POST = 4U,
-  DELETE = 8U,
-  ALL = GET | PUT | POST | DELETE
-};
-
 enum keyword_type {
   NORMAL,
   COOKIE,
@@ -246,6 +238,14 @@ public:
 private:
   class impl;
   boost::scoped_ptr<impl> p;
+};
+
+enum response_type {
+  GET = 1U,
+  PUT = 2U,
+  POST = 4U,
+  DELETE = 8U,
+  ALL = GET | PUT | POST | DELETE
 };
 
 namespace detail {
