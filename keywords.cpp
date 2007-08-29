@@ -212,29 +212,6 @@ public:
     return it;
   }
 
-  void unread_header() {
-    for (data_t::iterator it = data.begin(); it != data.end(); ++it)
-      if (it->type == HEADER)
-        it->state = entry::s_unread;
-  }
-
-  data_t::iterator find_next_header(std::string const &name) {
-    data_t::iterator it;
-    
-    int i = 0;
-    for(;;) {
-      it = data.find(boost::make_tuple(name, i++));
-      if(it == data.end())
-        break;
-      if(it->type != HEADER)
-        return data.end();
-      if(it->state == entry::s_unread)
-        break;
-    }
-
-    return it;
-  }
-
   impl() : last(0) {}
 };
 
@@ -376,8 +353,6 @@ void keywords::add_uri_encoded(std::string const &data) {
 }
 
 void keywords::set_header_fields(std::map<std::string, std::string> const &f) {
-  p->unread_header();
-
   typedef std::map<std::string, std::string>::const_iterator iterator;
   iterator const end = f.end();
   for(iterator i = f.begin(); i != end; ++i) {
@@ -385,11 +360,11 @@ void keywords::set_header_fields(std::map<std::string, std::string> const &f) {
         // TODO handle Cookies (see RFC 2965)
       ;
 
-    impl::data_t::iterator di = p->find_next_header(i->first);
-    if(di != p->data.end()) {
-      di->state = impl::entry::s_prepared;
-      di->stream.reset();
-      di->data = i->second;
+    impl::data_t::iterator x = p->find(i->first, 0);
+    if (x != p->data.end() && x->type == HEADER) {
+      x->state = impl::entry::s_normal;
+      x->data = i->second;
+      x->stream.reset();
     }
   }
 }
