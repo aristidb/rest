@@ -5,8 +5,8 @@
 #include <sstream>
 #include <boost/iostreams/stream.hpp>
 
-struct welcomer : rest::responder<rest::GET> {
-  rest::response get(std::string const &, rest::keywords &data) {
+struct welcomer : rest::responder<rest::GET, void> {
+  rest::response get(rest::keywords &data) {
     rest::response response("text/plain");
     response.set_data(std::string("Welcome, ") + data["user"]);
     return response;

@@ -319,13 +319,24 @@ namespace detail {
         method(unpack<path_type>(path), kw).move(result); \
         return result; \
       } \
-    } \
+    }; \
+    template<> \
+    struct i_ ## method<void, true> : method ## _base { \
+    public: \
+      virtual response method(keywords &) = 0; \
+    private: \
+      response x_ ## method(any_path const &, keywords &kw) { \
+        response result(response::empty_tag()); \
+        method(kw).move(result); \
+        return result; \
+      } \
+    }; \
     /**/
 
-  REST_METHOD_DEFINITION(get);
-  REST_METHOD_DEFINITION(put);
-  REST_METHOD_DEFINITION(post);
-  REST_METHOD_DEFINITION(delete_);
+  REST_METHOD_DEFINITION(get)
+  REST_METHOD_DEFINITION(put)
+  REST_METHOD_DEFINITION(post)
+  REST_METHOD_DEFINITION(delete_)
 
   #undef REST_METHOD_DEFINITION
 }
@@ -378,6 +389,61 @@ private:
 
   std::string x_etag(detail::any_path const &path) const {
     return etag(detail::unpack<path_type>(path));
+  }
+
+private:
+  detail::get_base *x_getter() {
+    return (ResponseType & GET) ? (detail::get_base *) this : 0;
+  }
+  detail::put_base *x_putter() {
+    return (ResponseType & PUT) ? (detail::put_base *) this : 0;
+  }
+  detail::post_base *x_poster() {
+    return (ResponseType & POST) ? (detail::post_base *) this : 0;
+  }
+  detail::delete__base *x_deleter() {
+    return (ResponseType & DELETE) ? (detail::delete__base *) this : 0;
+  }
+};
+
+template<unsigned ResponseType>
+class responder<ResponseType, void>
+: public
+  detail::responder_base,
+  detail::i_get<void, ResponseType & GET>,
+  detail::i_put<void, ResponseType & PUT>,
+  detail::i_post<void, ResponseType & POST>,
+  detail::i_delete_<void, ResponseType & DELETE>
+{
+public:
+  static unsigned const flags = ResponseType;
+
+  responder &get_interface() { return *this; }
+
+protected:
+  virtual bool exists(keywords &) const {
+    return true;
+  }
+
+  virtual time_t last_modified(time_t) const {
+    return time_t(-1);
+  }
+
+  virtual std::string etag() const {
+    return std::string();
+  }
+
+private:
+  bool x_exists(detail::any_path const &, keywords &kw) const {
+    return exists(kw);
+  }
+
+  time_t x_last_modified(detail::any_path const &, time_t now) const {
+    return last_modified(now);
+  }
+
+  std::string x_etag(detail::any_path const &) const {
+    return etag();
   }
 
 private:
