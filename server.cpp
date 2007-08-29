@@ -308,12 +308,16 @@ namespace {
     int handle_modification_tags(
       time_t, std::string const &, std::string const &);
 
-    response handle_get(det::responder_base*, det::any_path const&, keywords&);
-    response handle_head(det::responder_base*, det::any_path const&, keywords&);
-    response handle_post(det::responder_base*, det::any_path const&, keywords&);
-    response handle_put(det::responder_base*, det::any_path const&, keywords&);
+    response handle_get(
+      det::responder_base*, det::any_path const&, keywords&, request const&);
+    response handle_head(
+      det::responder_base*, det::any_path const&, keywords&, request const&);
+    response handle_post(
+      det::responder_base*, det::any_path const&, keywords&, request const&);
+    response handle_put(
+      det::responder_base*, det::any_path const&, keywords&, request const&);
     response handle_delete(
-      det::responder_base*, det::any_path const&, keywords&);
+      det::responder_base*, det::any_path const&, keywords&, request const&);
   };
 
   typedef boost::function<
@@ -321,17 +325,18 @@ namespace {
       http_connection *,
       det::responder_base *,
       det::any_path const &,
-      keywords &
+      keywords &,
+      request const &
     )
   > method_handler;
 
   method_handler H(
       response (http_connection::*fun)(
-        det::responder_base *, det::any_path const &, keywords &
+        det::responder_base*, det::any_path const&, keywords&, request const&
       )
     )
   {
-    return boost::bind(fun, _1, _2, _3, _4);
+    return boost::bind(fun, _1, _2, _3, _4, _5);
   }
   typedef std::map<std::string, method_handler> method_handler_map;
 
@@ -754,6 +759,7 @@ void http_connection::handle_request(response &out)
       throw 404;
     context &global = h->get_context();
 
+    request req;
     keywords kw;
 
     det::any_path path_id;
@@ -783,7 +789,7 @@ void http_connection::handle_request(response &out)
       method_handler_map::const_iterator m = method_handlers.find(method);
       if (m == method_handlers.end())
         throw 501;
-      m->second(this, responder, path_id, kw).move(out);
+      m->second(this, responder, path_id, kw, req).move(out);
     } else {
       response(mod_code).move(out);
     }
@@ -865,16 +871,22 @@ int http_connection::handle_modification_tags(
 }
 
 response http_connection::handle_get(
-  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+  det::responder_base *responder,
+  det::any_path const &path_id,
+  keywords &kw,
+  request const &req)
 {
   det::get_base *getter = responder->x_getter();
   if (!getter || !responder->x_exists(path_id, kw))
     return response(404);
-  return getter->x_get(path_id, kw);
+  return getter->x_get(path_id, kw, req);
 }
 
 response http_connection::handle_head(
-  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+  det::responder_base *responder,
+  det::any_path const &path_id,
+  keywords &kw,
+  request const &req)
 {
   //TODO: better implementation
   flags.set(NO_ENTITY);
@@ -882,12 +894,15 @@ response http_connection::handle_head(
   if (!getter || !responder->x_exists(path_id, kw))
     return response(404);
 
-  return getter->x_get(path_id, kw);
+  return getter->x_get(path_id, kw, req);
 }
 
 
 response http_connection::handle_post(
-  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+  det::responder_base *responder,
+  det::any_path const &path_id,
+  keywords &kw,
+  request const &req)
 {
   det::post_base *poster = responder->x_poster();
   if (!poster || !responder->x_exists(path_id, kw))
@@ -897,11 +912,14 @@ response http_connection::handle_post(
   if (ret != 0)
     return response(ret);
 
-  return poster->x_post(path_id, kw);
+  return poster->x_post(path_id, kw, req);
 }
 
 response http_connection::handle_put(
-  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+  det::responder_base *responder,
+  det::any_path const &path_id,
+  keywords &kw,
+  request const &req)
 {
   det::put_base *putter = responder->x_putter();
   if (!putter)
@@ -911,16 +929,19 @@ response http_connection::handle_put(
   if(ret != 0)
     throw ret;
 
-  return putter->x_put(path_id, kw);
+  return putter->x_put(path_id, kw, req);
 }
 
 response http_connection::handle_delete(
-  det::responder_base *responder, det::any_path const &path_id, keywords &kw)
+  det::responder_base *responder,
+  det::any_path const &path_id,
+  keywords &kw,
+  request const &req)
 {
   det::delete__base *deleter = responder->x_deleter();
   if (!deleter || !responder->x_exists(path_id, kw))
     throw 404;
-  return deleter->x_delete_(path_id, kw);
+  return deleter->x_delete_(path_id, kw, req);
 }
 
 int http_connection::set_header_options() {

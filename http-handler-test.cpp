@@ -9,19 +9,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
-                                rest::POST> {
-  std::string etag(std::string const &path) const {
-    if (path == "/")
-      return "\"zxyl\"";
-    return "";
+struct tester : rest::responder<rest::ALL, void> {
+  std::string etag() const {
+    return "\"zxyl\"";
   }
 
-  time_t last_modified(std::string const &, time_t now) const {
+  time_t last_modified(time_t now) const {
     return now;
   }
 
-  rest::response get(std::string const &, rest::keywords &kw) {
+  rest::response get(rest::keywords &kw, rest::request const &) {
     rest::response resp("text/html");
     #if 1
     std::string r("<html><head><title>supi</title></head>\n"
@@ -49,14 +46,14 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
 
     return resp;
   }
-  rest::response put(std::string const &, rest::keywords &) {
+  rest::response put(rest::keywords &, rest::request const &) {
     rest::response ok(200);
     return ok;
   }
-  rest::response delete_(std::string const &, rest::keywords &) {
+  rest::response delete_(rest::keywords &, rest::request const &) {
     return rest::response(200);
   }
-  rest::response post(std::string const &, rest::keywords &kw) {
+  rest::response post(rest::keywords &kw, rest::request const &) {
     rest::response resp("text/plain");
 
     std::ostringstream out;

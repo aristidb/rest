@@ -240,6 +240,10 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
+//TODO
+class request {
+};
+
 enum response_type {
   GET = 1U,
   PUT = 2U,
@@ -276,19 +280,19 @@ namespace detail {
   };
 
   struct get_base {
-    virtual response x_get(any_path const &, keywords &) = 0;
+    virtual response x_get(any_path const &, keywords &, request const &)=0;
     virtual ~get_base() {}
   };
   struct put_base {
-    virtual response x_put(any_path const &, keywords &) = 0;
+    virtual response x_put(any_path const &, keywords &, request const &)=0;
     virtual ~put_base() {}
   };
   struct post_base {
-    virtual response x_post(any_path const &, keywords &) = 0;
+    virtual response x_post(any_path const &, keywords &, request const &)=0;
     virtual ~post_base() {}
   };
   struct delete__base {
-    virtual response x_delete_(any_path const &, keywords &) = 0;
+    virtual response x_delete_(any_path const &, keywords &, request const &)=0;
     virtual ~delete__base() {}
   };
 
@@ -312,22 +316,25 @@ namespace detail {
     struct i_ ## method<Path, true> : method ## _base { \
       typedef typename path_helper<Path>::path_parameter path_parameter; \
       typedef typename path_helper<Path>::path_type path_type; \
-      virtual response method(path_parameter, keywords &) = 0; \
+      virtual response method(path_parameter, keywords &, request const &)=0; \
     private: \
-      response x_ ## method(any_path const &path, keywords &kw) { \
+      response x_ ## method( \
+          any_path const &path, keywords &kw, request const &req) \
+      { \
         response result(response::empty_tag()); \
-        method(unpack<path_type>(path), kw).move(result); \
+        method(unpack<path_type>(path), kw, req).move(result); \
         return result; \
       } \
     }; \
     template<> \
     struct i_ ## method<void, true> : method ## _base { \
-    public: \
-      virtual response method(keywords &) = 0; \
+      virtual response method(keywords &, request const &) = 0; \
     private: \
-      response x_ ## method(any_path const &, keywords &kw) { \
+      response x_ ## method( \
+          any_path const &, keywords &kw, request const &req) \
+      { \
         response result(response::empty_tag()); \
-        method(kw).move(result); \
+        method(kw, req).move(result); \
         return result; \
       } \
     }; \

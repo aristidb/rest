@@ -6,7 +6,7 @@
 #include <boost/iostreams/stream.hpp>
 
 struct welcomer : rest::responder<rest::GET, void> {
-  rest::response get(rest::keywords &data) {
+  rest::response get(rest::keywords &data, rest::request const &) {
     rest::response response("text/plain");
     response.set_data(std::string("Welcome, ") + data["user"]);
     return response;
@@ -14,7 +14,8 @@ struct welcomer : rest::responder<rest::GET, void> {
 };
 
 struct displayer : rest::responder<rest::GET | rest::PUT> {
-  rest::response get(std::string const &path, rest::keywords &data) {
+  rest::response
+  get(std::string const &path, rest::keywords &data, rest::request const &) {
     if (path == "list") {
       // return a list of objects
       rest::response ok;
@@ -26,7 +27,8 @@ struct displayer : rest::responder<rest::GET | rest::PUT> {
       return ok;
     }
   }
-  rest::response put(std::string const &path, rest::keywords &) {
+  rest::response
+  put(std::string const &path, rest::keywords &, rest::request const &) {
     if (path == "list") {
       // error
       rest::response err(404);
@@ -42,7 +44,8 @@ struct displayer : rest::responder<rest::GET | rest::PUT> {
 enum mode { COOKIE, KEYWORD, KEYWORD_NOT };
 
 struct searcher : rest::responder<rest::GET, mode> {
-  rest::response get(mode path, rest::keywords &) {
+  rest::response
+  get(mode path, rest::keywords &, rest::request const &) {
     rest::response response("text/plain");
     if (path == COOKIE)
       response.set_data("Sorry, got no cookie thing!");
