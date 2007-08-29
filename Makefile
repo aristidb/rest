@@ -1,14 +1,17 @@
 CXX         := g++
 CXXSTDFLAGS := -pipe -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
-CXXDBGFLAGS := -g -ggdb -DDEBUG
-CXXOPTFLAGS := -O3 -DNDEBUG
+CXXDBGFLAGS := -g3 -ggdb3 -DDEBUG
+CXXOPTFLAGS := -O3 -DNDEBUG -Wno-unused
 LDFLAGS     := -static -L. -lrest -lboost_filesystem -lbz2 -lz
+AR          := ar
+ARFLAGS     := rcs
 BUILDDIR    := build
+override BUILDDIR := $(strip $(BUILDDIR))
 
 OS	    := $(shell uname)
 ifeq ($(OS), Darwin)
 LDFLAGS     := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem
-CXXOPTFLAGS := $(CXXOPTFLAGS) -mcpu=G4 -mtune=G4
+CXXOPTFLAGS := $(CXXOPTFLAGS) -fast -mcpu=G4 -mtune=G4
 CXXSTDFLAGS := $(CXXSTDFLAGS) -DAPPLE
 endif
 
@@ -42,8 +45,8 @@ all: $(BINARIES)
 
 rest: $(LIBREST)
 
-librest.a: $(LIBREST_OBJECTS) $(LIBREST_DEPS)
-	ar rcs librest.a $(LIBREST_OBJECTS)
+$(LIBREST): $(LIBREST_OBJECTS) $(LIBREST_DEPS)
+	$(AR) $(ARFLAGS) librest.a $(LIBREST_OBJECTS)
 
 http-handler-test: $(LIBREST) http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
 	$(CXX) $(CXXFLAGS) http-handler-test.cpp -o http-handler-test $(LDFLAGS)
