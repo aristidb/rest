@@ -21,10 +21,10 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     return now;
   }
 
-  rest::response get(std::string const &, rest::keywords &) {
+  rest::response get(std::string const &, rest::keywords &kw) {
     rest::response resp("text/html");
-    #if 0
-    resp.set_data("<html><head><title>supi</title></head>\n"
+    #if 1
+    std::string r("<html><head><title>supi</title></head>\n"
                   "<body>\n<h3>Allles Supi!!</h3>\n<blink>blink</blink>\n"
                   "<form name=\"input\" action=\"/\" "
                   "method=\"post\" "
@@ -36,12 +36,16 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
                   "<input name=\"datei\" type=\"file\" size=\"50\" "
                   "maxlength=\"100000\" accept=\"text/*\">\n"
                   "<input type=\"submit\" value=\"Submit\">\n"
-                  "</form>\n</body>\n</html>\n");
-    #endif
+                  "</form>\n<p>User Agent: &quot;");
+    r += kw["user-agent"];
+    r += "&quot;</p>\n</body>\n</html>\n";
+    resp.set_data(r);
+    #else
     resp.set_data(
       rest::input_stream(new std::ifstream("out.html.gz")),
       true,
       rest::response::gzip);
+    #endif
 
     return resp;
   }
@@ -70,7 +74,10 @@ struct tester : rest::responder<rest::GET | rest::PUT | rest::DELETE |
     out << "user: " << user << '\n';
 
     std::string file = kw["datei"];
-    out << "file (oh we read() it): " << file << std::endl;
+    out << "file (oh we read() it): " << file << '\n';
+
+    std::string uagent = kw["user-agent"];
+    out << "user agent: " << uagent << std::endl;
 
     resp.set_data(out.str());
     return resp;
@@ -88,6 +95,7 @@ int main(int argc, char **argv) {
     h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
     h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
     h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
+    h.get_context().declare_keyword("user-agent", rest::HEADER);
 
     rest::config &conf = rest::config::get();
     rest::utils::property_tree &tree = conf.tree();

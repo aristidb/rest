@@ -586,6 +586,8 @@ namespace {
 void server::serve() {
   utils::log(LOG_NOTICE, "server started");
 
+  utils::property_tree &tree = config::get().tree();
+
 #ifndef DEBUG
   if(::chroot(".") == -1) {
     if(errno != EPERM)
@@ -593,7 +595,6 @@ void server::serve() {
     else
       utils::log(LOG_WARNING, "could not chroot: insufficient permissions");
   }
-  utils::property_tree &tree = config::get().tree();
   drop_privileges(tree);
 
   if(::daemon(1, 1) == -1)
@@ -761,6 +762,8 @@ void http_connection::handle_request(response &out)
 
     if (!responder)
       throw 404;
+
+    kw.set_header_fields(header_fields);
 
     time_t now;
     std::time(&now);

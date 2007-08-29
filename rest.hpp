@@ -2,6 +2,7 @@
 #ifndef REST_HPP
 #define REST_HPP
 
+#include <map>
 #include <string>
 #include <vector>
 #include <iosfwd>
@@ -175,6 +176,7 @@ enum keyword_type {
   NORMAL,
   COOKIE,
   FORM_PARAMETER,
+  HEADER,
   NONE = -1
 };
 
@@ -239,6 +241,8 @@ public:
 
   void add_uri_encoded(std::string const &data);
 
+  // TODO this should be utils::http::header_fields
+  void set_header_fields(std::map<std::string, std::string> const &fields);
 private:
   class impl;
   boost::scoped_ptr<impl> p;
