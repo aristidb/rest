@@ -1,0 +1,9 @@
+Big To Do File:
+
+* adding keyword support for http-headers
+* adding keyword support for cookies
+
+* find bugs
+* benchmark/profile
+* improve code quality
+* more unit tests
