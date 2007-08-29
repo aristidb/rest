@@ -275,28 +275,28 @@ namespace detail {
       path_parameter;
   };
 
-  struct getter_base {
+  struct get_base {
     virtual response x_get(any_path const &, keywords &) = 0;
-    virtual ~getter_base() {}
+    virtual ~get_base() {}
   };
-  struct putter_base {
+  struct put_base {
     virtual response x_put(any_path const &, keywords &) = 0;
-    virtual ~putter_base() {}
+    virtual ~put_base() {}
   };
-  struct poster_base {
+  struct post_base {
     virtual response x_post(any_path const &, keywords &) = 0;
-    virtual ~poster_base() {}
+    virtual ~post_base() {}
   };
-  struct deleter_base {
-    virtual response x_delete(any_path const &, keywords &) = 0;
-    virtual ~deleter_base() {}
+  struct delete__base {
+    virtual response x_delete_(any_path const &, keywords &) = 0;
+    virtual ~delete__base() {}
   };
 
   struct responder_base {
-    virtual getter_base *x_getter() = 0;
-    virtual putter_base *x_putter() = 0;
-    virtual poster_base *x_poster() = 0;
-    virtual deleter_base *x_deleter() = 0;
+    virtual get_base *x_getter() = 0;
+    virtual put_base *x_putter() = 0;
+    virtual post_base *x_poster() = 0;
+    virtual delete__base *x_deleter() = 0;
 
     virtual bool x_exists(any_path const &, keywords &) const = 0;
 
@@ -306,59 +306,28 @@ namespace detail {
     virtual ~responder_base() {}
   };
 
-  template<typename, bool> struct getter {};
-  template<typename, bool> struct putter {};
-  template<typename, bool> struct poster {};
-  template<typename, bool> struct deleter {};
+  #define REST_METHOD_DEFINITION(method) \
+    template<typename, bool> struct i_ ## method {}; \
+    template<typename Path> \
+    struct i_ ## method<Path, true> : method ## _base { \
+      typedef typename path_helper<Path>::path_parameter path_parameter; \
+      typedef typename path_helper<Path>::path_type path_type; \
+      virtual response method(path_parameter, keywords &) = 0; \
+    private: \
+      response x_ ## method(any_path const &path, keywords &kw) { \
+        response result(response::empty_tag()); \
+        method(unpack<path_type>(path), kw).move(result); \
+        return result; \
+      } \
+    } \
+    /**/
 
-  template<typename Path>
-  struct getter<Path, true> : getter_base {
-    typedef typename path_helper<Path>::path_parameter path_parameter;
-    typedef typename path_helper<Path>::path_type path_type;
-    virtual response get(path_parameter, keywords &) = 0;
-  private:
-    response x_get(any_path const &path, keywords &kw) {
-      response result(response::empty_tag());
-      get(unpack<path_type>(path), kw).move(result);
-      return result;
-    }
-  };
-  template<typename Path>
-  struct putter<Path, true> : putter_base {
-    typedef typename path_helper<Path>::path_parameter path_parameter;
-    typedef typename path_helper<Path>::path_type path_type;
-    virtual response put(path_parameter, keywords &) = 0;
-  private:
-    response x_put(any_path const &path, keywords &kw) {
-      response result(response::empty_tag());
-      put(unpack<path_type>(path), kw).move(result);
-      return result;
-    }
-  };
-  template<typename Path>
-  struct poster<Path, true> : poster_base{
-    typedef typename path_helper<Path>::path_parameter path_parameter;
-    typedef typename path_helper<Path>::path_type path_type;
-    virtual response post(path_parameter, keywords &) = 0;
-  private:
-    response x_post(any_path const &path, keywords &kw) {
-      response result(response::empty_tag());
-      post(unpack<path_type>(path), kw).move(result);
-      return result;
-    }
-  };
-  template<typename Path>
-  struct deleter<Path, true> : deleter_base {
-    typedef typename path_helper<Path>::path_parameter path_parameter;
-    typedef typename path_helper<Path>::path_type path_type;
-    virtual response delete_(path_parameter, keywords &) = 0;
-  private:
-    response x_delete(any_path const &path, keywords &kw) {
-      response result(response::empty_tag());
-      delete_(unpack<path_type>(path), kw).move(result);
-      return result;
-    }
-  };
+  REST_METHOD_DEFINITION(get);
+  REST_METHOD_DEFINITION(put);
+  REST_METHOD_DEFINITION(post);
+  REST_METHOD_DEFINITION(delete_);
+
+  #undef REST_METHOD_DEFINITION
 }
 
 template<
@@ -368,10 +337,10 @@ template<
 class responder 
 : public
   detail::responder_base,
-  detail::getter<Path, ResponseType & GET>,
-  detail::putter<Path, ResponseType & PUT>,
-  detail::poster<Path, ResponseType & POST>,
-  detail::deleter<Path, ResponseType & DELETE>
+  detail::i_get<Path, ResponseType & GET>,
+  detail::i_put<Path, ResponseType & PUT>,
+  detail::i_post<Path, ResponseType & POST>,
+  detail::i_delete_<Path, ResponseType & DELETE>
 {
 public:
   static unsigned const flags = ResponseType;
@@ -412,17 +381,17 @@ private:
   }
 
 private:
-  detail::getter_base *x_getter() {
-    return (ResponseType & GET) ? (detail::getter_base *) this : 0;
+  detail::get_base *x_getter() {
+    return (ResponseType & GET) ? (detail::get_base *) this : 0;
   }
-  detail::putter_base *x_putter() {
-    return (ResponseType & PUT) ? (detail::putter_base *) this : 0;
+  detail::put_base *x_putter() {
+    return (ResponseType & PUT) ? (detail::put_base *) this : 0;
   }
-  detail::poster_base *x_poster() {
-    return (ResponseType & POST) ? (detail::poster_base *) this : 0;
+  detail::post_base *x_poster() {
+    return (ResponseType & POST) ? (detail::post_base *) this : 0;
   }
-  detail::deleter_base *x_deleter() {
-    return (ResponseType & DELETE) ? (detail::deleter_base *) this : 0;
+  detail::delete__base *x_deleter() {
+    return (ResponseType & DELETE) ? (detail::delete__base *) this : 0;
   }
 };
 

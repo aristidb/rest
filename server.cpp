@@ -867,7 +867,7 @@ int http_connection::handle_modification_tags(
 response http_connection::handle_get(
   det::responder_base *responder, det::any_path const &path_id, keywords &kw)
 {
-  det::getter_base *getter = responder->x_getter();
+  det::get_base *getter = responder->x_getter();
   if (!getter || !responder->x_exists(path_id, kw))
     return response(404);
   return getter->x_get(path_id, kw);
@@ -878,7 +878,7 @@ response http_connection::handle_head(
 {
   //TODO: better implementation
   flags.set(NO_ENTITY);
-  det::getter_base *getter = responder->x_getter();
+  det::get_base *getter = responder->x_getter();
   if (!getter || !responder->x_exists(path_id, kw))
     return response(404);
 
@@ -889,7 +889,7 @@ response http_connection::handle_head(
 response http_connection::handle_post(
   det::responder_base *responder, det::any_path const &path_id, keywords &kw)
 {
-  det::poster_base *poster = responder->x_poster();
+  det::post_base *poster = responder->x_poster();
   if (!poster || !responder->x_exists(path_id, kw))
     return response(404);
 
@@ -903,7 +903,7 @@ response http_connection::handle_post(
 response http_connection::handle_put(
   det::responder_base *responder, det::any_path const &path_id, keywords &kw)
 {
-  det::putter_base *putter = responder->x_putter();
+  det::put_base *putter = responder->x_putter();
   if (!putter)
     throw 404;
 
@@ -917,10 +917,10 @@ response http_connection::handle_put(
 response http_connection::handle_delete(
   det::responder_base *responder, det::any_path const &path_id, keywords &kw)
 {
-  det::deleter_base *deleter = responder->x_deleter();
+  det::delete__base *deleter = responder->x_deleter();
   if (!deleter || !responder->x_exists(path_id, kw))
     throw 404;
-  return deleter->x_delete(path_id, kw);
+  return deleter->x_delete_(path_id, kw);
 }
 
 int http_connection::set_header_options() {
