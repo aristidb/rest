@@ -83,8 +83,11 @@ public:
 
   data_t::iterator find(std::string const &keyword, int index) {
     data_t::iterator it = data.find(boost::make_tuple(keyword, index));
-    if (it == data.end())
-      throw std::logic_error("invalid keyword");
+    if (it == data.end()) {
+      std::ostringstream x;
+      x << "invalid keyword (" << keyword << ',' << index << ')';
+      throw std::logic_error(x.str());
+    }
     return it;
   }
 
@@ -242,8 +245,11 @@ void keywords::declare(
 {
   impl::data_t::iterator it =
     p->data.insert(impl::entry(keyword, index, type)).first;
-  if (it->type != type)
-    throw std::logic_error("inconsistent type");
+  if (it->type != type) {
+    std::ostringstream x;
+    x << "inconsistent keyword type (" << keyword << ',' << index << ')';
+    throw std::logic_error(x.str());
+  }
 }
 
 keyword_type keywords::get_declared_type(
@@ -360,7 +366,7 @@ void keywords::set_header_fields(std::map<std::string, std::string> const &f) {
         // TODO handle Cookies (see RFC 2965)
       ;
 
-    impl::data_t::iterator x = p->find(i->first, 0);
+    impl::data_t::iterator x = p->data.find(boost::make_tuple(i->first, 0));
     if (x != p->data.end() && x->type == HEADER) {
       x->state = impl::entry::s_normal;
       x->data = i->second;
