@@ -26,6 +26,7 @@ struct tester : rest::responder<rest::ALL, void> {
                   "<form name=\"input\" action=\"/\" "
                   "method=\"post\" "
                   "enctype=\"multipart/form-data\" "
+                  "accept-charset=\"ISO-8859-1\" "
                   ">\n"
                   "<input type=\"text\" name=\"user\">\n"
                   "<input type=\"text\" name=\"bar\">\n"
