@@ -236,7 +236,8 @@ response::choose_content_encoding(
       return *it;
   if (p->data[identity].type == impl::data_holder::NIL)
     return identity;
-  if (!may_chunk)
+  std::size_t length = p->data[identity].length();
+  if (length != 0 && length <= 10000)
     return identity;
   return encodings[0];
 }
