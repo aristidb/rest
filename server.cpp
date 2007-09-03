@@ -292,7 +292,7 @@ namespace {
       encodings.clear();
     }
 
-    void handle_request(response &o);
+    response handle_request();
     int handle_entity(keywords &kw);
 
     void send(response r, bool entity);
@@ -702,9 +702,9 @@ void http_connection::serve() {
   try {
     while (open()) {
       reset();
-      response r(response::empty_tag());
-      handle_request(r);
-      send(r);
+      response resp(handle_request());
+      header_fields.clear();
+      send(resp);
     }
   }
   catch (utils::http::remote_close&) {
@@ -724,8 +724,7 @@ namespace {
   }
 }
 
-void http_connection::handle_request(response &out)
-{
+response http_connection::handle_request() {
   try {
     std::string method, uri, version;
     boost::tie(method, uri, version) = utils::http::get_request_line(conn);
@@ -735,19 +734,18 @@ void http_connection::handle_request(response &out)
 
     assure_relative_uri(uri);
 
-    if(version == "HTTP/1.0") {
+    if (version == "HTTP/1.0") {
       flags.set(HTTP_1_0_COMPAT);
       open_ = false;
-    }
-    else if(version != "HTTP/1.1") {
-      throw 505; // HTTP Version not Supported
+    } else if (version != "HTTP/1.1") {
+      return response(505);
     }
 
     header_fields = utils::http::read_headers(conn);
 
     int ret = set_header_options();
-    if(ret != 200)
-      throw ret;
+    if (ret != 0)
+      return response(ret);
 
     utils::http::header_fields::const_iterator host_header = 
       header_fields.find("host");
@@ -755,8 +753,9 @@ void http_connection::handle_request(response &out)
       throw utils::http::bad_format();
 
     host const *h = sock.get_host(host_header->second);
-    if(!h)
-      throw 404;
+    if (!h)
+      return response(404);
+
     context &global = h->get_context();
 
     request req;
@@ -768,7 +767,7 @@ void http_connection::handle_request(response &out)
     global.find_responder(uri, path_id, responder, local, kw);
 
     if (!responder)
-      throw 404;
+      return response(404);
 
     kw.set_header_fields(header_fields);
 
@@ -781,14 +780,16 @@ void http_connection::handle_request(response &out)
     std::string etag = responder->x_etag(path_id);
 
     int mod_code = handle_modification_tags(
-        last_modified == time_t(-1) ? now : last_modified,
-        etag,
-        method);
+          last_modified == time_t(-1) ? now : last_modified,
+          etag,
+          method);
+
+    response out(response::empty_tag());
 
     if (!mod_code) {
       method_handler_map::const_iterator m = method_handlers.find(method);
       if (m == method_handlers.end())
-        throw 501;
+        return response(501);
       m->second(this, responder, path_id, kw, req).move(out);
     } else {
       response(mod_code).move(out);
@@ -801,17 +802,11 @@ void http_connection::handle_request(response &out)
           utils::http::datetime_string(last_modified));
     if (!etag.empty())
       out.set_header("ETag", etag);
+
+    return out;
   } catch (utils::http::bad_format &) {
-    response(400).move(out); // Bad Request
-  } catch (int i) {
-    response(i).move(out);
+    return response(400);
   }
-
-  //TODO: instead of clearing the whole header structure, delete all analyzed
-  //      headers and explicitly delete ignored headers
-  //      - warn about unhandled headers (maybe even give a 400 or so?)
-
-  header_fields.clear();
 }
 
 int http_connection::handle_modification_tags(
@@ -923,11 +918,11 @@ response http_connection::handle_put(
 {
   det::put_base *putter = responder->x_putter();
   if (!putter)
-    throw 404;
+    return response(404);
 
   int ret = handle_entity(kw);
   if(ret != 0)
-    throw ret;
+    return response(ret);
 
   return putter->x_put(path_id, kw, req);
 }
@@ -940,7 +935,7 @@ response http_connection::handle_delete(
 {
   det::delete__base *deleter = responder->x_deleter();
   if (!deleter || !responder->x_exists(path_id, kw))
-    throw 404;
+    return response(404);
   return deleter->x_delete_(path_id, kw, req);
 }
 
@@ -991,7 +986,7 @@ int http_connection::set_header_options() {
     }
   }
 
-  return 200;
+  return 0;
 }
 
 namespace {
