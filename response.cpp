@@ -45,6 +45,8 @@ struct response::impl {
   std::string type;
   typedef std::map<std::string, std::string> header_map;
   header_map header;
+  typedef std::vector<cookie> cookie_vector;
+  cookie_vector cookies;
 
   struct data_holder {
     enum { NIL, STRING, STREAM } type;
@@ -179,6 +181,10 @@ void response::add_header_part(
   }
 }
 
+void response::add_cookie(cookie const &c) {
+  p->cookies.push_back(c);
+}
+
 void response::set_data(
     input_stream &data, bool seekable, content_encoding_t content_encoding)
 {
@@ -256,11 +262,85 @@ std::size_t response::length(content_encoding_t enc) const {
   return p->data[enc].length();
 }
 
+namespace {
+  // Set-Cookie2:
+  void print_cookie2(std::ostream &out, rest::cookie const &c, bool first) {
+    // Set-Cookie2 [see RFC 2965]
+    if(first)
+      out << "Set-Cookie2: ";
+    else
+      out << ',';
+    out << c.name << "=\"" << c.value << "\";Version=\"1\"";
+    if(!c.comment.empty())
+      out << ";Comment=\"" << c.comment << '"';
+    if(!c.comment_url.empty())
+      out << ";CommentURL=\"" << c.comment_url << '"';
+    if(c.discard)
+      out << ";Discard";
+    if(!c.domain.empty())
+      out << ";Domain=\"" << c.domain << '"';
+    if(c.max_age >= 0)
+      out << ";Max-Age=\"" << c.max_age << '"';
+    if(!c.path.empty())
+      out << ";Path=\"" << c.path << '"';
+    if(!c.ports.empty()) {
+      out << ";Ports=\"";
+      typedef rest::cookie::port_list::const_iterator port_iterator;
+      port_iterator const end = c.ports.end();
+      port_iterator const begin = c.ports.begin();
+      for(port_iterator j = begin; j != end; ++j) {
+        if(j != begin)
+          out << ',';
+        out << *j;
+      }
+      out << '"';
+    }
+    if(c.secure)
+      out << ";Secure";
+    out << "\r\n";
+  }
+
+  void print_cookie(std::ostream &out, rest::cookie const &c) {
+    // Set-Cookie [see Netscape Spec
+    //             http://wp.netscape.com/newsref/std/cookie_spec.html ]
+
+    out << "Set-Cookie: " << c.name << '=' << c.value;
+    if(c.max_age >= 0)
+      out << ";expires="
+          << rest::utils::http::datetime_string(std::time(0x0) + c.max_age);
+    if(!c.domain.empty())
+      out << ";domain=" << c.domain;
+    if(!c.path.empty())
+      out << ";path=" << c.path;
+    if(c.secure)
+      out << ";secure";
+    out << "\r\n";
+  }
+}
+
+void response::print_cookie_header(std::ostream &out) const {
+  std::ostringstream out1;
+
+  typedef impl::cookie_vector::const_iterator cookie_iterator;
+  cookie_iterator const begin = p->cookies.begin();
+  cookie_iterator const end = p->cookies.end();
+  for(cookie_iterator i = begin; i != end; ++i) {
+    print_cookie2(out, *i, i == begin);
+    print_cookie(out1, *i);
+  }
+  out << out1.str();
+
+  /* To Do:
+     * Should we set a cache controll header per default?
+   */
+}
+
 void response::print_headers(std::ostream &out) const {
   for (impl::header_map::const_iterator it = p->header.begin();
       it != p->header.end();
       ++it)
     out << it->first << ": " << it->second << "\r\n";
+  print_cookie_header(out);
   out << "\r\n";
 }
 

@@ -2,6 +2,7 @@ Big To Do File:
 
 * adding keyword support for http-headers
 * adding keyword support for cookies
+* change or extend Log-Format (Apache Logs?)
 
 * find bugs
 * benchmark/profile

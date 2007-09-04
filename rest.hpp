@@ -96,6 +96,28 @@ private:
   output_stream &operator=(output_stream const &); //DUMMY
 };
 
+struct cookie {
+  std::string name;
+  std::string value;
+
+  std::string comment;
+  std::string comment_url;
+  bool discard;
+  std::string domain;
+  int max_age;
+  std::string path;
+  typedef std::vector<unsigned short> port_list;
+  port_list ports;
+  bool secure;
+
+  cookie(std::string const &name, std::string const &value,
+         int max_age = -1, std::string const &path = "",
+         std::string const &domain = "")
+    : name(name), value(value), discard(false), domain(domain),
+      max_age(max_age), path(path), secure(false)
+  { }
+};
+
 /*
  * TODO:
  * - multi-chunk output
@@ -123,6 +145,8 @@ public:
   void set_type(std::string const &type);
   void set_header(std::string const &name, std::string const &value);
   void add_header_part(std::string const &name, std::string const &value);
+
+  void add_cookie(cookie const &c);
 
   enum content_encoding_t {
     identity,
@@ -155,6 +179,7 @@ public:
     std::ostream &out, content_encoding_t enc, bool may_chunk) const;
 
 private:
+  void print_cookie_header(std::ostream &out) const;
   void encode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
   void decode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
 

@@ -20,6 +20,7 @@ struct tester : rest::responder<rest::ALL, void> {
 
   rest::response get(rest::keywords &kw, rest::request const &) {
     rest::response resp("text/html");
+    resp.add_cookie(rest::cookie("hello", "world"));
     #if 1
     std::string r("<html><head><title>supi</title></head>\n"
                   "<body>\n<h3>Allles Supi!!</h3>\n<blink>blink</blink>\n"
@@ -77,6 +78,9 @@ struct tester : rest::responder<rest::ALL, void> {
     std::string uagent = kw["user-agent"];
     out << "user agent: " << uagent << std::endl;
 
+    std::string cookie = kw["cookie"];
+    out << "cookie: " << cookie << std::endl;
+
     resp.set_data(out.str());
     return resp;
   }
@@ -94,6 +98,7 @@ int main(int argc, char **argv) {
     h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
     h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
     h.get_context().declare_keyword("user-agent", rest::HEADER);
+    h.get_context().declare_keyword("cookie", rest::HEADER);
 
     rest::config &conf = rest::config::get();
     rest::utils::property_tree &tree = conf.tree();
