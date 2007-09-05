@@ -1,7 +1,10 @@
 Big To Do File:
 
+* real request-object support
+
 * adding keyword support for http-headers
 * adding keyword support for cookies
+* HttpOnly support for cookies?
 * change or extend Log-Format (Apache Logs?)
 
 * find bugs
