@@ -168,7 +168,7 @@ public:
   bool has_content_encoding(content_encoding_t content_encoding) const;
 
   content_encoding_t choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings, bool may_chunk) const;
+    std::vector<content_encoding_t> const &encodings) const;
 
   bool empty(content_encoding_t content_encoding) const;
   bool chunked(content_encoding_t content_encoding) const;

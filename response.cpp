@@ -11,6 +11,9 @@
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/null.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/key_extractors.hpp>
 #include <map>
 #include <cassert>
 
@@ -45,8 +48,16 @@ struct response::impl {
   std::string type;
   typedef std::map<std::string, std::string> header_map;
   header_map header;
-  typedef std::vector<cookie> cookie_vector;
-  cookie_vector cookies;
+
+  typedef boost::multi_index_container<
+      cookie,
+      boost::multi_index::indexed_by<
+        boost::multi_index::hashed_unique<
+          boost::multi_index::member<cookie, std::string, &cookie::name>
+        >
+      >
+    > cookie_set;
+  cookie_set cookies;
 
   struct data_holder {
     enum { NIL, STRING, STREAM } type;
@@ -182,7 +193,8 @@ void response::add_header_part(
 }
 
 void response::add_cookie(cookie const &c) {
-  p->cookies.push_back(c);
+  p->cookies.erase(c.name);
+  p->cookies.insert(c);
 }
 
 void response::set_data(
@@ -230,8 +242,7 @@ bool response::has_content_encoding(content_encoding_t content_encoding) const {
 
 response::content_encoding_t
 response::choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings,
-    bool may_chunk
+    std::vector<content_encoding_t> const &encodings
   ) const
 {
   if (encodings.empty() || empty(identity))
@@ -321,7 +332,7 @@ namespace {
 void response::print_cookie_header(std::ostream &out) const {
   std::ostringstream out1;
 
-  typedef impl::cookie_vector::const_iterator cookie_iterator;
+  typedef impl::cookie_set::const_iterator cookie_iterator;
   cookie_iterator const begin = p->cookies.begin();
   cookie_iterator const end = p->cookies.end();
   for(cookie_iterator i = begin; i != end; ++i) {
@@ -329,13 +340,12 @@ void response::print_cookie_header(std::ostream &out) const {
     print_cookie(out1, *i);
   }
   out << out1.str();
-
-  /* To Do:
-     * Should we set a cache controll header per default?
-   */
 }
 
 void response::print_headers(std::ostream &out) const {
+  /* TODO:
+     Should we set a cache control header per default?
+   */
   for (impl::header_map::const_iterator it = p->header.begin();
       it != p->header.end();
       ++it)

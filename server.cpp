@@ -1164,8 +1164,7 @@ void http_connection::send(response r, bool entity) {
   if (entity) {
     bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
 
-    response::content_encoding_t enc = 
-        r.choose_content_encoding(encodings, may_chunk);
+    response::content_encoding_t enc = r.choose_content_encoding(encodings);
 
     switch (enc) {
     case response::gzip:
