@@ -209,57 +209,51 @@ public:
   }
 
   std::string &access(std::string const &key, int index = 0);
-
-  std::string &operator[](std::string const &key) {
-    return access(key);
-  }
-
   std::istream &read(std::string const &key, int index = 0);
 
   std::string get_name(std::string const &key, int index = 0) const;
 
   void declare(std::string const &key, int index, keyword_type type);
+  keyword_type get_declared_type(std::string const &key, int index = 0) const;
+
+  void set(std::string const &key, int index, std::string const &value);
+  void set_stream(std::string const &key, int index, input_stream &stream);
+  void set_name(std::string const &key, int index, std::string const &name);
+  void set_output(std::string const &key, int index, output_stream &output);
+
+  void flush();
+
+  void set_entity(std::auto_ptr<std::istream> &entity, std::string const &type);
+  void add_uri_encoded(std::string const &data);
+
+  // TODO this should be utils::http::header_fields
+  void set_header_fields(std::map<std::string, std::string> const &fields);
+
+public:
+  std::string &operator[](std::string const &key) {
+    return access(key);
+  }
 
   void declare(std::string const &key, keyword_type type) {
     declare(key, 0, type);
   }
 
-  keyword_type get_declared_type(std::string const &key, int index = 0) const;
-
   void set(std::string const &key, std::string const &value) {
     return set(key, 0, value);
   }
 
-  void set(std::string const &key, int index, std::string const &value);
-
   void set_stream(std::string const &key, input_stream &value) {
     return set_stream(key, 0, value);
   }
-
-  void set_stream(
-      std::string const &key, int index, input_stream &stream);
-
+  
   void set_name(std::string const &key, std::string const &value) {
     set_name(key, 0, value);
   }
-
-  void set_name(std::string const &key, int index, std::string const &name);
 
   void set_output(std::string const &key, output_stream &stream) {
     set_output(key, 0, stream);
   }
 
-  void set_output(
-      std::string const &key, int index, output_stream &output);
-
-  void flush();
-
-  void set_entity(std::auto_ptr<std::istream> &entity, std::string const &type);
-
-  void add_uri_encoded(std::string const &data);
-
-  // TODO this should be utils::http::header_fields
-  void set_header_fields(std::map<std::string, std::string> const &fields);
 private:
   class impl;
   boost::scoped_ptr<impl> p;
