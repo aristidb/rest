@@ -271,7 +271,8 @@ namespace {
     typedef std::bitset<X_NO_FLAG> state_flags;
     state_flags flags;
     std::vector<response::content_encoding_t> encodings;
-    utils::http::header_fields header_fields;
+
+    request request_;
 
   public:
     http_connection(server::socket_param const &sock, int connfd,
@@ -703,7 +704,7 @@ void http_connection::serve() {
     while (open()) {
       reset();
       response resp(handle_request());
-      header_fields.clear();
+      request_.clear();
       send(resp);
     }
   }
@@ -741,18 +742,17 @@ response http_connection::handle_request() {
       return response(505);
     }
 
-    header_fields = utils::http::read_headers(conn);
+    request_.read_headers(conn);
 
     int ret = set_header_options();
     if (ret != 0)
       return response(ret);
 
-    utils::http::header_fields::const_iterator host_header = 
-      header_fields.find("host");
-    if (host_header == header_fields.end())
+    boost::optional<std::string> host_header = request_.get_header("host");
+    if (!host_header)
       throw utils::http::bad_format();
 
-    host const *h = sock.get_host(host_header->second);
+    host const *h = sock.get_host(host_header.get());
     if (!h)
       return response(404);
 
@@ -769,7 +769,7 @@ response http_connection::handle_request() {
     if (!responder)
       return response(404);
 
-    kw.set_header_fields(header_fields);
+    //TODO: set header fields in keywords
 
     time_t now;
     std::time(&now);
@@ -812,54 +812,54 @@ response http_connection::handle_request() {
 int http_connection::handle_modification_tags(
   time_t last_modified, std::string const &etag, std::string const &method)
 {
-  utils::http::header_fields::iterator it;
-  it = header_fields.find("if-modified-since");
-  if (it != header_fields.end()) {
-    time_t if_modified_since = utils::http::datetime_value(it->second);
+  boost::optional<std::string> el;
+  el = request_.get_header("if-modified-since");
+  if (el) {
+    time_t if_modified_since = utils::http::datetime_value(el.get());
     if (if_modified_since >= last_modified)
       return 304;
   }
-  it = header_fields.find("if-unmodified-since");
-  if (it != header_fields.end()) {
-    time_t if_unmodified_since = utils::http::datetime_value(it->second);
+  el = request_.get_header("if-unmodified-since");
+  if (el) {
+    time_t if_unmodified_since = utils::http::datetime_value(el.get());
     if (if_unmodified_since < last_modified)
       return 412;
   }
-  it = header_fields.find("if-match");
-  if (it != header_fields.end()) {
-    if (it->second == "*") {
+  el = request_.get_header("if-match");
+  if (el) {
+    if (el.get() == "*") {
       if (etag.empty())
         return 412;
     } else {
       std::vector<std::string> if_match;
-      utils::http::parse_list(it->second, if_match);
+      utils::http::parse_list(el.get(), if_match);
       if (std::find(if_match.begin(), if_match.end(), etag) == if_match.end())
         return 412;
     }
   }
-  it = header_fields.find("if-none-match");
-  if (it != header_fields.end()) {
+  el = request_.get_header("if-none-match");
+  if (el) {
     int const fail = (method == "GET" || method == "HEAD") ? 304 : 412;
-    if (it->second == "*") {
+    if (el.get() == "*") {
       if (!etag.empty())
         return fail;
     } else {
       std::vector<std::string> if_none_match;
-      utils::http::parse_list(it->second, if_none_match);
+      utils::http::parse_list(el.get(), if_none_match);
       if (std::find(if_none_match.begin(), if_none_match.end(), etag) !=
           if_none_match.end())
         return fail;
     }
   }
-  it = header_fields.find("if-range");
-  if (it != header_fields.end()) {
-    time_t v = utils::http::datetime_value(it->second);
+  el = request_.get_header("if-range");
+  if (el) {
+    time_t v = utils::http::datetime_value(el.get());
     if (v == time_t(-1)) {
-      if (it->second != etag) 
-        header_fields.erase("range");
+      if (el.get() != etag) 
+        request_.erase_header("range");
     } else {
       if (v <= last_modified)
-        header_fields.erase("range");
+        request_.erase_header("range");
     }
   }
   return 0;
@@ -940,11 +940,11 @@ response http_connection::handle_delete(
 }
 
 int http_connection::set_header_options() {
-  utils::http::header_fields::iterator connect_header =
-    header_fields.find("connection");
-  if (connect_header != header_fields.end()) {
+  boost::optional<std::string> connect_header =
+    request_.get_header("connection");
+  if (connect_header) {
     std::vector<std::string> tokens;
-    utils::http::parse_list(connect_header->second, tokens);
+    utils::http::parse_list(connect_header.get(), tokens);
     for (std::vector<std::string>::iterator it = tokens.begin();
         it != tokens.end();
         ++it) {
@@ -952,14 +952,17 @@ int http_connection::set_header_options() {
       if (*it == "close")
         open_ = false;
       if (flags.test(HTTP_1_0_COMPAT))
-        header_fields.erase(*it);
+        request_.erase_header(*it);
     }
   }
 
   typedef std::multimap<int, std::string> qlist_t;
 
   qlist_t qlist;
-  utils::http::parse_qlist(header_fields["accept-encoding"], qlist);
+  boost::optional<std::string> accept_encoding =
+    request_.get_header("accept-encoding");
+  if (accept_encoding)
+    utils::http::parse_qlist(accept_encoding.get(), qlist);
 
   qlist_t::const_reverse_iterator const rend = qlist.rend();
   bool found = false;
@@ -1024,37 +1027,37 @@ namespace {
 int http_connection::handle_entity(keywords &kw) {
   pop_filt_stream fin;
 
-  utils::http::header_fields::iterator content_encoding =
-    header_fields.find("content-encoding");
+  boost::optional<std::string> content_encoding =
+    request_.get_header("content-encoding");
 
-  if (content_encoding != header_fields.end()) {
+  if (content_encoding) {
     std::vector<std::string> ce;
-    utils::http::parse_list(content_encoding->second, ce);
+    utils::http::parse_list(content_encoding.get(), ce);
     for (std::vector<std::string>::iterator it = ce.begin();
         it != ce.end();
         ++it)
     {
-      if (algo::iequals(content_encoding->second, "gzip") ||
+      if (algo::iequals(content_encoding.get(), "gzip") ||
            (flags.test(HTTP_1_0_COMPAT) &&
-             algo::iequals(content_encoding->second, "x-gzip")))
+             algo::iequals(content_encoding.get(), "x-gzip")))
         fin.filt().push(io::gzip_decompressor());
-      else if (algo::iequals(content_encoding->second, "bzip2"))
+      else if (algo::iequals(content_encoding.get(), "bzip2"))
         fin.filt().push(io::bzip2_decompressor());
-      else if (algo::iequals(content_encoding->second, "deflate"))
+      else if (algo::iequals(content_encoding.get(), "deflate"))
         fin.filt().push(io::zlib_decompressor());
-      else if (!algo::iequals(content_encoding->second, "identity"))
+      else if (!algo::iequals(content_encoding.get(), "identity"))
         return 415;
     }
   }
 
-  utils::http::header_fields::iterator transfer_encoding =
-    header_fields.find("transfer-encoding");
+  boost::optional<std::string> transfer_encoding =
+    request_.get_header("transfer-encoding");
 
   bool chunked = false;
 
-  if(transfer_encoding != header_fields.end()) {
+  if(transfer_encoding) {
     std::vector<std::string> te;
-    utils::http::parse_list(transfer_encoding->second, te);
+    utils::http::parse_list(transfer_encoding.get(), te);
     for (std::vector<std::string>::iterator it = te.begin();
         it != te.end();
         ++it)
@@ -1074,21 +1077,21 @@ int http_connection::handle_entity(keywords &kw) {
     }
   }
 
-  utils::http::header_fields::iterator content_length =
-    header_fields.find("content-length");
+  boost::optional<std::string> content_length =
+    request_.get_header("content-length");
 
-  if(content_length == header_fields.end() && !chunked)
+  if (content_length && !chunked)
     return 411; // Content-length required
   else if (!chunked) {
     std::size_t const length =
-      boost::lexical_cast<std::size_t>(content_length->second);
+      boost::lexical_cast<std::size_t>(content_length.get());
     fin.filt().push(utils::length_filter(length));
   }
 
-  if(!flags.test(HTTP_1_0_COMPAT)) {
-    utils::http::header_fields::iterator expect = header_fields.find("expect");
-    if (expect != header_fields.end()) {
-      if (!algo::iequals(expect->second, "100-continue"))
+  if (!flags.test(HTTP_1_0_COMPAT)) {
+    boost::optional<std::string> expect = request_.get_header("expect");
+    if (expect) {
+      if (!algo::iequals(expect.get(), "100-continue"))
         return 417;
       send(response(100), false);
     }
@@ -1096,15 +1099,13 @@ int http_connection::handle_entity(keywords &kw) {
 
   fin.filt().push(boost::ref(conn), 0, 0);
 
-  utils::http::header_fields::iterator content_type =
-    header_fields.find("content-type");
+  boost::optional<std::string> content_type =
+    request_.get_header("content-type");
 
   std::auto_ptr<std::istream> pstream(new pop_filt_stream(fin.reset()));
   kw.set_entity(
       pstream,
-      content_type == header_fields.end() ?
-        "application/octet-stream" :
-        content_type->second
+      content_type ? "application/octet-stream" : content_type.get()
   );
 
   return 0;

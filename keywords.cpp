@@ -120,7 +120,8 @@ public:
   void read_headers() {
     using utils::http::header_fields;
 
-    header_fields headers = utils::http::read_headers(*element);
+    header_fields headers;
+    utils::http::read_headers(*element, headers);
 
     parse_content_disposition(headers["content-disposition"]);
 

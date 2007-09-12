@@ -369,22 +369,11 @@ namespace http {
 
   typedef std::map<std::string, std::string> header_fields;
 
-  namespace detail {
-    enum {
-      CSV_HEADERS=4
-    };
-    static char const * const csv_header[CSV_HEADERS] = {
-      "accept", "accept-charset", "accept-encoding",
-      "accept-language"   // TODO ...
-    };
-    static char const * const * const csv_header_end = csv_header + CSV_HEADERS;
-  }
-
   // reads a header field from `in' and adds it to `fields'
   // see RFC 2616 chapter 4.2
   // Warning: Field names are converted to all lower-case!
-  template<class Source>
-  void get_header_field(Source &in, header_fields &fields) {
+  template<class Source, class HeaderFields>
+  void get_header_field(Source &in, HeaderFields &fields) {
     namespace io = boost::iostreams;
     std::string name;
     int t = 0;
@@ -401,15 +390,11 @@ namespace http {
       else
         name += std::tolower(t);
     }
-    header_fields::iterator it = fields.find(name);
-    if (it == fields.end())
-      it = fields.insert(std::make_pair(name, "")).first;
-    else if (std::find(detail::csv_header, detail::csv_header_end, name)
-             != detail::csv_header_end)
-      it->second += ", ";
-    else
-      it->second = "";
-    std::string &value = it->second;
+
+    std::string &value = fields[name];
+    if (!value.empty())
+      value += ", ";
+
     for(;;) {
       t = io::get(in);
       if(t == '\n' || t == '\r') {
@@ -437,13 +422,11 @@ namespace http {
     value.erase(xend.base(), value.end());
   }
 
-  template<class Source>
-  header_fields read_headers(Source &source) {
-    header_fields fields;
+  template<class Source, class HeaderFields>
+  void read_headers(Source &source, HeaderFields &fields) {
     do {
       get_header_field(source, fields);
     } while (!(expect(source, '\r') && expect(source, '\n')));
-    return fields;
   }
 
   void parse_parametrised(

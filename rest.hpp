@@ -15,7 +15,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
-#include <boost/noncopyable.hpp>
+#include <boost/optional/optional.hpp>
 
 namespace rest {
 
@@ -265,8 +265,20 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
-//TODO
 class request {
+public:
+  request();
+  ~request();
+
+  void clear();
+  void read_headers(std::streambuf&);
+
+  boost::optional<std::string> get_header(std::string const &name) const;
+  void erase_header(std::string const &name);
+
+private:
+  class impl;
+  boost::scoped_ptr<impl> p;
 };
 
 enum response_type {

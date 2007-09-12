@@ -1,3 +1,4 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "epoll.h"
 #include <errno.h>
 #include <assert.h>
