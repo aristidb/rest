@@ -308,7 +308,6 @@ namespace {
     }
     if(c.secure)
       out << ";Secure";
-    out << "\r\n";
   }
 
   void print_cookie(std::ostream &out, rest::cookie const &c) {
@@ -339,6 +338,7 @@ void response::print_cookie_header(std::ostream &out) const {
     print_cookie2(out, *i, i == begin);
     print_cookie(out1, *i);
   }
+  out << "\r\n";
   out << out1.str();
 }
 
