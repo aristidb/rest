@@ -338,6 +338,7 @@ void response::print_cookie_header(std::ostream &out) const {
   for(cookie_iterator i = begin; i != end; ++i) {
     print_cookie(out, *i);
   }
+  out << "\r\n";
 }
 
 void response::print_headers(std::ostream &out) const {

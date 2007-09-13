@@ -194,6 +194,8 @@ enum keyword_type {
   NONE = -1
 };
 
+class request;
+
 class keywords {
 public:
   keywords();
