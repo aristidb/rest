@@ -1079,7 +1079,7 @@ int http_connection::handle_entity(keywords &kw) {
   boost::optional<std::string> content_length =
     request_.get_header("content-length");
 
-  if (content_length && !chunked)
+  if (!content_length && !chunked)
     return 411; // Content-length required
   else if (!chunked) {
     std::size_t const length =
@@ -1152,6 +1152,9 @@ void http_connection::send(response r, bool entity) {
   utils::log(LOG_NOTICE, "response: %d", code);
 
   out << code << " " << response::reason(code) << "\r\n";
+
+  if (code >= 400)
+    open_ = false;
 
   if (!flags.test(HTTP_1_0_COMPAT) && !open_ && code != 100)
     r.add_header_part("Connection", "close");
