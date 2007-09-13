@@ -758,7 +758,6 @@ response http_connection::handle_request() {
 
     context &global = h->get_context();
 
-    request req;
     keywords kw;
 
     det::any_path path_id;
@@ -769,7 +768,7 @@ response http_connection::handle_request() {
     if (!responder)
       return response(404);
 
-    //TODO: set header fields in keywords
+    kw.set_request_data(request_);
 
     time_t now;
     std::time(&now);
@@ -790,7 +789,7 @@ response http_connection::handle_request() {
       method_handler_map::const_iterator m = method_handlers.find(method);
       if (m == method_handlers.end())
         return response(501);
-      m->second(this, responder, path_id, kw, req).move(out);
+      m->second(this, responder, path_id, kw, request_).move(out);
     } else {
       response(mod_code).move(out);
     }

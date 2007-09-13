@@ -7,6 +7,7 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/bind.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <map>
@@ -271,6 +272,22 @@ void keywords::set(
   it->stream.reset();
 }
 
+void keywords::set_with_type(
+    keyword_type type,
+    std::string const &keyword,
+    int index,
+    std::string const &data)
+{
+  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
+  if (it == p->data.end())
+    return;
+  if (it->type != type)
+    return;
+  it->state = impl::entry::s_normal;
+  it->data = data;
+  it->stream.reset();
+}
+
 void keywords::set_stream(
     std::string const &keyword, int index, input_stream &stream)
 {
@@ -359,21 +376,9 @@ void keywords::add_uri_encoded(std::string const &data) {
   }
 }
 
-void keywords::set_header_fields(std::map<std::string, std::string> const &f) {
-  typedef std::map<std::string, std::string>::const_iterator iterator;
-  iterator const end = f.end();
-  for(iterator i = f.begin(); i != end; ++i) {
-    if(i->first == "Cookie" || i->first == "Cookie2")
-        // TODO handle Cookies (see RFC 2965)
-      ;
-
-    impl::data_t::iterator x = p->data.find(boost::make_tuple(i->first, 0));
-    if (x != p->data.end() && x->type == HEADER) {
-      x->state = impl::entry::s_normal;
-      x->data = i->second;
-      x->stream.reset();
-    }
-  }
+void keywords::set_request_data(request const &req) {
+  req.for_each_header(
+    boost::bind(&keywords::set_with_type, this, HEADER, _1, _2));
 }
 
 void keywords::set_output(

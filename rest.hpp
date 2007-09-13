@@ -189,6 +189,8 @@ private:
   response &operator=(response const &); //DUMMY
 };
 
+class request;
+
 enum keyword_type {
   NORMAL,
   COOKIE,
@@ -217,6 +219,8 @@ public:
   keyword_type get_declared_type(std::string const &key, int index = 0) const;
 
   void set(std::string const &key, int index, std::string const &value);
+  void set_with_type(
+    keyword_type, std::string const &key, int index, std::string const &value);
   void set_stream(std::string const &key, int index, input_stream &stream);
   void set_name(std::string const &key, int index, std::string const &name);
   void set_output(std::string const &key, int index, output_stream &output);
@@ -226,8 +230,7 @@ public:
   void set_entity(std::auto_ptr<std::istream> &entity, std::string const &type);
   void add_uri_encoded(std::string const &data);
 
-  // TODO this should be utils::http::header_fields
-  void set_header_fields(std::map<std::string, std::string> const &fields);
+  void set_request_data(request const &req);
 
 public:
   std::string &operator[](std::string const &key) {
@@ -235,11 +238,17 @@ public:
   }
 
   void declare(std::string const &key, keyword_type type) {
-    declare(key, 0, type);
+    return declare(key, 0, type);
   }
 
   void set(std::string const &key, std::string const &value) {
     return set(key, 0, value);
+  }
+
+  void set_with_type(
+      keyword_type type, std::string const &key, std::string const &value)
+  {
+    return set_with_type(type, key, 0, value);
   }
 
   void set_stream(std::string const &key, input_stream &value) {
@@ -247,11 +256,11 @@ public:
   }
   
   void set_name(std::string const &key, std::string const &value) {
-    set_name(key, 0, value);
+    return set_name(key, 0, value);
   }
 
   void set_output(std::string const &key, output_stream &stream) {
-    set_output(key, 0, stream);
+    return set_output(key, 0, stream);
   }
 
 private:
@@ -269,6 +278,12 @@ public:
 
   boost::optional<std::string> get_header(std::string const &name) const;
   void erase_header(std::string const &name);
+
+  typedef
+    boost::function<void (std::string const &name, std::string const &value)>
+    header_callback;
+
+  void for_each_header(header_callback const &) const;
 
 private:
   class impl;

@@ -35,3 +35,10 @@ boost::optional<std::string> request::get_header(std::string const &name) const
 void request::erase_header(std::string const &name) {
   p->headers.erase(name);
 }
+
+void request::for_each_header(header_callback const &cb) const {
+  for (impl::header_map::iterator it = p->headers.begin();
+      it != p->headers.end();
+      ++it)
+    cb(it->first, it->second);
+}
