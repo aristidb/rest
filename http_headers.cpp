@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest-utils.hpp"
+#include "rest.hpp"
 #include <boost/algorithm/string.hpp>
 #include <cctype>
 
@@ -78,7 +79,7 @@ void rest::utils::http::parse_parametrised(
 }
 
 void rest::utils::http::parse_list(
-    std::string const &in, std::vector<std::string> &out)
+  std::string const &in, std::vector<std::string> &out, char delimeter)
 {
   typedef std::string::const_iterator iterator;
 
@@ -89,7 +90,7 @@ void rest::utils::http::parse_list(
   skip_ws_bwd(end, it);
 
   while (it != end) {
-    iterator delim = std::find(it, end, ',');
+    iterator delim = std::find(it, end, delimeter);
     iterator left = delim;
     skip_ws_bwd(left, it);
     if (it != left)
@@ -134,3 +135,59 @@ void rest::utils::http::parse_qlist(
   }
 }
 
+namespace {
+  typedef std::pair<std::string, std::string> name_value_pair;
+  name_value_pair parse_name_value_pair(std::string const &in) {
+    typedef std::string::const_iterator iterator;
+    iterator const begin = in.begin();
+    iterator const end = in.end();
+
+    iterator const delim = std::find(begin, end, '=');
+    if(delim == end)
+      return std::make_pair(algo::trim_copy(in), std::string());
+
+    std::string name(begin, delim);
+    algo::trim(name);
+
+    std::string value(delim + 1, end);
+    algo::trim(value);
+    return std::make_pair(name, value);
+  }
+}
+
+namespace rest { namespace utils { namespace http {
+void parse_cookie_header(std::string const &in,
+                         std::vector<rest::cookie> &cookies)
+{
+  typedef std::vector<rest::cookie>::iterator cookie_iterator;
+  typedef std::vector<std::string>::const_iterator iterator;
+
+  std::vector<std::string> cookie_values;
+  parse_list(in, cookie_values, ',');
+
+  iterator const end = cookie_values.end();
+  for(iterator i = cookie_values.begin(); i != end; ++i) {
+    std::vector<std::string> params;
+    parse_list(*i, params, ';');
+    iterator const params_end = params.end();
+    for(iterator j = params.begin(); j != params_end; ++j) {
+      name_value_pair nv = parse_name_value_pair(*j);
+      if(nv.first[0] == '$') { // Parameter start with $
+        if(algo::iequals(nv.first, "$version")) {
+        }
+        else if(!cookies.empty()) {
+          if(algo::iequals(nv.first, "$path"))
+            cookies.back().path = nv.second;
+          else if(algo::iequals(nv.first, "$domain"))
+            cookies.back().domain = nv.second;
+          else if(algo::iequals(nv.first, "$port")) {
+          }
+        }
+      }
+      else {
+        cookies.push_back(rest::cookie(nv.first, nv.second));
+      }
+    }
+  }
+}
+}}}

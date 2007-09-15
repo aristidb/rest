@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest-utils.hpp"
+#include "rest.hpp"
 #include <testsoon.hpp>
 
 using namespace rest::utils::http;
@@ -33,3 +34,28 @@ TEST(qvalue) {
   Equals(parse_qvalue("0.71"), 710);
 }
 
+namespace rest { namespace utils { namespace http {
+  void parse_cookie_header(std::string const &in,
+                           std::vector<rest::cookie> &cookies);
+}}}
+
+TEST_GROUP(parse_cookie_header) {
+  XTEST((values, (std::string)
+         ("$version = 1, foo = bar; $path = hu; fou = barre") 
+         ("$version = 1; foo = bar; $path = hu; fou = barre")
+         ("$version = 1; foo = bar; $path = hu, fou = barre")
+         ("$version = 1, foo = bar; $path = hu, fou = barre")))
+{
+    std::string cookie_header = value;
+    std::vector<rest::cookie> cookies;
+
+    parse_cookie_header(cookie_header, cookies);
+
+    Equals(cookies.size(), 2U);
+    Equals(cookies[0].name, "foo");
+    Equals(cookies[0].value, "bar");
+    Equals(cookies[0].path, "hu");
+    Equals(cookies[1].name, "fou");
+    Equals(cookies[1].value, "barre");
+  }
+}
