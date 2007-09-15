@@ -8,6 +8,12 @@ using rest::request;
 
 class request::impl {
 public:
+  impl() : host_(0) {}
+
+  std::string uri;
+
+  host const *host_;
+
   typedef std::map<std::string, std::string> header_map;
   header_map headers;
 };
@@ -15,7 +21,25 @@ public:
 request::request() : p(new impl) {}
 request::~request() {}
 
+void request::set_uri(std::string const &uri) {
+  p->uri = uri;
+}
+
+std::string const &request::get_uri() const {
+  return p->uri;
+}
+
+void request::set_host(host const &h) {
+  p->host_ = &h;
+}
+
+rest::host const &request::get_host() const {
+  return *p->host_;
+}
+
 void request::clear() {
+  p->uri = std::string();
+  p->host_ = 0;
   p->headers.clear();
 }
 

@@ -734,6 +734,7 @@ response http_connection::handle_request() {
                uri.c_str(), version.c_str());
 
     assure_relative_uri(uri);
+    request_.set_uri(uri);
 
     if (version == "HTTP/1.0") {
       flags.set(HTTP_1_0_COMPAT);
@@ -755,6 +756,8 @@ response http_connection::handle_request() {
     host const *h = sock.get_host(host_header.get());
     if (!h)
       return response(404);
+
+    request_.set_host(*h);
 
     context &global = h->get_context();
 

@@ -265,12 +265,21 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
+class host;
+
 class request {
 public:
   request();
   ~request();
 
+  void set_uri(std::string const &uri);
+  std::string const &get_uri() const;
+
+  void set_host(host const &h);
+  host const &get_host() const;
+
   void clear();
+
   void read_headers(std::streambuf&);
 
   boost::optional<std::string> get_header(std::string const &name) const;
@@ -559,8 +568,6 @@ private:
   class impl;
   boost::scoped_ptr<impl> p;
 };
-
-class host;
 
 namespace utils {
   class property_tree;
