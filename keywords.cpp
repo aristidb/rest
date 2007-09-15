@@ -379,6 +379,17 @@ void keywords::add_uri_encoded(std::string const &data) {
 void keywords::set_request_data(request const &req) {
   req.for_each_header(
     boost::bind(&keywords::set_with_type, this, HEADER, _1, _2));
+
+  boost::optional<std::string> cookie_ = req.get_header("cookie");
+  if (cookie_) {
+    std::vector<cookie> cookies;
+    utils::http::parse_cookie_header(cookie_.get(), cookies);
+
+    for (std::vector<cookie>::iterator it = cookies.begin();
+        it != cookies.end();
+        ++it)
+      set_with_type(COOKIE, it->name, it->value);
+  }
 }
 
 void keywords::set_output(

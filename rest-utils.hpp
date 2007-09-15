@@ -441,10 +441,13 @@ namespace http {
   void parse_qlist(std::string const &in, std::multimap<int, std::string> &out);
 
   int parse_qvalue(std::string const &in);
-  /*
+}}}
+
+namespace rest {
+  class cookie;
+namespace utils { namespace http {
   void parse_cookie_header(std::string const &in,
                            std::vector<rest::cookie> &cookies);
-  */
 }
 
 class errno_error

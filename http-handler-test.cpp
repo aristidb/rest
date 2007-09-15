@@ -70,17 +70,18 @@ struct tester : rest::responder<rest::ALL, void> {
     std::getline(kw.read("datei"), fln);
     out << "file: " << fln << '\n';
 
-    std::string user = kw["user"];
-    out << "user: " << user << '\n';
+    out << "user: " << kw["user"] << '\n';
 
-    std::string file = kw["datei"];
-    out << "file (oh we read() it): " << file << '\n';
+    out << "file (oh we read() it): " << kw["datei"] << '\n';
 
-    std::string uagent = kw["user-agent"];
-    out << "user agent: " << uagent << std::endl;
+    out << "user agent: " << kw["user-agent"] << std::endl;
 
-    std::string cookie = kw["cookie"];
-    out << "cookie: " << cookie << std::endl;
+    out << "cookie: " << kw["cookie"] << std::endl;
+
+    out << "the_cookie: " << kw["the_cookie"] << std::endl;
+    kw["the_cookie"] += "+";
+
+    out << "hello: " << kw["hello"] << std::endl;
 
     resp.set_data(out.str());
     return resp;
@@ -94,12 +95,16 @@ int main(int argc, char **argv) {
     tester t;
 
     rest::host h("");
-    h.get_context().bind("/", t);
-    h.get_context().declare_keyword("user", rest::FORM_PARAMETER);
-    h.get_context().declare_keyword("bar", rest::FORM_PARAMETER);
-    h.get_context().declare_keyword("datei", rest::FORM_PARAMETER);
-    h.get_context().declare_keyword("user-agent", rest::HEADER);
-    h.get_context().declare_keyword("cookie", rest::HEADER);
+    rest::context &c = h.get_context();
+
+    c.bind("/", t);
+    c.declare_keyword("user", rest::FORM_PARAMETER);
+    c.declare_keyword("bar", rest::FORM_PARAMETER);
+    c.declare_keyword("datei", rest::FORM_PARAMETER);
+    c.declare_keyword("user-agent", rest::HEADER);
+    c.declare_keyword("cookie", rest::HEADER);
+    c.declare_keyword("the_cookie", rest::COOKIE);
+    c.declare_keyword("hello", rest::COOKIE);
 
     rest::config &conf = rest::config::get();
     rest::utils::property_tree &tree = conf.tree();
