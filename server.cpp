@@ -1104,7 +1104,7 @@ int http_connection::handle_entity(keywords &kw) {
   std::auto_ptr<std::istream> pstream(new pop_filt_stream(fin.reset()));
   kw.set_entity(
       pstream,
-      content_type ? "application/octet-stream" : content_type.get()
+      !content_type ? "application/octet-stream" : content_type.get()
   );
 
   return 0;
