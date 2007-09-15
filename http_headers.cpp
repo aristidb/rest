@@ -139,19 +139,24 @@ namespace {
   typedef std::pair<std::string, std::string> name_value_pair;
   name_value_pair parse_name_value_pair(std::string const &in) {
     typedef std::string::const_iterator iterator;
-    iterator const begin = in.begin();
-    iterator const end = in.end();
+    iterator begin = in.begin();
+    iterator end = in.end();
+
+    skip_ws_fwd(begin, end);
+    skip_ws_bwd(end, begin);
 
     iterator const delim = std::find(begin, end, '=');
     if(delim == end)
-      return std::make_pair(algo::trim_copy(in), std::string());
+      return std::make_pair(std::string(begin, end), std::string());
 
-    std::string name(begin, delim);
-    algo::trim(name);
+    iterator end_name = delim;
+    skip_ws_bwd(end_name, begin);
 
-    std::string value(delim + 1, end);
-    algo::trim(value);
-    return std::make_pair(name, value);
+    iterator begin_value = delim + 1;
+    skip_ws_fwd(begin_value, end);
+
+    return std::make_pair(std::string(begin, end_name),
+                          std::string(begin_value, end));
   }
 }
 

@@ -58,4 +58,26 @@ TEST_GROUP(parse_cookie_header) {
     Equals(cookies[1].name, "fou");
     Equals(cookies[1].value, "barre");
   }
+
+  XTEST((values, (std::string)
+         ("") (",,") (";") ("   ")))
+  {
+    std::string cookie_header = value;
+    std::vector<rest::cookie> cookies;
+
+    parse_cookie_header(cookie_header, cookies);
+
+    Equals(cookies.empty(), true);
+  }
+
+  TEST() {
+    std::string cookie_header = " = ";
+    std::vector<rest::cookie> cookies;
+
+    parse_cookie_header(cookie_header, cookies);
+
+    Equals(cookies.size(), 1U);
+    Equals(cookies[0].name.empty(), true);
+    Equals(cookies[0].value.empty(), true);
+  }
 }
