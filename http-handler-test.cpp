@@ -79,7 +79,7 @@ struct tester : rest::responder<rest::ALL, void> {
     out << "cookie: " << kw["cookie"] << std::endl;
 
     out << "the_cookie: " << kw["the_cookie"] << std::endl;
-    kw["the_cookie"] += "+";
+    resp.add_cookie(rest::cookie("the_cookie", kw["the_cookie"] + "+"));
 
     out << "hello: " << kw["hello"] << std::endl;
 
