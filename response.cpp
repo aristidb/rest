@@ -274,7 +274,7 @@ std::size_t response::length(content_encoding_t enc) const {
 }
 
 namespace {
-  // Set-Cookie2:
+#if 0
   void print_cookie2(std::ostream &out, rest::cookie const &c, bool first) {
     // Set-Cookie2 [see RFC 2965]
     if(first)
@@ -309,15 +309,18 @@ namespace {
     if(c.secure)
       out << ";Secure";
   }
+#endif
 
   void print_cookie(std::ostream &out, rest::cookie const &c) {
     // Set-Cookie [see Netscape Spec
     //             http://wp.netscape.com/newsref/std/cookie_spec.html ]
 
-    out << "Set-Cookie: " << c.name << '=' << c.value;
-    if(c.max_age >= 0)
+    out << "Set-Cookie: ";
+    out << rest::utils::uri::escape(c.name) << '=';
+    out << rest::utils::uri::escape(c.value);
+    if(c.expires != time_t(-1))
       out << ";expires="
-          << rest::utils::http::datetime_string(std::time(0x0) + c.max_age);
+          << rest::utils::http::datetime_string(c.expires);
     if(!c.domain.empty())
       out << ";domain=" << c.domain;
     if(!c.path.empty())
@@ -329,17 +332,12 @@ namespace {
 }
 
 void response::print_cookie_header(std::ostream &out) const {
-  std::ostringstream out1;
-
   typedef impl::cookie_set::const_iterator cookie_iterator;
   cookie_iterator const begin = p->cookies.begin();
   cookie_iterator const end = p->cookies.end();
   for(cookie_iterator i = begin; i != end; ++i) {
-    print_cookie2(out, *i, i == begin);
-    print_cookie(out1, *i);
+    print_cookie(out, *i);
   }
-  out << "\r\n";
-  out << out1.str();
 }
 
 void response::print_headers(std::ostream &out) const {

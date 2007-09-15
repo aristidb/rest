@@ -100,21 +100,16 @@ struct cookie {
   std::string name;
   std::string value;
 
-  std::string comment;
-  std::string comment_url;
-  bool discard;
   std::string domain;
-  int max_age;
+  time_t expires;
   std::string path;
-  typedef std::vector<unsigned short> port_list;
-  port_list ports;
   bool secure;
 
   cookie(std::string const &name, std::string const &value,
-         int max_age = -1, std::string const &path = "",
+         time_t expires = time_t(-1), std::string const &path = "",
          std::string const &domain = "")
-    : name(name), value(value), discard(false), domain(domain),
-      max_age(max_age), path(path), secure(false)
+    : name(name), value(value), domain(domain),
+      expires(expires), path(path), secure(false)
   { }
 };
 

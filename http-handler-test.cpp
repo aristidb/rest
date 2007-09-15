@@ -21,6 +21,7 @@ struct tester : rest::responder<rest::ALL, void> {
   rest::response get(rest::keywords &kw, rest::request const &) {
     rest::response resp("text/html");
     resp.add_cookie(rest::cookie("hello", "world"));
+    resp.add_cookie(rest::cookie("foo", "bar"));
     #if 1
     std::string r("<html><head><title>supi</title></head>\n"
                   "<body>\n<h3>Allles Supi!!</h3>\n<blink>blink</blink>\n"
