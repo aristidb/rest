@@ -1,8 +1,11 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest-utils.hpp"
 #include "rest.hpp"
-#include <boost/algorithm/string.hpp>
+
 #include <cctype>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/range/iterator_range.hpp>
 
 namespace algo = boost::algorithm;
 
@@ -177,17 +180,15 @@ void parse_cookie_header(std::string const &in,
     iterator const params_end = params.end();
     for(iterator j = params.begin(); j != params_end; ++j) {
       name_value_pair nv = parse_name_value_pair(*j);
+      algo::to_lower(nv.first);
       if(nv.first[0] == '$') { // Parameter start with $
-        if(algo::iequals(nv.first, "$version")) {
-        }
-        else if(!cookies.empty()) {
-          if(algo::iequals(nv.first, "$path"))
+        if(!cookies.empty()) {
+          if(nv.first == "$path")
             cookies.back().path = nv.second;
-          else if(algo::iequals(nv.first, "$domain"))
-            cookies.back().domain = nv.second;
-          else if(algo::iequals(nv.first, "$port")) {
-          }
+          else if(nv.first == "$domain")
+            cookies.back().domain = nv.second;          
         }
+        // ignore $version
       }
       else {
         cookies.push_back(rest::cookie(nv.first, nv.second));
