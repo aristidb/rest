@@ -257,9 +257,9 @@ response::choose_content_encoding(
     return identity;
   std::size_t length = p->data[identity].length();
 
-  rest::utils::property_tree &conf = rest::config::get().tree();
-
   if (length != 0) {
+    rest::utils::property_tree &conf = rest::config::get().tree();
+
     std::size_t min_length =
       rest::utils::get(conf, std::size_t(0),
         "general", "compression", "minimum_size");
