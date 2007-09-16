@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-struct tester : rest::responder<rest::ALL, void> {
+struct tester : rest::responder<rest::ALL, rest::NO_PATH> {
   std::string etag() const {
     return "\"zxyl\"";
   }
