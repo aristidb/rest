@@ -7,9 +7,10 @@
 #include <vector>
 #include <iosfwd>
 #include <sys/socket.h>
-#include <boost/mpl/void.hpp>
 #include <boost/mpl/if.hpp>
+#include <boost/mpl/or.hpp>
 #include <boost/type_traits/is_scalar.hpp>
+#include <boost/type_traits/is_same.hpp>
 #include <boost/any.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -304,6 +305,9 @@ enum response_type {
   ALL = GET | PUT | POST | DELETE
 };
 
+struct NO_PATH {};
+struct DEDUCED_PATH {};
+
 namespace detail {
   typedef boost::any any_path;
 
@@ -314,21 +318,17 @@ namespace detail {
 
   template<typename Path>
   struct path_helper {
-    typedef typename
-      boost::mpl::if_<
-        boost::mpl::is_void_<Path>,
+    typedef typename boost::mpl::if_<
+        boost::is_same<Path, DEDUCED_PATH>,
         std::string,
         Path
-      >::type
-      path_type;
+      >::type path_type;
 
-    typedef typename
-      boost::mpl::if_<
+    typedef typename boost::mpl::if_<
         boost::is_scalar<path_type>,
         path_type,
         path_type const &
-      >::type
-      path_parameter;
+      >::type path_parameter;
   };
 
   struct get_base {
@@ -379,7 +379,7 @@ namespace detail {
       } \
     }; \
     template<> \
-    struct i_ ## method<void, true> : method ## _base { \
+    struct i_ ## method<NO_PATH, true> : method ## _base { \
       virtual response method(keywords &, request const &) = 0; \
     private: \
       response x_ ## method( \
@@ -402,7 +402,7 @@ namespace detail {
 
 template<
   unsigned ResponseType = ALL,
-  typename Path = boost::mpl::void_
+  typename Path = DEDUCED_PATH
 >
 class responder 
 : public
