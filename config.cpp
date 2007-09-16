@@ -99,7 +99,8 @@ namespace utils {
         else
           child = *i;
         read_config(*iter, *child);
-        root.add_child(child);
+        if(i == root.children_end())
+          root.add_child(child);
       }
       else
         root.add_property(property(iter->leaf(), *iter));
