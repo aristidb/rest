@@ -74,7 +74,10 @@ namespace utils {
   public:
     void add_child(property_tree *child) {
       assert(child);
-      children.insert(child);
+      typedef std::pair<children_t::iterator, bool> result_t;
+      result_t r = children.insert(child);
+      if(!r.second)
+        merge(r.first, *child);
     }
     void add_property(property const &p) {
       properties.insert(p);
@@ -110,6 +113,12 @@ namespace utils {
       return children.find(name);
     }
 
+    void merge(children_t::iterator i, property_tree &n) {
+      for(children_iterator j = n.children_begin(); j != n.children_end(); ++j)
+        (*i)->add_child(&**j);
+      for(property_iterator j = n.property_begin(); j != n.property_end(); ++j)
+        (*i)->add_property(*j);
+    }
   private:
     property_tree(property_tree const &);
     void operator=(property_tree const &);
