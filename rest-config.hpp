@@ -279,7 +279,8 @@ namespace utils {
   class config {
   public:
     static config &get();
-    void load(int argc, char **argv);
+    void load(int argc, char **argv, char const *config_path = 0x0, 
+              bool allow_params = true);
     utils::property_tree &tree();
 
   private:

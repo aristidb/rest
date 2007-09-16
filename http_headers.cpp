@@ -3,9 +3,7 @@
 #include "rest.hpp"
 
 #include <cctype>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/range/iterator_range.hpp>
 
 namespace algo = boost::algorithm;
 
@@ -163,9 +161,8 @@ namespace {
   }
 }
 
-namespace rest { namespace utils { namespace http {
-void parse_cookie_header(std::string const &in,
-                         std::vector<rest::cookie> &cookies)
+void rest::utils::http::parse_cookie_header(std::string const &in,
+                                            std::vector<rest::cookie> &cookies)
 {
   typedef std::vector<rest::cookie>::iterator cookie_iterator;
   typedef std::vector<std::string>::const_iterator iterator;
@@ -196,4 +193,4 @@ void parse_cookie_header(std::string const &in,
     }
   }
 }
-}}}
+

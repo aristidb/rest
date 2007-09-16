@@ -116,23 +116,26 @@ namespace utils {
     utils::set(tree_, "musikdings.rest/0.1", "general", "name");
   }
 
-  void config::load(int argc, char **argv) {
-    char const * config_path = DEFAULT_CONFIG_PATH;
-    for(int i = 1; i < argc; ++i)
-      if(argv[i][0] == '-') {
-        if(argv[i][1] == 'h' && argv[i][2] == 0) {
-          usage(argc, argv);
-        }
-        else if(argv[i][1] == 'c' && argv[i][2] == 0) {
-          if(i+1 < argc) {
-            config_path = argv[++i];
-          }
-          else {
-            std::cerr << "error: no path to config given\n";
+  void config::load(int argc, char **argv, char const *cpath,
+                    bool allow_params)
+  {
+    char const * config_path = !cpath ? DEFAULT_CONFIG_PATH : cpath;
+    if(allow_params)
+      for(int i = 1; i < argc; ++i)
+        if(argv[i][0] == '-') {
+          if(argv[i][1] == 'h' && argv[i][2] == 0) {
             usage(argc, argv);
           }
+          else if(argv[i][1] == 'c' && argv[i][2] == 0) {
+            if(i+1 < argc) {
+              config_path = argv[++i];
+            }
+            else {
+              std::cerr << "error: no path to config given\n";
+              usage(argc, argv);
+            }
+          }
         }
-      }
 
     utils::read_config(config_path, tree_);
   }
