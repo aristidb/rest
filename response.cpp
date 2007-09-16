@@ -17,7 +17,6 @@
 #include <boost/multi_index/key_extractors.hpp>
 #include <map>
 #include <cassert>
-#include<iostream>//FIXME
 
 using rest::response;
 
@@ -263,8 +262,6 @@ response::choose_content_encoding(
     std::size_t min_length =
       rest::utils::get(conf, std::size_t(0),
         "general", "compression", "minimum_size");
-
-    std::cout << "min_length: " << min_length << std::endl;
 
     if (length <= min_length)
       return identity;
