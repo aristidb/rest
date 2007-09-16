@@ -92,7 +92,12 @@ namespace utils {
         iter != end_iter;
         ++iter)
       if(fs::is_directory(*iter)) {
-        property_tree *child = new property_tree(iter->leaf());
+        property_tree *child = 0x0;
+        property_tree::children_iterator i = root.find_children(iter->leaf());
+        if(i == root.children_end())
+          child = new property_tree(iter->leaf());
+        else
+          child = *i;
         read_config(*iter, *child);
         root.add_child(child);
       }
