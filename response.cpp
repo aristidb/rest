@@ -1,6 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest.hpp"
 #include "rest-utils.hpp"
+#include "rest-config.hpp"
 #include <boost/array.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -16,6 +17,7 @@
 #include <boost/multi_index/key_extractors.hpp>
 #include <map>
 #include <cassert>
+#include<iostream>//FIXME
 
 using rest::response;
 
@@ -254,8 +256,20 @@ response::choose_content_encoding(
   if (p->data[identity].type == impl::data_holder::NIL)
     return identity;
   std::size_t length = p->data[identity].length();
-  if (length != 0 && length <= 10000)
-    return identity;
+
+  rest::utils::property_tree &conf = rest::config::get().tree();
+
+  if (length != 0) {
+    std::size_t min_length =
+      rest::utils::get(conf, std::size_t(0),
+        "general", "compression", "minimum_size");
+
+    std::cout << "min_length: " << min_length << std::endl;
+
+    if (length <= min_length)
+      return identity;
+  }
+
   return encodings[0];
 }
 
