@@ -347,11 +347,14 @@ namespace http {
   enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
   template<class Source>
-  void get_until(char end, Source &in, std::string &ret) {
+  void get_until(char end, Source &in, std::string &ret,
+                 bool allow_cr_or_lf = false) {
     int t;
     while ((t = boost::iostreams::get(in)) != end) {
       if(t == EOF)
         throw remote_close();
+      if (!allow_cr_or_lf && (t == '\r' || t == '\n'))
+        throw bad_format();
       ret += t;
     }
   }
@@ -363,8 +366,14 @@ namespace http {
         throw bad_format();
     request_line ret;
     get_until(' ', in, ret.get<REQUEST_METHOD>());
+    if (ret.get<REQUEST_METHOD>().empty())
+      throw bad_format();
     get_until(' ', in, ret.get<REQUEST_URI>());
+    if (ret.get<REQUEST_URI>().empty())
+      throw bad_format();
     get_until('\r', in, ret.get<REQUEST_HTTP_VERSION>());
+    if (ret.get<REQUEST_HTTP_VERSION>().empty())
+      throw bad_format();
     if(!expect(in, '\n'))
       throw bad_format();
     return ret;
