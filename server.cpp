@@ -319,6 +319,8 @@ namespace {
       det::responder_base*, det::any_path const&, keywords&, request const&);
     response handle_delete(
       det::responder_base*, det::any_path const&, keywords&, request const&);
+    response handle_options(
+      det::responder_base*, det::any_path const&, keywords&, request const&);
   };
 
   typedef boost::function<
@@ -342,12 +344,13 @@ namespace {
   typedef std::map<std::string, method_handler> method_handler_map;
 
   static std::pair<std::string, method_handler> method_handlers_raw[] = {
+    std::make_pair("DELETE", H(&http_connection::handle_delete)),
     std::make_pair("GET", H(&http_connection::handle_get)),
     std::make_pair("HEAD", H(&http_connection::handle_head)),
+    std::make_pair("OPTIONS", H(&http_connection::handle_options)),
     std::make_pair("POST", H(&http_connection::handle_post)),
     std::make_pair("PUT", H(&http_connection::handle_put)),
-    std::make_pair("DELETE", H(&http_connection::handle_delete)),
-  };
+ };
 
   static method_handler_map const method_handlers(
     method_handlers_raw,
@@ -709,7 +712,6 @@ void http_connection::serve() {
     }
   }
   catch (utils::http::remote_close&) {
-    //std::cout << "%% remote or timeout" << std::endl; // DEBUG
   }
 }
 
@@ -768,7 +770,7 @@ response http_connection::handle_request() {
     context *local;
     global.find_responder(uri, path_id, responder, local, kw);
 
-    if (!responder)
+    if (!responder && !(method == "OPTIONS" && uri == "*"))
       return response(404);
 
     kw.set_request_data(request_);
@@ -776,10 +778,14 @@ response http_connection::handle_request() {
     time_t now;
     std::time(&now);
 
-    time_t last_modified = responder->x_last_modified(path_id, now);
+    time_t last_modified = time_t(-1);
+    if (responder)
+      last_modified = responder->x_last_modified(path_id, now);
     if (last_modified != time_t(-1) && last_modified > now)
       last_modified = now;
-    std::string etag = responder->x_etag(path_id);
+    std::string etag;
+    if (responder)
+      etag = responder->x_etag(path_id);
 
     int mod_code = handle_modification_tags(
           last_modified == time_t(-1) ? now : last_modified,
@@ -865,6 +871,38 @@ int http_connection::handle_modification_tags(
     }
   }
   return 0;
+}
+
+response http_connection::handle_options(
+  det::responder_base *responder,
+  det::any_path const &path_id,
+  keywords &kw,
+  request const &req)
+{
+  response resp(200);
+  resp.add_header_part("Allow", "OPTIONS");
+  if (!responder) {
+    resp.add_header_part("Allow", "DELETE");
+    resp.add_header_part("Allow", "GET");
+    resp.add_header_part("Allow", "HEAD");
+    resp.add_header_part("Allow", "POST");
+    resp.add_header_part("Allow", "PUT");
+  } else {
+    if (responder->x_getter()) {
+      resp.add_header_part("Allow", "GET");
+      resp.add_header_part("Allow", "HEAD");
+    }
+    if (responder->x_poster()) {
+      resp.add_header_part("Allow", "POST");     
+    }
+    if (responder->x_deleter()) {
+      resp.add_header_part("Allow", "DELETE");
+    }
+    if (responder->x_putter()) {
+      resp.add_header_part("Allow", "PUT");
+    }
+  }
+  return resp;
 }
 
 response http_connection::handle_get(
