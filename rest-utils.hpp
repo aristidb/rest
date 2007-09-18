@@ -358,6 +358,9 @@ namespace http {
 
   template<class Source>
   request_line get_request_line(Source &in) {
+    while (expect(in, '\r'))
+      if (!expect(in, '\n'))
+        throw bad_format();
     request_line ret;
     get_until(' ', in, ret.get<REQUEST_METHOD>());
     get_until(' ', in, ret.get<REQUEST_URI>());
