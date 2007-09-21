@@ -92,15 +92,20 @@ namespace utils {
         iter != end_iter;
         ++iter)
       if(fs::is_directory(*iter)) {
-        property_tree *child = 0x0;
         property_tree::children_iterator i = root.find_children(iter->leaf());
-        if(i == root.children_end())
-          child = new property_tree(iter->leaf());
-        else
-          child = *i;
-        read_config(*iter, *child);
-        if(i == root.children_end())
-          root.add_child(child);
+        if(i == root.children_end()) {
+          property_tree *child = new property_tree(iter->leaf());
+          try {
+            read_config(*iter, *child);
+            root.add_child(child);
+          } catch (...) {
+            delete child;
+            throw;
+          }
+        } else {
+          property_tree *child = *i;
+          read_config(*iter, *child);
+        }
       }
       else
         root.add_property(property(iter->leaf(), *iter));
