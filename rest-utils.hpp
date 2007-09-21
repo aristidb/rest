@@ -496,7 +496,6 @@ public:
     return operator()(x.get());
   }
 };
-
 }}
 
 #endif

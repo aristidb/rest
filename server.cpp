@@ -213,7 +213,8 @@ public:
   void read_connections();
   int initialize_sockets();
   void incoming(socket_param const &sock, std::string const &severname);
-  int connection(socket_param const &sock, int connfd, std::string const &name);
+  int connection(socket_param const &sock, int connfd,
+                 rest::network::address const &addr, std::string const &name);
 };
 
 bool server::impl::restart = false;
@@ -276,12 +277,14 @@ namespace {
 
   public:
     http_connection(server::socket_param const &sock, int connfd,
+                    rest::network::address const &addr,
                     std::string const &servername)
     : sock(sock),
       connfd(connfd),
       conn(connfd, sock.timeout_read(), sock.timeout_write()),
       servername(servername),
-      open_(true)
+      open_(true),
+      request_(addr)
     { }
 
     bool open() const { return open_; }
@@ -649,9 +652,24 @@ void server::serve() {
 void server::impl::incoming(server::socket_param const &sock,
                             std::string const &servername)
 {
-  sockaddr_in cliaddr;
-  socklen_t clilen = sizeof(cliaddr);
-  int connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
+  network::address addr;
+  int connfd = -1;
+  if(sock.socket_type() == server::socket_param::ip4) {
+    sockaddr_in cliaddr;
+    socklen_t clilen = sizeof(cliaddr);
+    connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
+    BOOST_STATIC_ASSERT((sizeof(addr.addr.ip4) == sizeof(cliaddr.sin_addr)));
+    std::memcpy(&addr.addr.ip4, &cliaddr.sin_addr, sizeof(addr.addr.ip4));
+    addr.type = server::socket_param::ip4;
+  }
+  else if(sock.socket_type() == server::socket_param::ip6) {
+    sockaddr_in6 cliaddr;
+    socklen_t clilen = sizeof(cliaddr);
+    connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
+    BOOST_STATIC_ASSERT((sizeof(addr.addr.ip6) == sizeof(cliaddr.sin6_addr)));
+    std::memcpy(addr.addr.ip6, &cliaddr.sin6_addr, sizeof(addr.addr.ip6));
+    addr.type = server::socket_param::ip6;
+  }
   if(connfd == -1) {
     utils::log(LOG_ERR, "accept failed: %m");
     return;
@@ -667,9 +685,9 @@ void server::impl::incoming(server::socket_param const &sock,
     do_close_on_fork();
 #endif
     utils::log(LOG_INFO,
-      "accept connection from %s", inet_ntoa(cliaddr.sin_addr));
+               "accept connection from %s", network::ntoa(addr).c_str());
 
-    int status = connection(sock, connfd, servername);
+    int status = connection(sock, connfd, addr, servername);
     (void) status;
 
 #ifndef NO_FORK_LOOP
@@ -684,11 +702,26 @@ void server::impl::incoming(server::socket_param const &sock,
 #endif
 }
 
+namespace rest {
+namespace network {
+enum {
+    MAX_IP_LEN = 41
+};
+
+std::string ntoa(address const &a) {
+  char buf[MAX_IP_LEN] = { 0 };
+  if(!::inet_ntop(a.type, &a.addr, buf, MAX_IP_LEN - 1))
+    throw utils::errno_error("inet_ntop");
+  return buf;
+}
+}}
+
 int server::impl::connection(socket_param const &sock, int connfd,
+                             network::address const &addr,
                              std::string const &servername)
 {
   try {
-    http_connection conn(sock, connfd, servername);
+    http_connection conn(sock, connfd, addr, servername);
     conn.serve();
   }
   catch(std::exception &e) {
@@ -875,9 +908,9 @@ int http_connection::handle_modification_tags(
 
 response http_connection::handle_options(
   det::responder_base *responder,
-  det::any_path const &path_id,
-  keywords &kw,
-  request const &req)
+  det::any_path const &,
+  keywords &,
+  request const &)
 {
   response resp(200);
   resp.add_header_part("Allow", "OPTIONS");

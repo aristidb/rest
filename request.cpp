@@ -8,7 +8,7 @@ using rest::request;
 
 class request::impl {
 public:
-  impl() : host_(0) {}
+  impl(network::address const &addr) : host_(0), addr(addr) { }
 
   std::string uri;
 
@@ -16,9 +16,11 @@ public:
 
   typedef std::map<std::string, std::string> header_map;
   header_map headers;
+
+  network::address addr;
 };
 
-request::request() : p(new impl) {}
+request::request(network::address const &addr) : p(new impl(addr)) { }
 request::~request() {}
 
 void request::set_uri(std::string const &uri) {
@@ -35,6 +37,10 @@ void request::set_host(host const &h) {
 
 rest::host const &request::get_host() const {
   return *p->host_;
+}
+
+rest::network::address const &request::get_client_address() const {
+  return p->addr;
 }
 
 void request::clear() {

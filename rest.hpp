@@ -7,6 +7,7 @@
 #include <vector>
 #include <iosfwd>
 #include <sys/socket.h>
+#include <boost/cstdint.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/mpl/or.hpp>
 #include <boost/type_traits/is_scalar.hpp>
@@ -266,11 +267,25 @@ private:
   boost::scoped_ptr<impl> p;
 };
 
+namespace network {
+typedef union {
+  boost::uint32_t ip4;
+  boost::uint64_t ip6[2];
+} addr_t;
+
+struct address {
+  int type;
+  addr_t addr;
+};
+
+std::string ntoa(address const &addr);
+}
+
 class host;
 
 class request {
 public:
-  request();
+  request(network::address const &addr);
   ~request();
 
   void set_uri(std::string const &uri);
@@ -292,6 +307,7 @@ public:
 
   void for_each_header(header_callback const &) const;
 
+  network::address const &get_client_address() const;
 private:
   class impl;
   boost::scoped_ptr<impl> p;
