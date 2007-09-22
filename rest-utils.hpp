@@ -109,7 +109,7 @@ public:
     std::size_t n = std::size_t(n_);
     std::size_t i = 0;
     try {
-      while (i < n && !eof) {
+      while (i < n) {
         std::size_t c = update(source) - pos;
         if (c > n - i)
           c = n - i;
@@ -118,8 +118,8 @@ public:
         pos += c;
       }
     } catch (eof_event&) {
-      eof = true;
       skip_transport_padding(source);
+      eof = true;
     }
     return i ? i : -1;
   }
