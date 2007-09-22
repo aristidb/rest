@@ -101,8 +101,9 @@ public:
     std::streamsize i = 0;
     try {
       while (i < n && !eof) {
-        update(source);
-        outbuf[i++] = buf[pos++];
+        std::size_t c = update(source);
+        for (std::size_t j = 0; i < n && j != c; ++j)
+          outbuf[i++] = buf[pos++];
       }
     } catch (eof_event&) {
       eof = true;
@@ -112,7 +113,7 @@ public:
   }
 
   template<typename Source>
-  void update(Source &source) {
+  std::size_t update(Source &source) {
     namespace io = boost::iostreams;
 
     bool end = false;
@@ -142,6 +143,8 @@ public:
         memmove(buf.get() + pos, buf.get(), boundary.size() - pos);
       }
     }
+
+    return 1;
   }
 
   template<typename Source>
