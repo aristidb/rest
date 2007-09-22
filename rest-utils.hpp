@@ -92,8 +92,10 @@ public:
   : boundary(o.boundary), buf(new char[boundary.size()]), eof(false),
     pos(boundary.size()) {}
 
+private:
   struct eof_event {};
 
+public:
   template<typename Source>
   std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
     if (eof)
@@ -112,16 +114,16 @@ public:
     return i ? i : -1;
   }
 
+private:
   template<typename Source>
   std::size_t update(Source &source) {
     namespace io = boost::iostreams;
 
     bool end = false;
 
-    while (boundary.compare(
-              0, boundary.size() - pos,
-              buf.get() + pos, boundary.size() - pos
-            ) == 0)
+    std::size_t x;
+
+    while (!(x = check_boundary()))
     {
       if (end || pos == 0)
         throw eof_event();
@@ -144,7 +146,16 @@ public:
       }
     }
 
-    return 1;
+    return x;
+  }
+
+  std::size_t check_boundary() {
+    if (0 == boundary.compare(
+               0, boundary.size() - pos,
+               buf.get() + pos, boundary.size() - pos))
+      return 0;
+    else
+      return 1;
   }
 
   template<typename Source>
