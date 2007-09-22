@@ -137,10 +137,10 @@ public:
         pos -= c;
       } while (pos > 0);
       
-      if (pos != 0)
+      if (pos != 0) {
         end = true;
-
-      memmove(buf.get() + pos, buf.get(), boundary.size() - pos);
+        memmove(buf.get() + pos, buf.get(), boundary.size() - pos);
+      }
     }
   }
 
