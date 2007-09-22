@@ -26,8 +26,6 @@
 
 #include <syslog.h>
 
-#include<iostream>//FIXME
-
 namespace rest { namespace utils {
 
 namespace uri {
@@ -86,11 +84,17 @@ class boundary_filter : public boost::iostreams::multichar_input_filter {
 public:
   boundary_filter(std::string const &boundary)
   : boundary(boundary), buf(new char[boundary.size()]), eof(false),
-    pos(boundary.size()) {}
+    pos(boundary.size())
+  {
+    kmp_init();
+  }
     
   boundary_filter(boundary_filter const &o)
   : boundary(o.boundary), buf(new char[boundary.size()]), eof(false),
-    pos(boundary.size()) {}
+    pos(boundary.size())
+  {
+    kmp_init();
+  }
 
 private:
   struct eof_event {};
@@ -149,13 +153,33 @@ private:
     return x;
   }
 
+  void kmp_init() {
+    kmp_next.resize(boundary.size() + 1);
+    std::size_t i = 0;
+    int j = -1;
+    kmp_next[0] = -1;
+    while (i < boundary.size()) {
+      while (j >= 0 && boundary[j] != boundary[i])
+        j = kmp_next[j];
+      ++i;
+      ++j;
+      kmp_next[i] = j;
+    }
+  }
+
   std::size_t check_boundary() {
-    if (0 == boundary.compare(
-               0, boundary.size() - pos,
-               buf.get() + pos, boundary.size() - pos))
-      return 0;
-    else
-      return 1;
+    std::size_t i = pos;
+    int j = 0;
+    std::size_t a = i;
+    while (i < boundary.size()) {
+      while (j >= 0 && buf[i] != boundary[j])
+        j = kmp_next[j];
+      ++i;
+      ++j;
+      if (j <= 0)
+        a = i;
+    }
+    return a - pos;
   }
 
   template<typename Source>
@@ -192,6 +216,7 @@ private:
   boost::scoped_array<char> buf;
   bool eof;
   std::size_t pos;
+  std::vector<int> kmp_next;
 };
 BOOST_IOSTREAMS_PIPABLE(boundary_filter, 0)
 
