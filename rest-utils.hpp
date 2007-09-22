@@ -110,11 +110,12 @@ public:
     std::size_t i = 0;
     try {
       while (i < n && !eof) {
-        std::size_t c = update(source);
-        if (c - pos > n - i)
-          c = pos + n - i;
-        while (pos < c)
-          outbuf[i++] = buf[pos++];
+        std::size_t c = update(source) - pos;
+        if (c > n - i)
+          c = n - i;
+        memcpy(outbuf + i, buf.get() + pos, c);
+        i += c;
+        pos += c;
       }
     } catch (eof_event&) {
       eof = true;
