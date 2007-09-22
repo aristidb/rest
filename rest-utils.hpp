@@ -26,6 +26,8 @@
 
 #include <syslog.h>
 
+#include<iostream>//FIXME
+
 namespace rest { namespace utils {
 
 namespace uri {
@@ -90,48 +92,48 @@ public:
   : boundary(o.boundary), buf(new char[boundary.size()]), eof(false),
     pos(boundary.size()) {}
 
+  struct eof_event {};
+
   template<typename Source>
   std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
     if (eof)
       return -1;
     std::streamsize i = 0;
-    while (i < n && !eof) {
-      if (!update(source))
+    try {
+      while (i < n && !eof) {
+        update(source);
         outbuf[i++] = buf[pos++];
-    }
-    if (eof)
+      }
+    } catch (eof_event&) {
+      eof = true;
       skip_transport_padding(source);
+    }
     return i ? i : -1;
   }
 
   template<typename Source>
-  bool update(Source &source) {
-    std::size_t len = boundary.size() - pos;
-    if (!boundary.compare(0, len, buf.get() + pos, len) == 0)
-      return false;
+  void update(Source &source) {
+    while (boundary.compare(0, boundary.size() - pos, buf.get() + pos, boundary.size() - pos) == 0) {
+      if (pos == 0)
+        throw eof_event();
 
-    if (len == boundary.size()) {
-      eof = true;
-      return true;
+      memmove(buf.get(), buf.get() + pos, boundary.size() - pos);
+
+      do {
+        std::streamsize c = boost::iostreams::read(source, buf.get() + boundary.size() - pos, pos);
+
+        if (c < 0)
+          break;
+
+        pos -= c;
+      } while (pos > 0);
+
+      if (pos == boundary.size())
+        throw eof_event();
+      //FIXME/TODO
+
+      std::cout << "pos: " << pos << '(' << boundary.size() << ')' << std::endl;
     }
-
-    if (len > 0)
-      memmove(buf.get(), buf.get() + pos, len);
-
-    std::streamsize c = boost::iostreams::read(source, buf.get() + len, pos);
-
-    if (c == -1) {
-      eof = true;
-    } else if (c != pos) {
-      pos = boundary.size() - c;
-      memmove(buf.get() + pos, buf.get(), c);
-    } else {
-      pos = 0;
-      if (boundary.compare(0, boundary.size(), buf.get(), boundary.size()) != 0)
-        return false;
-      eof = true;
-    }
-    return true;
   }
 
   template<typename Source>
@@ -167,7 +169,7 @@ private:
   std::string boundary;
   boost::scoped_array<char> buf;
   bool eof;
-  std::streamsize pos;
+  std::size_t pos;
 };
 BOOST_IOSTREAMS_PIPABLE(boundary_filter, 0)
 
