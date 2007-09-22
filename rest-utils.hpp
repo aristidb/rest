@@ -113,26 +113,34 @@ public:
 
   template<typename Source>
   void update(Source &source) {
-    while (boundary.compare(0, boundary.size() - pos, buf.get() + pos, boundary.size() - pos) == 0) {
-      if (pos == 0)
+    namespace io = boost::iostreams;
+
+    bool end = false;
+
+    while (boundary.compare(
+              0, boundary.size() - pos,
+              buf.get() + pos, boundary.size() - pos
+            ) == 0)
+    {
+      if (end || pos == 0)
         throw eof_event();
 
       memmove(buf.get(), buf.get() + pos, boundary.size() - pos);
 
       do {
-        std::streamsize c = boost::iostreams::read(source, buf.get() + boundary.size() - pos, pos);
+        std::streamsize c = 
+          io::read(source, buf.get() + boundary.size() - pos, pos);
 
         if (c < 0)
           break;
 
         pos -= c;
       } while (pos > 0);
+      
+      if (pos != 0)
+        end = true;
 
-      if (pos == boundary.size())
-        throw eof_event();
-      //FIXME/TODO
-
-      std::cout << "pos: " << pos << '(' << boundary.size() << ')' << std::endl;
+      memmove(buf.get() + pos, buf.get(), boundary.size() - pos);
     }
   }
 
