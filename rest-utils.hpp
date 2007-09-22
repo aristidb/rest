@@ -101,14 +101,19 @@ private:
 
 public:
   template<typename Source>
-  std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+  std::streamsize read(Source &source, char *outbuf, std::streamsize n_) {
     if (eof)
       return -1;
-    std::streamsize i = 0;
+    if (n_ <= 0)
+      return 0;
+    std::size_t n = std::size_t(n_);
+    std::size_t i = 0;
     try {
       while (i < n && !eof) {
         std::size_t c = update(source);
-        for (std::size_t j = 0; i < n && j != c; ++j)
+        if (c - pos > n - i)
+          c = pos + n - i;
+        while (pos < c)
           outbuf[i++] = buf[pos++];
       }
     } catch (eof_event&) {
@@ -127,7 +132,7 @@ private:
 
     std::size_t x;
 
-    while (!(x = check_boundary()))
+    while ((x = check_boundary()) == pos)
     {
       if (end || pos == 0)
         throw eof_event();
@@ -179,7 +184,7 @@ private:
       if (j <= 0)
         a = i;
     }
-    return a - pos;
+    return a;
   }
 
   template<typename Source>
