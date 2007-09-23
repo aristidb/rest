@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,10 +16,12 @@ int epoll_create(int size) {
 
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
   int flags = 0;
-  if(op == EPOLL_CTL_ADD || op == EPOLL_CTL_MOD)
+  if(op == EPOLL_CTL_ADD || op == EPOLL_CTL_MOD) {
     flags |= EV_ADD | EV_ENABLE;
-  else if(op == EPOLL_CTL_DEL)
+  }
+  else if(op == EPOLL_CTL_DEL) {
     flags |= EV_DELETE;
+  }
   else {
     errno = EINVAL;
     return -1;
@@ -37,8 +40,16 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
     // TODO ...
   }
 
+  // WARNING MEMLEAK! (this is never freed!) TODO
+  struct epoll_event * event_cpy = 
+#ifdef __cplusplus
+    (struct epoll_event *)
+#endif
+    malloc(sizeof(struct epoll_event));
+  memcpy(event_cpy, event, sizeof(struct epoll_event));
+
   struct kevent event_;
-  EV_SET(&event_, fd, filter, flags, 0, 0, event);
+  EV_SET(&event_, fd, filter, flags, 0, 0, event_cpy);
   return kevent(epfd, &event_, 1, 0, 0, 0);
 }
 
