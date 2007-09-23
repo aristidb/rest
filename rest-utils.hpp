@@ -83,17 +83,25 @@ private:
 class boundary_filter : public boost::iostreams::multichar_input_filter {
 public:
   boundary_filter(std::string const &boundary)
-  : boundary(boundary), buf(new char[boundary.size()]), eof(false),
+  : boundary(boundary),
+    buf(new char[boundary.size()]),
+    eof(false),
     pos(boundary.size())
   {
     kmp_init();
   }
     
   boundary_filter(boundary_filter const &o)
-  : boundary(o.boundary), buf(new char[boundary.size()]), eof(false),
+  : boundary(o.boundary),
+    buf(new char[boundary.size()]),
+    eof(false),
     pos(boundary.size())
   {
     kmp_init();
+  }
+
+  ~boundary_filter() {
+    delete [] buf;
   }
 
 private:
@@ -101,7 +109,11 @@ private:
 
 public:
   template<typename Source>
-  std::streamsize read(Source &source, char *outbuf, std::streamsize n_) {
+  std::streamsize read(
+      Source & __restrict source,
+      char * __restrict outbuf,
+      std::streamsize n_)
+  {
     if (eof)
       return -1;
     if (n_ <= 0)
@@ -113,7 +125,7 @@ public:
         std::size_t c = update(source) - pos;
         if (c > n - i)
           c = n - i;
-        memcpy(outbuf + i, buf.get() + pos, c);
+        memcpy(outbuf + i, buf + pos, c);
         i += c;
         pos += c;
       }
@@ -126,7 +138,7 @@ public:
 
 private:
   template<typename Source>
-  std::size_t update(Source &source) {
+  std::size_t update(Source & __restrict source) {
     namespace io = boost::iostreams;
 
     bool end = false;
@@ -138,11 +150,11 @@ private:
       if (end || pos == 0)
         throw eof_event();
 
-      memmove(buf.get(), buf.get() + pos, boundary.size() - pos);
+      memmove(buf, buf + pos, boundary.size() - pos);
 
       do {
         std::streamsize c = 
-          io::read(source, buf.get() + boundary.size() - pos, pos);
+          io::read(source, buf + boundary.size() - pos, pos);
 
         if (c < 0)
           break;
@@ -152,7 +164,7 @@ private:
       
       if (pos != 0) {
         end = true;
-        memmove(buf.get() + pos, buf.get(), boundary.size() - pos);
+        memmove(buf + pos, buf, boundary.size() - pos);
       }
     }
 
@@ -189,7 +201,7 @@ private:
   }
 
   template<typename Source>
-  void skip_transport_padding(Source &source) {
+  void skip_transport_padding(Source & __restrict source) {
     int ch;
     // skip LWS
     while ((ch = boost::iostreams::get(source)) == ' ' && ch == '\t')
@@ -218,8 +230,8 @@ private:
   }
 
 private:
-  std::string boundary;
-  boost::scoped_array<char> buf;
+  std::string const boundary;
+  char * __restrict buf;
   bool eof;
   std::size_t pos;
   std::vector<int> kmp_next;
@@ -231,7 +243,11 @@ public:
   length_filter(std::streamsize length) : length(length) {}
 
   template<typename Source>
-  std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+  std::streamsize read(
+      Source & __restrict source,
+      char * __restrict outbuf,
+      std::streamsize n)
+  {
     namespace io = boost::iostreams;
 
     std::streamsize c;
@@ -265,7 +281,11 @@ public:
   chunked_filter() : pending(0) { }
 
   template<typename Sink>
-  std::streamsize write(Sink& snk, char const* s, std::streamsize n) {
+  std::streamsize write(
+      Sink & __restrict snk,
+      char const * __restrict s,
+      std::streamsize n)
+  {
     namespace io = boost::iostreams;
 
     assert(n >= 0);
@@ -303,7 +323,11 @@ public:
 
 
   template<typename Source>
-  std::streamsize read(Source &source, char *outbuf, std::streamsize n) {
+  std::streamsize read(
+      Source & __restrict source,
+      char * __restrict outbuf,
+      std::streamsize n)
+  {
     namespace io = boost::iostreams;
 
     if (pending == -1)
