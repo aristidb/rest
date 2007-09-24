@@ -87,7 +87,8 @@ public:
   : boundary(boundary),
     buf(new char[boundary.size()]),
     eof(false),
-    pos(boundary.size())
+    pos(boundary.size()),
+    boundary_pos(pos)
   {
     kmp_init();
   }
@@ -96,7 +97,8 @@ public:
   : boundary(o.boundary),
     buf(new char[boundary.size()]),
     eof(false),
-    pos(boundary.size())
+    pos(boundary.size()),
+    boundary_pos(pos)
   {
     kmp_init();
   }
@@ -127,6 +129,7 @@ private:
   char * __restrict buf;
   bool eof;
   std::size_t pos;
+  std::size_t boundary_pos;
   std::vector<int> kmp_next;
 };
 BOOST_IOSTREAMS_PIPABLE(boundary_filter, 0)
@@ -163,9 +166,8 @@ std::size_t boundary_filter::update(Source & __restrict source) {
   namespace io = boost::iostreams;
 
   bool end_of_input = false;
-  std::size_t boundary_pos;
 
-  while ((boundary_pos = check_boundary()) == pos) {
+  while (boundary_pos == pos) {
     if (end_of_input || pos == 0)
       throw eof_event();
 
@@ -185,6 +187,8 @@ std::size_t boundary_filter::update(Source & __restrict source) {
       end_of_input = true;
       memmove(buf + pos, buf, boundary.size() - pos);
     }
+
+    boundary_pos = check_boundary();
   }
 
   return boundary_pos;
