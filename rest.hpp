@@ -217,12 +217,16 @@ public:
   void declare(std::string const &key, int index, keyword_type type);
   keyword_type get_declared_type(std::string const &key, int index = 0) const;
 
+  bool is_set(std::string const &key, int index = 0) const;
+
   void set(std::string const &key, int index, std::string const &value);
   void set_with_type(
     keyword_type, std::string const &key, int index, std::string const &value);
   void set_stream(std::string const &key, int index, input_stream &stream);
   void set_name(std::string const &key, int index, std::string const &name);
   void set_output(std::string const &key, int index, output_stream &output);
+
+  void unset(std::string const &key, int index = 0);
 
   void flush();
 

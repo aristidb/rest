@@ -25,13 +25,13 @@ namespace io = boost::iostreams;
 class keywords::impl {
 public:
   struct entry {
-    enum state_t { s_normal, s_unread, s_prepared };
+    enum state_t { s_normal, s_prepared, s_unset = -1 };
 
     entry(std::string const &keyword, int index, keyword_type type = NORMAL)
-    : keyword(keyword), index(index), type(type), state(s_normal) {}
+    : keyword(keyword), index(index), type(type), state(s_unset){}
 
     entry(entry const &o)
-    : keyword(o.keyword), index(o.index), type(o.type), state(s_normal) {}
+    : keyword(o.keyword), index(o.index), type(o.type), state(s_unset) {}
 
     void read() const {
       if (stream.get()) {
@@ -185,7 +185,7 @@ public:
   }
 
   void read_until(entry const &next) {
-    if (next.state != entry::s_unread)
+    if (next.state != entry::s_unset)
       return;
     if (!read_until(next.keyword))
       next.state = entry::s_normal;
@@ -194,7 +194,7 @@ public:
   void unread_form() {
     for (data_t::iterator it = data.begin(); it != data.end(); ++it)
       if (it->type == FORM_PARAMETER)
-        it->state = entry::s_unread;
+        it->state = entry::s_unset;
   }
 
   data_t::iterator find_next_form(std::string const &name) {
@@ -207,7 +207,7 @@ public:
         break;
       if (it->type != FORM_PARAMETER)
         return data.end();
-      if (it->state == entry::s_unread)
+      if (it->state == entry::s_unset)
         break;
     }
 
@@ -240,6 +240,11 @@ std::string &keywords::access(std::string const &keyword, int index) {
   p->read_until(*it);
   it->read();
   return it->data;
+}
+
+bool keywords::is_set(std::string const &keyword, int index) const {
+  impl::data_t::iterator it = p->find(keyword, index);
+  return it->state != impl::entry::s_unset;
 }
 
 void keywords::declare(
@@ -301,6 +306,16 @@ void keywords::set_name(
 {
   impl::data_t::iterator it = p->find(keyword, index);
   it->name = name;
+}
+
+void keywords::unset(std::string const &keyword, int index) {
+  impl::data_t::iterator it = p->find(keyword, index);
+  it->state = impl::entry::s_unset;
+  it->name.clear();
+  it->mime.clear();
+  it->data.clear();
+  it->stream.reset();
+  it->output.reset();
 }
 
 std::string keywords::get_name(std::string const &keyword, int index) const {
