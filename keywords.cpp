@@ -299,6 +299,7 @@ void keywords::set_stream(
   impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
   it->state = impl::entry::s_normal;
   stream.move(it->stream);
+  it->data.clear();
 }
 
 void keywords::set_name(
@@ -362,8 +363,19 @@ void keywords::set_entity(
 
     add_uri_encoded(data);
   } else {
-    declare("_", NORMAL);
-    set_stream("_", input_stream(entity.release()));
+    for (impl::data_t::iterator it = p->data.begin();
+        it != p->data.end();
+        ++it)
+      if (it->type == ENTITY) {
+        it->state = impl::entry::s_normal;
+        it->data.clear();
+        input_stream(entity.release()).move(it->stream);
+        break;
+      }
+    if (entity.get()) {
+      entity->ignore(std::numeric_limits<int>::max());
+      entity.reset();
+    }
   }
 }
 

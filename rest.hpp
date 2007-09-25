@@ -191,6 +191,7 @@ class request;
 enum keyword_type {
   NORMAL,
   COOKIE,
+  ENTITY,
   FORM_PARAMETER,
   HEADER,
   NONE = -1
