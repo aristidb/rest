@@ -176,6 +176,8 @@ public:
     std::ostream &out, content_encoding_t enc, bool may_chunk) const;
 
 private:
+  void defaults();
+
   void print_cookie_header(std::ostream &out) const;
   void encode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
   void decode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;

@@ -136,15 +136,22 @@ struct response::impl {
 
 response::response(empty_tag_t) {}
 
-response::response() : p(new impl) { }
+response::response() : p(new impl) {
+  defaults();
+}
 
-response::response(int code) : p(new impl(code)) { }
+response::response(int code) : p(new impl(code)) {
+  defaults();
+}
 
-response::response(std::string const &type) : p(new impl(type)) { }
+response::response(std::string const &type) : p(new impl(type)) {
+  defaults();
+}
 
 response::response(std::string const &type, std::string const &data)
   : p(new impl(type))
 {
+  defaults();
   p->data[identity].set(data);
 }
 
@@ -163,6 +170,11 @@ void response::move(response &o) {
 
 void response::swap(response &o) {
   p.swap(o.p);
+}
+
+void response::defaults() {
+  add_header_part("Cache-Control", "no-cache=\"Set-Cookie\"");
+  add_header_part("Cache-Control", "no-cache=\"Set-Cookie2\"");
 }
 
 void response::set_code(int code) {
@@ -352,9 +364,6 @@ void response::print_cookie_header(std::ostream &out) const {
 }
 
 void response::print_headers(std::ostream &out) const {
-  /* TODO:
-     Should we set a cache control header per default?
-   */
   for (impl::header_map::const_iterator it = p->header.begin();
       it != p->header.end();
       ++it)
