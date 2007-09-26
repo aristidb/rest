@@ -819,6 +819,9 @@ response http_connection::handle_request() {
     std::string etag;
     if (responder)
       etag = responder->x_etag(path_id);
+    time_t expires = time_t(-1);
+    if (responder)
+      expires = responder->x_expires(path_id, now);
 
     int mod_code = handle_modification_tags(
           last_modified == time_t(-1) ? now : last_modified,
@@ -843,6 +846,10 @@ response http_connection::handle_request() {
           utils::http::datetime_string(last_modified));
     if (!etag.empty())
       out.set_header("ETag", etag);
+    if (expires != time_t(-1))
+      out.set_header(
+          "Expires",
+          utils::http::datetime_string(expires));
 
     return out;
   } catch (utils::http::bad_format &) {

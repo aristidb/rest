@@ -18,6 +18,10 @@ struct tester : rest::responder<rest::ALL, rest::NO_PATH> {
     return now;
   }
 
+  time_t expires(time_t now) const {
+    return now + 3600;
+  }
+
   rest::response get(rest::keywords &kw, rest::request const &) {
     rest::response resp("text/html");
     resp.add_cookie(rest::cookie("hello", "world"));

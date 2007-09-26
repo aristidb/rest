@@ -15,8 +15,8 @@ CXXOPTFLAGS := $(CXXOPTFLAGS) -fast -mcpu=G4 -mtune=G4
 CXXSTDFLAGS := $(CXXSTDFLAGS) -DAPPLE
 endif
 
-#CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
-CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
+CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
+#CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
 
 LIBREST_SOURCES := context.cpp keywords.cpp response.cpp uri.cpp \
 	host.cpp server.cpp logger.cpp datetime.cpp socket_device.cpp \

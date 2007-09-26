@@ -381,6 +381,7 @@ namespace detail {
 
     virtual std::string x_etag(any_path const &) const = 0;
     virtual time_t x_last_modified(any_path const &, time_t) const = 0;
+    virtual time_t x_expires(any_path const &, time_t) const = 0;
 
     virtual ~responder_base() {}
   };
@@ -460,6 +461,10 @@ protected:
     return std::string();
   }
 
+  virtual time_t expires(path_parameter, time_t) const {
+    return time_t(-1);
+  }
+
 private:
   bool x_exists(detail::any_path const &path, keywords &kw) const {
     return exists(detail::unpack<path_type>(path), kw);
@@ -471,6 +476,10 @@ private:
 
   std::string x_etag(detail::any_path const &path) const {
     return etag(detail::unpack<path_type>(path));
+  }
+
+  time_t x_expires(detail::any_path const &path, time_t now) const {
+    return expires(detail::unpack<path_type>(path), now);
   }
 
 private:
@@ -489,13 +498,13 @@ private:
 };
 
 template<unsigned ResponseType>
-class responder<ResponseType, void>
+class responder<ResponseType, NO_PATH>
 : public
   detail::responder_base,
-  detail::i_get<void, ResponseType & GET>,
-  detail::i_put<void, ResponseType & PUT>,
-  detail::i_post<void, ResponseType & POST>,
-  detail::i_delete_<void, ResponseType & DELETE>
+  detail::i_get<NO_PATH, ResponseType & GET>,
+  detail::i_put<NO_PATH, ResponseType & PUT>,
+  detail::i_post<NO_PATH, ResponseType & POST>,
+  detail::i_delete_<NO_PATH, ResponseType & DELETE>
 {
 public:
   static unsigned const flags = ResponseType;
@@ -515,6 +524,10 @@ protected:
     return std::string();
   }
 
+  virtual time_t expires(time_t) const {
+    return time_t(-1);
+  }
+
 private:
   bool x_exists(detail::any_path const &, keywords &kw) const {
     return exists(kw);
@@ -526,6 +539,10 @@ private:
 
   std::string x_etag(detail::any_path const &) const {
     return etag();
+  }
+
+  time_t x_expires(detail::any_path const &, time_t now) const {
+    return expires(now);
   }
 
 private:
