@@ -210,15 +210,18 @@ inline void boundary_filter::kmp_init() {
 
 inline std::size_t boundary_filter::check_boundary() {
   std::size_t i = pos;
-  int j = 0;
+  int j = 0, j2;
   std::size_t x = i;
   while (i < boundary.size()) {
+    j2 = j;
     while (j >= 0 && buf[i] != boundary[j])
       j = kmp_next[j];
     ++i;
     ++j;
     if (j <= 0)
       x = i;
+    else if (j <= j2)
+      x = i - 1;
   }
   return x;
 }

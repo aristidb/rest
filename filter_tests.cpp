@@ -177,6 +177,28 @@ TEST() {
   Equals("--" + y.str(), "--a\r\nb\r\nc");
 }
 
+TEST() {
+  std::istringstream x("12121234xy");
+  filtering_istream s;
+  s.push(boundary_filter("1234"));
+  s.push(boost::ref(x), 0);
+  std::ostringstream y;
+  y << s.rdbuf();
+  Equals("[" + y.str() + "]", "[1212]");
+  Equals(x.tellg(), std::streampos(9));
+}
+
+TEST() {
+  std::istringstream x("1212111234xy");
+  filtering_istream s;
+  s.push(boundary_filter("1234"));
+  s.push(boost::ref(x), 0);
+  std::ostringstream y;
+  y << s.rdbuf();
+  Equals("[" + y.str() + "]", "[121211]");
+  Equals(x.tellg(), std::streampos(11));
+}
+
 }
 
 }

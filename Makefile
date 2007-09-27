@@ -57,7 +57,7 @@ unit: librest.a $(UNIT_OBJECTS) $(UNIT_DEPS)
 test1: librest.a test1.cpp $(BUILDDIR)/test1.dep
 	$(CXX) $(CXXFLAGS) test1.cpp -o test1 $(LDFLAGS)
 
-boundary-filter-bench: librest.a boundary-filter-bench.cpp $(BUILDDIR)/boundary-filter-bench.dep
+boundary-filter-bench: boundary-filter-bench.cpp $(BUILDDIR)/boundary-filter-bench.dep
 	$(CXX) $(CXXSTDFLAGS) $(CXXOPTFLAGS) $(LDFLAGS) boundary-filter-bench.cpp -o boundary-filter-bench
 
 ifneq ($(MAKECMDGOALS), clean)
