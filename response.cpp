@@ -173,8 +173,9 @@ void response::swap(response &o) {
 }
 
 void response::defaults() {
-  add_header_part("Cache-Control", "no-cache=\"Set-Cookie\"");
-  add_header_part("Cache-Control", "no-cache=\"Set-Cookie2\"");
+  set_header("Cache-Control", "");
+  set_header("Set-Cookie", "");
+  set_header("Set-Cookie2", "");
 }
 
 void response::set_code(int code) {
@@ -364,10 +365,12 @@ void response::print_cookie_header(std::ostream &out) const {
 }
 
 void response::print_headers(std::ostream &out) const {
+  p->header.erase("set-cookie");
   for (impl::header_map::const_iterator it = p->header.begin();
       it != p->header.end();
       ++it)
-    out << it->first << ": " << it->second << "\r\n";
+    if (!it->second.empty())
+      out << it->first << ": " << it->second << "\r\n";
   print_cookie_header(out);
   out << "\r\n";
 }

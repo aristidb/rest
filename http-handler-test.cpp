@@ -22,6 +22,10 @@ struct tester : rest::responder<rest::ALL, rest::NO_PATH> {
     return now + 3600;
   }
 
+  rest::cache::flags cache() const {
+    return rest::cache::private_;
+  }
+
   rest::response get(rest::keywords &kw, rest::request const &) {
     rest::response resp("text/html");
     resp.add_cookie(rest::cookie("hello", "world"));

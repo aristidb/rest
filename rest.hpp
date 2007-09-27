@@ -331,6 +331,36 @@ enum response_type {
 struct NO_PATH {};
 struct DEDUCED_PATH {};
 
+namespace cache {
+  enum flags {
+    NO_FLAGS = 0U,
+    private_ = 1U,
+    no_cache = 2U,
+    no_store = 4U,
+    no_transform = 8U
+  };
+
+  inline flags operator~(flags x) {
+    return flags(~(unsigned)x);
+  }
+
+  inline flags operator|(flags a, flags b) {
+    return flags((unsigned)a | (unsigned)b);
+  }
+
+  inline flags &operator|=(flags &a, flags b) {
+    return a = (a | b);
+  }
+
+  inline flags operator&(flags a, flags b) {
+    return flags((unsigned)a & (unsigned)b);
+  }
+
+  inline flags &operator&=(flags &a, flags b) {
+    return a = (a & b);
+  }
+}
+
 namespace detail {
   typedef boost::any any_path;
 
@@ -382,6 +412,9 @@ namespace detail {
     virtual std::string x_etag(any_path const &) const = 0;
     virtual time_t x_last_modified(any_path const &, time_t) const = 0;
     virtual time_t x_expires(any_path const &, time_t) const = 0;
+
+    virtual cache::flags x_cache(any_path const &) const = 0;
+    virtual cache::flags x_cache(any_path const &, std::string const &) const=0;
 
     virtual ~responder_base() {}
   };
@@ -465,6 +498,16 @@ protected:
     return time_t(-1);
   }
 
+  virtual cache::flags cache(path_parameter) const {
+    return cache::NO_FLAGS;
+  }
+
+  virtual cache::flags cache(path_parameter, std::string const &header) const {
+    if (header == "set-cookie" || header == "set-cookie2")
+      return cache::no_cache;
+    return cache::NO_FLAGS;
+  }
+
 private:
   bool x_exists(detail::any_path const &path, keywords &kw) const {
     return exists(detail::unpack<path_type>(path), kw);
@@ -480,6 +523,16 @@ private:
 
   time_t x_expires(detail::any_path const &path, time_t now) const {
     return expires(detail::unpack<path_type>(path), now);
+  }
+
+  cache::flags x_cache(detail::any_path const &path) const {
+    return cache(detail::unpack<path_type>(path));
+  }
+
+  cache::flags x_cache(
+      detail::any_path const &path, std::string const &header) const
+  {
+    return cache(detail::unpack<path_type>(path), header);
   }
 
 private:
@@ -528,6 +581,16 @@ protected:
     return time_t(-1);
   }
 
+  virtual cache::flags cache() const {
+    return cache::NO_FLAGS;
+  }
+
+  virtual cache::flags cache(std::string const &header) const {
+    if (header == "set-cookie" || header == "set-cookie2")
+      return cache::no_cache;
+    return cache::NO_FLAGS;
+  }
+
 private:
   bool x_exists(detail::any_path const &, keywords &kw) const {
     return exists(kw);
@@ -543,6 +606,14 @@ private:
 
   time_t x_expires(detail::any_path const &, time_t now) const {
     return expires(now);
+  }
+
+  cache::flags x_cache(detail::any_path const &) const {
+    return cache();
+  }
+
+  cache::flags x_cache(detail::any_path const&, std::string const&header)const{
+    return cache(header);
   }
 
 private:
