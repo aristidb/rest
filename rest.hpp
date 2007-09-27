@@ -142,6 +142,7 @@ public:
   void set_type(std::string const &type);
   void set_header(std::string const &name, std::string const &value);
   void add_header_part(std::string const &name, std::string const &value);
+  void list_headers(boost::function<void(std::string const &)> const &cb) const;
 
   void add_cookie(cookie const &c);
 
@@ -359,6 +360,12 @@ namespace cache {
   inline flags &operator&=(flags &a, flags b) {
     return a = (a & b);
   }
+
+  inline flags default_header_flags(std::string const &header) {
+    if (header == "set-cookie" || header == "set-cookie2")
+      return no_cache;
+    return NO_FLAGS;
+  }
 }
 
 namespace detail {
@@ -503,9 +510,7 @@ protected:
   }
 
   virtual cache::flags cache(path_parameter, std::string const &header) const {
-    if (header == "set-cookie" || header == "set-cookie2")
-      return cache::no_cache;
-    return cache::NO_FLAGS;
+    return cache::default_header_flags(header);
   }
 
 private:
@@ -586,9 +591,7 @@ protected:
   }
 
   virtual cache::flags cache(std::string const &header) const {
-    if (header == "set-cookie" || header == "set-cookie2")
-      return cache::no_cache;
-    return cache::NO_FLAGS;
+    return cache::default_header_flags(header);
   }
 
 private:

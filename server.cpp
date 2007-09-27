@@ -312,6 +312,12 @@ namespace {
     int handle_modification_tags(
       time_t, std::string const &, std::string const &);
 
+    void handle_caching(
+      det::responder_base *, det::any_path const &, response &, time_t, time_t);
+    void handle_header_caching(
+      det::responder_base *, det::any_path const &, response &, bool &,
+      std::string const &);
+
     response handle_get(
       det::responder_base*, det::any_path const&, keywords&, request const&);
     response handle_head(
@@ -851,6 +857,9 @@ response http_connection::handle_request() {
           "Expires",
           utils::http::datetime_string(expires));
 
+    if (responder)
+      handle_caching(responder, path_id, out, now, expires);
+
     return out;
   } catch (utils::http::bad_format &) {
     return response(400);
@@ -911,6 +920,75 @@ int http_connection::handle_modification_tags(
     }
   }
   return 0;
+}
+
+void http_connection::handle_caching(
+  det::responder_base *responder,
+  det::any_path const &path_id,
+  response &resp,
+  time_t now,
+  time_t expires)
+{
+  bool cripple_expires = false;
+  cache::flags general = responder->x_cache(path_id);
+
+  if (general & cache::private_) {
+    cripple_expires = true;
+    resp.add_header_part("Cache-Control", "private");
+  } else {
+    resp.add_header_part("Cache-Control", "public");
+  }
+
+  if (general & cache::no_cache) {
+    resp.add_header_part("Cache-Control", "no-cache");
+    resp.add_header_part("Pragma", "no-cache");
+  }
+
+  if (general & cache::no_store) {
+    resp.add_header_part("Cache-Control", "no-store");
+  }
+
+  if (general & cache::no_transform) {
+    resp.add_header_part("Cache-Control", "no-transform");
+  }
+
+  resp.list_headers(boost::bind(
+      &http_connection::handle_header_caching,
+      this,
+      responder,
+      boost::cref(path_id),
+      boost::ref(resp),
+      boost::ref(cripple_expires),
+      _1));
+
+  if (cripple_expires) {
+    std::ostringstream max_age;
+    max_age << "max-age=" << (expires - now);
+    resp.add_header_part("Cache-Control", max_age.str());
+    resp.set_header("Expires", utils::http::datetime_string(0));
+  }
+}
+
+void http_connection::handle_header_caching(
+  det::responder_base *responder,
+  det::any_path const &path_id,
+  response &resp,
+  bool &cripple_expires,
+  std::string const &header)
+{
+  cache::flags flags = responder->x_cache(path_id, header);
+  if (flags & cache::no_cache) {
+    cripple_expires = true;
+    std::string x;
+    x += "no-cache="; x += '"'; x += header; x += '"';
+    resp.add_header_part("Cache-Control",  x);
+  }
+  if (flags & cache::private_) {
+    cripple_expires = true;
+    std::string x;
+    x += "private="; x += '"'; x += header; x += '"';
+    resp.add_header_part("Cache-Control",  x);
+  }
 }
 
 response http_connection::handle_options(

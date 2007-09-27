@@ -23,7 +23,7 @@ struct tester : rest::responder<rest::ALL, rest::NO_PATH> {
   }
 
   rest::cache::flags cache() const {
-    return rest::cache::private_;
+    return rest::cache::private_ | rest::cache::no_transform;
   }
 
   rest::response get(rest::keywords &kw, rest::request const &) {

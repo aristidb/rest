@@ -174,8 +174,9 @@ void response::swap(response &o) {
 
 void response::defaults() {
   set_header("Cache-Control", "");
+  set_header("Pragma", "");
   set_header("Set-Cookie", "");
-  set_header("Set-Cookie2", "");
+  //set_header("Set-Cookie2", ""); -- unused
 }
 
 void response::set_code(int code) {
@@ -198,12 +199,21 @@ void response::add_header_part(
   std::string name = name_;
   boost::algorithm::to_lower(name);
   impl::header_map::iterator i = p->header.find(name);
-  if(i == p->header.end())
+  if(i == p->header.end() || i->second.empty())
     set_header(name, value);
   else {
     i->second += ", ";
     i->second += value;
   }
+}
+
+void response::list_headers(
+    boost::function<void (std::string const &)> const &cb) const
+{
+  for (impl::header_map::iterator it = p->header.begin();
+      it != p->header.end();
+      ++it)
+    cb(it->first);
 }
 
 void response::add_cookie(cookie const &c) {
