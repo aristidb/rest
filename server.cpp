@@ -846,10 +846,6 @@ response http_connection::handle_request() {
           utils::http::datetime_string(last_modified));
     if (!etag.empty())
       out.set_header("ETag", etag);
-    if (expires != time_t(-1))
-      out.set_header(
-          "Expires",
-          utils::http::datetime_string(expires));
 
     if (responder)
       handle_caching(responder, path_id, out, now, expires);
@@ -943,13 +939,11 @@ void http_connection::handle_caching(
     resp.add_header_part("Pragma", "no-cache");
   }
 
-  if (general & cache::no_store) {
+  if (general & cache::no_store)
     resp.add_header_part("Cache-Control", "no-store");
-  }
 
-  if (general & cache::no_transform) {
+  if (general & cache::no_transform)
     resp.add_header_part("Cache-Control", "no-transform");
-  }
 
   resp.list_headers(boost::bind(
       &http_connection::handle_header_caching,
@@ -960,13 +954,18 @@ void http_connection::handle_caching(
       boost::ref(cripple_expires),
       _1));
 
-  if (cripple_expires && expires != time_t(-1)) {
+  if (expires != time_t(-1)) {
     std::ostringstream s_max_age;
     time_t max_age = (expires > now) ? (expires - now) : 0;
     s_max_age << "max-age=" << max_age;
     resp.add_header_part("Cache-Control", s_max_age.str());
-    resp.set_header("Expires", utils::http::datetime_string(0));
+
+    if (!cripple_expires)
+      resp.set_header("Expires", utils::http::datetime_string(expires));
   }
+
+  if (cripple_expires)
+    resp.set_header("Expires", "0");
 }
 
 void http_connection::handle_header_caching(
