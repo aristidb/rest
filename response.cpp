@@ -173,10 +173,10 @@ void response::swap(response &o) {
 }
 
 void response::defaults() {
+  // Make sure that these headers exist before they are examined for caching:
+  set_header("Expires", "");
   set_header("Cache-Control", "");
   set_header("Pragma", "");
-  set_header("Set-Cookie", "");
-  //set_header("Set-Cookie2", ""); -- unused
 }
 
 void response::set_code(int code) {
@@ -219,6 +219,11 @@ void response::list_headers(
 void response::add_cookie(cookie const &c) {
   p->cookies.erase(c.name);
   p->cookies.insert(c);
+
+  // Set-Cookie headers are not set like normal headers, fake the existence
+  // of a Set-Cookie header:
+  set_header("Set-Cookie", "");
+  //set_header("Set-Cookie2", ""); -- unused
 }
 
 void response::set_data(
