@@ -313,8 +313,6 @@ public:
     boost::format length("%1$x");
     length % n;
 
-    // TODO handle 0 <= ret < length 
-
     std::streamsize ret = io::write(snk, length.str().c_str(),
                                     length.str().length());
     if(ret < 0)

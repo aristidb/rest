@@ -61,12 +61,6 @@ namespace det = rest::detail;
 namespace io = boost::iostreams;
 namespace algo = boost::algorithm;
 
-/*
- * Big TODO:
- *
- * - see below (for more)
- */
-
 typedef
   boost::multi_index_container<
     boost::reference_wrapper<host const>,
