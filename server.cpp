@@ -863,44 +863,49 @@ response http_connection::handle_request() {
 int http_connection::handle_modification_tags(
   time_t last_modified, std::string const &etag, std::string const &method)
 {
+  int code = 0;
   boost::optional<std::string> el;
   el = request_.get_header("if-modified-since");
   if (el) {
     time_t if_modified_since = utils::http::datetime_value(el.get());
-    if (if_modified_since >= last_modified)
-      return 304;
+    if (if_modified_since < last_modified)
+      return 0;
+    code = 304;
   }
   el = request_.get_header("if-unmodified-since");
   if (el) {
     time_t if_unmodified_since = utils::http::datetime_value(el.get());
-    if (if_unmodified_since < last_modified)
-      return 412;
+    if (if_unmodified_since >= last_modified)
+      return 0;
+    code = 412;
   }
   el = request_.get_header("if-match");
   if (el) {
     if (el.get() == "*") {
-      if (etag.empty())
-        return 412;
+      if (!etag.empty())
+        return 0;
     } else {
       std::vector<std::string> if_match;
       utils::http::parse_list(el.get(), if_match);
-      if (std::find(if_match.begin(), if_match.end(), etag) == if_match.end())
-        return 412;
+      if (std::find(if_match.begin(), if_match.end(), etag) != if_match.end())
+        return 0;
     }
+    code = 412;
   }
   el = request_.get_header("if-none-match");
   if (el) {
-    int const fail = (method == "GET" || method == "HEAD") ? 304 : 412;
     if (el.get() == "*") {
-      if (!etag.empty())
-        return fail;
+      if (etag.empty())
+        return 0;
     } else {
       std::vector<std::string> if_none_match;
       utils::http::parse_list(el.get(), if_none_match);
-      if (std::find(if_none_match.begin(), if_none_match.end(), etag) !=
+      if (std::find(if_none_match.begin(), if_none_match.end(), etag) ==
           if_none_match.end())
-        return fail;
+        return 0;
     }
+    if (code != 412)
+      code = (method == "GET" || method == "HEAD") ? 304 : 412;
   }
   el = request_.get_header("if-range");
   if (el) {
@@ -913,7 +918,7 @@ int http_connection::handle_modification_tags(
         request_.erase_header("range");
     }
   }
-  return 0;
+  return code;
 }
 
 void http_connection::handle_caching(
@@ -955,10 +960,11 @@ void http_connection::handle_caching(
       boost::ref(cripple_expires),
       _1));
 
-  if (cripple_expires) {
-    std::ostringstream max_age;
-    max_age << "max-age=" << (expires - now);
-    resp.add_header_part("Cache-Control", max_age.str());
+  if (cripple_expires && expires != time_t(-1)) {
+    std::ostringstream s_max_age;
+    time_t max_age = (expires > now) ? (expires - now) : 0;
+    s_max_age << "max-age=" << max_age;
+    resp.add_header_part("Cache-Control", s_max_age.str());
     resp.set_header("Expires", utils::http::datetime_string(0));
   }
 }

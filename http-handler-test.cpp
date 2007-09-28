@@ -19,7 +19,7 @@ struct tester : rest::responder<rest::ALL, rest::NO_PATH> {
   }
 
   time_t expires(time_t now) const {
-    return now + 3600;
+    return now + 10;
   }
 
   rest::cache::flags cache() const {
