@@ -285,6 +285,11 @@ response::choose_content_encoding(
   return encodings[0];
 }
 
+bool response::is_nil(content_encoding_t enc) const {
+  return p->data[enc].type == impl::data_holder::NIL &&
+         p->data[enc].compute_from == enc;
+}
+
 bool response::empty(content_encoding_t enc) const {
   if (p->data[enc].type == impl::data_holder::NIL)
     return p->data[enc].compute_from == enc;

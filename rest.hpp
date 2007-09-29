@@ -171,7 +171,8 @@ public:
   content_encoding_t choose_content_encoding(
     std::vector<content_encoding_t> const &encodings) const;
 
-  bool empty(content_encoding_t content_encoding) const;
+  bool is_nil(content_encoding_t content_encoding = identity) const;
+  bool empty(content_encoding_t content_encoding = identity) const;
   bool chunked(content_encoding_t content_encoding) const;
   std::size_t length(content_encoding_t content_encoding) const;
 
