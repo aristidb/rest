@@ -740,6 +740,8 @@ void http_connection::serve() {
     while (open()) {
       reset();
       response resp(handle_request());
+      if (resp.is_nil())
+        request_.get_host().make_standard_response(resp);
       request_.clear();
       send(resp);
     }

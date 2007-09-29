@@ -777,6 +777,8 @@ public:
     host const &h;
   };
 
+  void make_standard_response(response &) const;
+
 private:
   template<class T>
   static void delete_helper(void *p) { delete static_cast<T *>(p); }

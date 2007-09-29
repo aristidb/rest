@@ -2,6 +2,7 @@
 #include "rest.hpp"
 #include <vector>
 #include <utility>
+#include <sstream>
 
 using namespace rest;
 
@@ -33,4 +34,19 @@ context &host::get_context() const { return p->con; }
 
 void host::do_store(void *x, void (*destruct)(void *))  {
   p->storage.push_back(std::make_pair(x, destruct));
+}
+
+void host::make_standard_response(response &resp) const {
+  if (resp.get_code() == -1 || resp.get_code() == 200)
+    return;
+
+  //TODO?
+  resp.set_type("text/plain");
+
+  int const code = resp.get_code();
+
+  std::ostringstream data;
+  data << response::reason(code) << " (HTTP " << code << ")\n";
+
+  resp.set_data(data.str());
 }
