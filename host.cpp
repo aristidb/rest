@@ -14,6 +14,9 @@ public:
   typedef std::vector<std::pair<void *, void (*)(void *)> > storage_t;
   storage_t storage;
 
+  typedef std::map<int, std::pair<std::string, std::string> > std_resp_t;
+  std_resp_t standard_responses;
+
   impl(std::string const &name) : name(name) {}
 
   ~impl() {
@@ -22,7 +25,18 @@ public:
   }
 };
 
-host::host(std::string const &name) : p(new impl(name)) {}
+host::host(std::string const &name) : p(new impl(name)) {
+  for (int code = 0; code < 1000; ++code) {
+    if (code == 200)
+      continue;
+    char const *reason = response::reason(code);
+    if (!*reason)
+      continue;
+    std::ostringstream data;
+    data << reason << " (Code " << code << ")\n";
+    set_standard_response(code, "text/plain", data.str());
+  }
+}
 
 host::~host() {}
 
@@ -37,16 +51,20 @@ void host::do_store(void *x, void (*destruct)(void *))  {
 }
 
 void host::make_standard_response(response &resp) const {
-  if (resp.get_code() == -1 || resp.get_code() == 200)
+  int const code = resp.get_code();
+  impl::std_resp_t::const_iterator it = p->standard_responses.find(code);
+
+  if (it == p->standard_responses.end())
     return;
 
-  //TODO?
-  resp.set_type("text/plain");
+  resp.set_type(it->second.first);
+  resp.set_data(it->second.second);
+}
 
-  int const code = resp.get_code();
-
-  std::ostringstream data;
-  data << response::reason(code) << " (HTTP " << code << ")\n";
-
-  resp.set_data(data.str());
+void host::set_standard_response(
+  int code, std::string const &mime, std::string const &text)
+{
+  p->standard_responses.erase(code);
+  p->standard_responses.insert(
+    std::make_pair(code, std::make_pair(mime, text)));
 }

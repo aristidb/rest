@@ -778,6 +778,8 @@ public:
   };
 
   void make_standard_response(response &) const;
+  void set_standard_response(
+    int code, std::string const &mime, std::string const &text);
 
 private:
   template<class T>
