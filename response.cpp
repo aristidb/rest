@@ -66,16 +66,27 @@ struct response::impl {
     bool seekable;
     std::string string;
     content_encoding_t compute_from;
+    std::size_t length;
 
     void set(std::string const &str) {
       type = STRING;
       string = str;
+      length = string.size();
     }
 
     void set(input_stream &in, bool seekable_) {
       type = STREAM;
       in.move(stream);
       seekable = seekable_;
+      if (seekable) {
+        std::size_t old_pos = stream->tellg();
+        stream->seekg(0, std::ios::end);
+        std::size_t new_pos = stream->tellg();
+        stream->seekg(old_pos, std::ios::beg);
+        length = new_pos - old_pos;
+      } else {
+        length = std::size_t(-1);
+      }
     }
 
     bool empty() const {
@@ -92,39 +103,15 @@ struct response::impl {
     }
 
     bool chunked() const {
-      switch (type) {
-      case NIL:
-        return true;
-      case STRING:
-        return false;
-      case STREAM:
-        return !seekable;
-      }
-      return true;
-    }
-
-    std::size_t length() const {
-      switch (type) {
-      case NIL:
-        break;
-      case STRING:
-        return string.length();
-      case STREAM:
-        if (seekable) {
-          std::size_t old_pos = stream->tellg();
-          stream->seekg(0, std::ios::end);
-          std::size_t new_pos = stream->tellg();
-          stream->seekg(old_pos, std::ios::beg);
-          return new_pos - old_pos;
-        }
-        break;
-      }
-      return 0;
+      return length == std::size_t(-1);
     }
 
     data_holder() 
     : type(NIL),
-      stream(0), seekable(false), compute_from(identity) { }
+      stream(0),
+      seekable(false),
+      compute_from(identity),
+      length(std::size_t(-1)) { }
   };
 
   boost::array<data_holder, response::X_NO_OF_ENCODINGS> data;
@@ -282,9 +269,9 @@ response::choose_content_encoding(
       return *it;
   if (p->data[identity].type == impl::data_holder::NIL)
     return identity;
-  std::size_t length = p->data[identity].length();
+  std::size_t length = p->data[identity].length;
 
-  if (length != 0) {
+  if (length != std::size_t(-1)) {
     rest::utils::property_tree &conf = rest::config::get().tree();
 
     std::size_t min_length =
@@ -309,7 +296,11 @@ bool response::chunked(content_encoding_t enc) const {
 }
 
 std::size_t response::length(content_encoding_t enc) const {
-  return p->data[enc].length();
+  return empty(enc) ? 0 : p->data[enc].length;
+}
+
+void response::set_length(std::size_t len, content_encoding_t enc) {
+  p->data[enc].length = len;
 }
 
 namespace {
@@ -474,7 +465,7 @@ void response::decode(
     in.push(io::null_source());
     break;
   case impl::data_holder::STRING:
-    in.push(io::array_source(d.string.data(), d.string.length()));
+    in.push(io::array_source(d.string.data(), d.length));
     break;
   case impl::data_holder::STREAM:
     in.push(boost::ref(*d.stream));

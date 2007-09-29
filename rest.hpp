@@ -159,6 +159,9 @@ public:
   void set_data(input_stream &data, bool seekable,
     content_encoding_t content_encoding = identity);
 
+  void set_length(std::size_t size,
+    content_encoding_t content_encoding = identity);
+
   int get_code() const;
   static char const *reason(int code);
   std::string const &get_type() const;
