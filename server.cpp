@@ -962,6 +962,8 @@ void http_connection::handle_caching(
 
     if (!cripple_expires)
       resp.set_header("Expires", utils::http::datetime_string(expires));
+  } else if (!cripple_expires) {
+    resp.set_header("Expires", "");
   }
 
   if (cripple_expires)
