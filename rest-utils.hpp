@@ -29,6 +29,20 @@
 
 namespace rest { namespace utils {
 
+struct string_icompare {
+  bool operator() (std::string const &a, std::string const &b) const {
+    return std::lexicographical_compare(
+        a.begin(), a.end(),
+        b.begin(), b.end(),
+        *this);
+  }
+
+  bool operator() (char a, char b) const {
+    return std::tolower(a) < std::tolower(b);
+  }
+};
+
+
 namespace uri {
   std::string escape(std::string::const_iterator, std::string::const_iterator);
 
@@ -472,8 +486,6 @@ namespace http {
       throw bad_format();
     return ret;
   }
-
-  typedef std::map<std::string, std::string> header_fields;
 
   // reads a header field from `in' and adds it to `fields'
   // see RFC 2616 chapter 4.2

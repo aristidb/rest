@@ -14,7 +14,10 @@ public:
 
   host const *host_;
 
-  typedef std::map<std::string, std::string> header_map;
+  typedef std::map<std::string, std::string,
+                   rest::utils::string_icompare>
+          header_map;
+
   header_map headers;
 
   network::address addr;

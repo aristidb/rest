@@ -16,6 +16,7 @@
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
 #include <map>
+#include <algorithm>
 #include <cassert>
 
 using rest::response;
@@ -47,7 +48,11 @@ namespace {
 struct response::impl {
   int code;
   std::string type;
-  typedef std::map<std::string, std::string> header_map;
+
+  typedef std::map<std::string, std::string,
+                   rest::utils::string_icompare>
+          header_map;
+
   header_map header;
 
   typedef boost::multi_index_container<
@@ -174,21 +179,17 @@ void response::set_type(std::string const &type) {
   p->type = type;
 }
 
-void response::set_header(std::string const &name_, std::string const &value) {
-  std::string name = name_;
-  boost::algorithm::to_lower(name);
+void response::set_header(std::string const &name, std::string const &value) {
   p->header[name] = value;
 }
 
 void response::add_header_part(
-    std::string const &name_, std::string const &value)
+    std::string const &name, std::string const &value)
 {
-  std::string name = name_;
-  boost::algorithm::to_lower(name);
   impl::header_map::iterator i = p->header.find(name);
-  if(i == p->header.end() || i->second.empty())
+  if(i == p->header.end() || i->second.empty()) {
     set_header(name, value);
-  else {
+  } else {
     i->second += ", ";
     i->second += value;
   }

@@ -119,15 +119,14 @@ public:
   }
 
   void read_headers() {
-    using utils::http::header_fields;
-
-    header_fields headers;
+    typedef std::map<std::string, std::string, rest::utils::string_icompare> hm;
+    hm headers;
     utils::http::read_headers(*element, headers);
 
-    parse_content_disposition(headers["content-disposition"]);
+    parse_content_disposition(headers["Content-Disposition"]);
 
     {
-      header_fields::iterator it = headers.find("content-type");
+      hm::iterator it = headers.find("Content-Type");
       if (it != headers.end())
         next_filetype = it->second;
       else

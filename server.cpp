@@ -298,9 +298,6 @@ namespace {
       send(r, !flags.test(NO_ENTITY));
     }
 
-    static hosts_cont_t::const_iterator find_host(
-      utils::http::header_fields const &fields, hosts_cont_t const &hosts);
-
     void serve();
 
     int handle_modification_tags(
@@ -786,7 +783,7 @@ response http_connection::handle_request() {
     if (ret != 0)
       return response(ret);
 
-    boost::optional<std::string> host_header = request_.get_header("host");
+    boost::optional<std::string> host_header = request_.get_header("Host");
     if (!host_header)
       throw utils::http::bad_format();
 
@@ -844,7 +841,7 @@ response http_connection::handle_request() {
     out.set_header("Date", utils::http::datetime_string(now));
     if (last_modified != time_t(-1))
       out.set_header(
-          "Last-modified",
+          "Last-Modified",
           utils::http::datetime_string(last_modified));
     if (!etag.empty())
       out.set_header("ETag", etag);
@@ -863,21 +860,21 @@ int http_connection::handle_modification_tags(
 {
   int code = 0;
   boost::optional<std::string> el;
-  el = request_.get_header("if-modified-since");
+  el = request_.get_header("If-Modified-Since");
   if (el) {
     time_t if_modified_since = utils::http::datetime_value(el.get());
     if (if_modified_since < last_modified)
       return 0;
     code = 304;
   }
-  el = request_.get_header("if-unmodified-since");
+  el = request_.get_header("If-Unmodified-Since");
   if (el) {
     time_t if_unmodified_since = utils::http::datetime_value(el.get());
     if (if_unmodified_since >= last_modified)
       return 0;
     code = 412;
   }
-  el = request_.get_header("if-match");
+  el = request_.get_header("If-Match");
   if (el) {
     if (el.get() == "*") {
       if (!etag.empty())
@@ -890,7 +887,7 @@ int http_connection::handle_modification_tags(
     }
     code = 412;
   }
-  el = request_.get_header("if-none-match");
+  el = request_.get_header("If-None-Match");
   if (el) {
     if (el.get() == "*") {
       if (etag.empty())
@@ -905,15 +902,15 @@ int http_connection::handle_modification_tags(
     if (code != 412)
       code = (method == "GET" || method == "HEAD") ? 304 : 412;
   }
-  el = request_.get_header("if-range");
+  el = request_.get_header("If-Range");
   if (el) {
     time_t v = utils::http::datetime_value(el.get());
     if (v == time_t(-1)) {
       if (el.get() != etag) 
-        request_.erase_header("range");
+        request_.erase_header("Range");
     } else {
       if (v <= last_modified)
-        request_.erase_header("range");
+        request_.erase_header("Range");
     }
   }
   return code;
@@ -1102,7 +1099,7 @@ response http_connection::handle_delete(
 
 int http_connection::set_header_options() {
   boost::optional<std::string> connect_header =
-    request_.get_header("connection");
+    request_.get_header("Connection");
   if (connect_header) {
     std::vector<std::string> tokens;
     utils::http::parse_list(connect_header.get(), tokens);
@@ -1121,7 +1118,7 @@ int http_connection::set_header_options() {
 
   qlist_t qlist;
   boost::optional<std::string> accept_encoding =
-    request_.get_header("accept-encoding");
+    request_.get_header("Accept-Encoding");
   if (accept_encoding)
     utils::http::parse_qlist(accept_encoding.get(), qlist);
 
@@ -1189,7 +1186,7 @@ int http_connection::handle_entity(keywords &kw) {
   pop_filt_stream fin;
 
   boost::optional<std::string> content_encoding =
-    request_.get_header("content-encoding");
+    request_.get_header("Content-Encoding");
 
   if (content_encoding) {
     std::vector<std::string> ce;
@@ -1212,7 +1209,7 @@ int http_connection::handle_entity(keywords &kw) {
   }
 
   boost::optional<std::string> transfer_encoding =
-    request_.get_header("transfer-encoding");
+    request_.get_header("Transfer-Encoding");
 
   bool chunked = false;
 
@@ -1239,7 +1236,7 @@ int http_connection::handle_entity(keywords &kw) {
   }
 
   boost::optional<std::string> content_length =
-    request_.get_header("content-length");
+    request_.get_header("Content-Length");
 
   if (!content_length && !chunked)
     return 411; // Content-length required
@@ -1261,7 +1258,7 @@ int http_connection::handle_entity(keywords &kw) {
   fin.filt().push(boost::ref(conn), 0, 0);
 
   boost::optional<std::string> content_type =
-    request_.get_header("content-type");
+    request_.get_header("Content-Type");
 
   std::auto_ptr<std::istream> pstream(new pop_filt_stream(fin.reset()));
   kw.set_entity(
