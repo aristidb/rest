@@ -7,10 +7,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#ifdef APPLE
-#define TCP_CORK TCP_NOPUSH
-#endif
-
 using namespace rest::utils;
 
 class socket_device::impl {
@@ -29,12 +25,17 @@ public:
   bool log_cork;
   bool tcp_cork;
 
+  #ifndef APPLE
   void do_cork(bool x) {
-    #ifndef APPLE
-    int const cork = x;
-    ::setsockopt(fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
-    #endif
+    if (tcp_cork != x) {
+      int const cork = x;
+      tcp_cork = x;
+      ::setsockopt(fd, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+    }
   }
+  #else
+  void do_cork(bool) {}
+  #endif
 };
 
 socket_device::socket_device(int fd, long timeout_rd, long timeout_wr)
@@ -67,8 +68,7 @@ void socket_device::loosen_cork() {
 
 void socket_device::pull_cork() {
   p->log_cork = false;
-  if (p->tcp_cork)
-    p->do_cork(false);
+  p->do_cork(false);
 }
 
 void socket_device::close(std::ios_base::open_mode) {
@@ -94,10 +94,8 @@ std::streamsize socket_device::write(char const *buf, std::streamsize length) {
   if (p->fd < 0)
     return -1;
 
-  if (p->log_cork && !p->tcp_cork) {
-    p->tcp_cork = true;
+  if (p->log_cork)
     p->do_cork(true);
-  }
 
   std::streamsize n;
   for (;;) {
