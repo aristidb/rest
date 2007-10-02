@@ -1356,8 +1356,8 @@ void http_connection::send(response r, bool entity) {
   }
 
   io::flush(out);
+  conn->loosen_cork();
   out->real_flush();
-
   conn->pull_cork();
 }
 
