@@ -80,7 +80,8 @@ void rest::utils::http::parse_parametrised(
 }
 
 void rest::utils::http::parse_list(
-  std::string const &in, std::vector<std::string> &out, char delimiter)
+  std::string const &in, std::vector<std::string> &out,
+  char delimiter, bool skip_empty)
 {
   typedef std::string::const_iterator iterator;
 
@@ -94,7 +95,7 @@ void rest::utils::http::parse_list(
     iterator delim = std::find(it, end, delimiter);
     iterator left = delim;
     skip_ws_bwd(left, it);
-    if (it != left)
+    if (it != left || !skip_empty)
       out.push_back(std::string(it, left));
     it = delim;
     if (it != end)
