@@ -269,7 +269,7 @@ namespace {
 
     request request_;
 
-    typedef std::vector<std::pair<int, int> > ranges_t;
+    typedef std::vector<std::pair<long, long> > ranges_t;
     ranges_t ranges;
 
   public:
@@ -1157,12 +1157,59 @@ int http_connection::set_header_options() {
 }
 
 void http_connection::analyze_ranges() {
-  boost::optional<std::string> ranges_ = request_.get_header("Range");
-  if (!ranges_)
+  boost::optional<std::string> range_ = request_.get_header("Range");
+  if (!range_)
     return;
-  std::string const &ranges = ranges_.get();
-  typedef std::string::const_iterator iterator;
-  // TODO
+  std::string const &range = range_.get();
+
+  typedef std::vector<std::string> s_vect;
+  s_vect seq;
+
+  rest::utils::http::parse_list(range, seq, '=');
+  if (seq.size() != 2 || !algo::iequals(seq[0], "bytes"))
+    return;
+
+  std::string data;
+  seq[1].swap(data);
+  seq.clear();
+
+  rest::utils::http::parse_list(data, seq, ',');
+  if (seq.empty())
+    return;
+
+  for (s_vect::iterator it = seq.begin(); it != seq.end(); ++it) {
+    std::vector<std::string> x;
+    rest::utils::http::parse_list(*it, x, '-', false);
+    if (x.size() != 2)
+      goto bad;
+    std::pair<long, long> v(-1, -1);
+    try {
+      if (!x[0].empty()) {
+        v.first = boost::lexical_cast<long>(x[0]);
+        if (v.first < 0)
+          goto bad;
+      }
+      if (!x[1].empty()) {
+        v.second = boost::lexical_cast<long>(x[1]);
+        if (v.second < 0)
+          goto bad;
+      }
+    } catch (boost::bad_lexical_cast &) {
+      goto bad;
+    }
+    if (v.first == -1 && v.second == -1)
+      goto bad;
+    if (v.first != -1 && v.second != -1 && v.first > v.second)
+      goto bad;
+      
+    ranges.push_back(v);
+  }
+
+  return;
+
+  bad:
+    ranges.clear();
+    return;
 }
 
 namespace {
@@ -1307,7 +1354,13 @@ private:
   std::streambuf *buf;
 };
 
+#include <iostream>
+
 void http_connection::send(response r, bool entity) {
+  std::cout << "R: " << ranges.size() << std::endl;
+  for (ranges_t::iterator it = ranges.begin(); it != ranges.end(); ++it)
+    std::cout << "r: " << it->first << "-" << it->second << std::endl;
+
   //TODO implement partial-GET, entity data from streams
 
   conn->push_cork();
