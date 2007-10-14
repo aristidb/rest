@@ -98,9 +98,12 @@ void rest::utils::http::parse_list(
     if (it != left || !skip_empty)
       out.push_back(std::string(it, left));
     it = delim;
-    if (it != end)
+    if (it != end) {
       ++it;
-    skip_ws_fwd(it, end);
+      skip_ws_fwd(it, end);
+      if (it == end && !skip_empty)
+        out.push_back(std::string());
+    }
   }
 }
 
