@@ -269,6 +269,9 @@ namespace {
 
     request request_;
 
+    typedef std::vector<std::pair<int, int> > ranges_t;
+    ranges_t ranges;
+
   public:
     http_connection(server::socket_param const &sock, int connfd,
                     rest::network::address const &addr,
@@ -308,6 +311,8 @@ namespace {
     void handle_header_caching(
       det::responder_base *, det::any_path const &, response &, bool &,
       std::string const &);
+
+    void analyze_ranges();
 
     response handle_get(
       det::responder_base*, det::any_path const&, keywords&, request const&);
@@ -739,6 +744,7 @@ void http_connection::serve() {
       response resp(handle_request());
       if (resp.is_nil())
         request_.get_host().make_standard_response(resp);
+      analyze_ranges();
       request_.clear();
       send(resp);
     }
@@ -1148,6 +1154,15 @@ int http_connection::set_header_options() {
   }
 
   return 0;
+}
+
+void http_connection::analyze_ranges() {
+  boost::optional<std::string> ranges_ = request_.get_header("Range");
+  if (!ranges_)
+    return;
+  std::string const &ranges = ranges_.get();
+  typedef std::string::const_iterator iterator;
+  // TODO
 }
 
 namespace {
