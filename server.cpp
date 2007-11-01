@@ -742,9 +742,10 @@ void http_connection::serve() {
     while (open()) {
       reset();
       response resp(handle_request());
+      if (!resp.check_ranges(ranges))
+        response(416).move(resp);
       if (resp.is_nil())
         request_.get_host().make_standard_response(resp);
-      analyze_ranges();
       request_.clear();
       send(resp);
     }
@@ -1038,7 +1039,11 @@ response http_connection::handle_get(
   det::get_base *getter = responder->x_getter();
   if (!getter || !responder->x_exists(path_id, kw))
     return response(404);
-  return getter->x_get(path_id, kw, req);
+  response r(getter->x_get(path_id, kw, req));
+  int code = r.get_code();
+  if ((code == -1 || (code >= 200 && code <= 299)) && !r.is_nil())
+    analyze_ranges();
+  return r;
 }
 
 response http_connection::handle_head(
@@ -1354,15 +1359,7 @@ private:
   std::streambuf *buf;
 };
 
-#include <iostream>
-
 void http_connection::send(response r, bool entity) {
-  std::cout << "R: " << ranges.size() << std::endl;
-  for (ranges_t::iterator it = ranges.begin(); it != ranges.end(); ++it)
-    std::cout << "r: " << it->first << "-" << it->second << std::endl;
-
-  //TODO implement partial-GET, entity data from streams
-
   conn->push_cork();
 
   io::stream<noflush_writer> out(&conn);

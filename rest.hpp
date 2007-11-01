@@ -176,6 +176,8 @@ public:
   bool chunked(content_encoding_t content_encoding) const;
   std::size_t length(content_encoding_t content_encoding) const;
 
+  bool check_ranges(std::vector<std::pair<long, long> > const &ranges);
+
   void print_headers(std::ostream &out) const;
   void print_entity(
     std::ostream &out, content_encoding_t enc, bool may_chunk) const;

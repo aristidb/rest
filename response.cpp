@@ -309,6 +309,13 @@ void response::set_length(std::size_t len, content_encoding_t enc) {
   p->data[enc].length = len;
 }
 
+bool response::check_ranges(std::vector<std::pair<long, long> > const &ranges) {
+  if (ranges.empty())
+    return true;
+  set_code(206);
+  return true;
+}
+
 namespace {
 #if 0
   void print_cookie2(std::ostream &out, rest::cookie const &c, bool first) {
