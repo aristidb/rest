@@ -395,7 +395,10 @@ void response::print_headers(std::ostream &out) const {
 }
 
 void response::print_entity(
-    std::ostream &out, content_encoding_t enc, bool may_chunk) const
+    std::ostream &out,
+    content_encoding_t enc,
+    bool may_chunk,
+    std::vector<std::pair<long, long> > const &ranges) const
 {
   impl::data_holder &d = p->data[enc];
   switch (d.type) {

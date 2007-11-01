@@ -742,8 +742,10 @@ void http_connection::serve() {
     while (open()) {
       reset();
       response resp(handle_request());
-      if (!resp.check_ranges(ranges))
+      if (!resp.check_ranges(ranges)) {
         response(416).move(resp);
+        std::vector<std::pair<long, long> >().swap(ranges);
+      }
       if (resp.is_nil())
         request_.get_host().make_standard_response(resp);
       request_.clear();
@@ -1415,7 +1417,7 @@ void http_connection::send(response r, bool entity) {
     }
 
     r.print_headers(out);
-    r.print_entity(out, enc, may_chunk);
+    r.print_entity(out, enc, may_chunk, ranges);
   } else {
     r.print_headers(out);
   }
