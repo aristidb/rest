@@ -744,12 +744,13 @@ void http_connection::serve() {
       response resp(handle_request());
       if (!resp.check_ranges(ranges)) {
         response(416).move(resp);
-        std::vector<std::pair<long, long> >().swap(ranges);
+        ranges_t().swap(ranges);
       }
       if (resp.is_nil())
         request_.get_host().make_standard_response(resp);
       request_.clear();
       send(resp);
+      ranges_t().swap(ranges);
     }
   }
   catch (utils::http::remote_close&) {
@@ -1215,7 +1216,7 @@ void http_connection::analyze_ranges() {
   return;
 
   bad:
-    ranges.clear();
+    ranges_t().swap(ranges);
     return;
 }
 
