@@ -863,6 +863,16 @@ response http_connection::handle_request() {
     if (responder)
       handle_caching(responder, path_id, out, now, expires);
 
+    if (method == "GET" || method == "HEAD") {
+      int code = out.get_code();
+      if (code == -1 || (code >= 200 && code <= 299)) {
+        if (out.length(response::identity) != std::size_t(-1))
+          out.set_header("Accept-Ranges", "bytes");
+        else
+          out.set_header("Accept-Ranges", "none");
+      }
+    }
+
     return out;
   } catch (utils::http::bad_format &) {
     return response(400);
