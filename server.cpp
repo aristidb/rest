@@ -314,6 +314,8 @@ namespace {
 
     void analyze_ranges();
 
+    void tell_allow(response &resp, det::responder_base *responder);
+
     response handle_get(
       det::responder_base*, det::any_path const&, keywords&, request const&);
     response handle_head(
@@ -848,6 +850,8 @@ response http_connection::handle_request() {
       response(mod_code).move(out);
     }
 
+    tell_allow(out, responder);
+
     out.set_header("Date", utils::http::datetime_string(now));
     if (last_modified != time_t(-1))
       out.set_header(
@@ -1002,34 +1006,12 @@ void http_connection::handle_header_caching(
 }
 
 response http_connection::handle_options(
-  det::responder_base *responder,
+  det::responder_base *,
   det::any_path const &,
   keywords &,
   request const &)
 {
   response resp(200);
-  resp.add_header_part("Allow", "OPTIONS");
-  if (!responder) {
-    resp.add_header_part("Allow", "DELETE");
-    resp.add_header_part("Allow", "GET");
-    resp.add_header_part("Allow", "HEAD");
-    resp.add_header_part("Allow", "POST");
-    resp.add_header_part("Allow", "PUT");
-  } else {
-    if (responder->x_getter()) {
-      resp.add_header_part("Allow", "GET");
-      resp.add_header_part("Allow", "HEAD");
-    }
-    if (responder->x_poster()) {
-      resp.add_header_part("Allow", "POST");     
-    }
-    if (responder->x_deleter()) {
-      resp.add_header_part("Allow", "DELETE");
-    }
-    if (responder->x_putter()) {
-      resp.add_header_part("Allow", "PUT");
-    }
-  }
   return resp;
 }
 
@@ -1109,6 +1091,32 @@ response http_connection::handle_delete(
   if (!deleter || !responder->x_exists(path_id, kw))
     return response(404);
   return deleter->x_delete_(path_id, kw, req);
+}
+
+void http_connection::tell_allow(response &resp, det::responder_base *responder)
+{
+  resp.add_header_part("Allow", "OPTIONS");
+  if (!responder) {
+    resp.add_header_part("Allow", "DELETE");
+    resp.add_header_part("Allow", "GET");
+    resp.add_header_part("Allow", "HEAD");
+    resp.add_header_part("Allow", "POST");
+    resp.add_header_part("Allow", "PUT");
+  } else {
+    if (responder->x_getter()) {
+      resp.add_header_part("Allow", "GET");
+      resp.add_header_part("Allow", "HEAD");
+    }
+    if (responder->x_poster()) {
+      resp.add_header_part("Allow", "POST");     
+    }
+    if (responder->x_deleter()) {
+      resp.add_header_part("Allow", "DELETE");
+    }
+    if (responder->x_putter()) {
+      resp.add_header_part("Allow", "PUT");
+    }
+  }
 }
 
 int http_connection::set_header_options() {
