@@ -1,0 +1,155 @@
+<!-- received="Thu Jun  6 01:42:20 1996 BST" -->
+<!-- sent="Wed, 05 Jun 1996 17:42:07 -0700" -->
+<!-- name="Lou Montulli" -->
+<!-- email="montulli@mozilla.com" -->
+<!-- subject="Re: Accept-Ranges: the controversy that wouldn't die" -->
+<!-- id="31B6295F.773C@mozilla.com" -->
+<!-- inreplyto="Accept-Ranges: the controversy that wouldn't die" -->
+<title>HTTP-wg Archive: Re: Accept-Ranges: the controversy that wouldn't die</title>
+<h1>Re: Accept-Ranges: the controversy that wouldn't die</h1>
+<b>Lou Montulli</b> (<a href="mailto:montulli@mozilla.com"><i>montulli@mozilla.com</i></a>)<br>
+<i>Wed, 05 Jun 1996 17:42:07 -0700</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="date.html#1475">[ date ]</a><a href="index.html#1475">[ thread ]</a><a href="subject.html#1475">[ subject ]</a><a href="author.html#1475">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="1476.html">Roy T. Fielding: "no-transform"</a>
+<li> <b>Previous message:</b> <a href="1474.html">Larry Masinter: "revised suggested registered names for character sets"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="1479.html">Roy T. Fielding: "Re: Accept-Ranges: the controversy that wouldn't die"</a>
+<li> <b>Reply:</b> <a href="1479.html">Roy T. Fielding: "Re: Accept-Ranges: the controversy that wouldn't die"</a>
+<li> <b>Reply:</b> <a href="1481.html">Shel Kaphan: "Minimum HTTP version (was: Accept-Ranges: the controversy that wouldn't die)"</a>
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+&gt; 
+&gt; &gt;     The reason is because the Range header field is interpreted by the
+&gt; &gt;     next inbound server that has the entity cached -- not necessarily
+&gt; &gt;     the origin server -- and thus 14.5 is SEVERELY BROKEN in draft 04a.
+&gt; &gt;
+&gt; &gt; Unfortunately, you are wrong here.  I say "unfortunately" because
+&gt; &gt; I regard this part of the specification as somewhat ugly.
+&gt; &gt;
+&gt; &gt; Two weeks ago, I would have agreed with you, but then I finally got Lou
+&gt; &gt; Montulli to explain Netscape's insistence on support for
+&gt; &gt; "Accept-Ranges: bytes".  We had several long telephone conversations,
+&gt; &gt; with some side conversations between me and Jim, and this is the only
+&gt; &gt; solution we could come up with that would satisfy Netscape's
+&gt; &gt; already-deployed use of this header.
+&gt; 
+&gt; Ummm, no, I think there was a disconnect.  Assuming they implemented
+&gt; it according to their own design, then this is just a case of them
+&gt; not understanding what will happen when caches are involved.
+&gt; 
+&gt; &gt; After all, if we weren't concerned with Netscape's installed base, we
+&gt; &gt; would have named this header "Allow-Ranges".
+&gt; 
+&gt; Nope -- Allow-Ranges was the original name for indicating the
+&gt; byte range would be added to the URL, which is why we couldn't
+&gt; use that name again.
+&gt; 
+&gt; &gt; Netscape wants to know that a Range GET on a (say) multi-megabyte
+&gt; &gt; resource will definitely not result in a full-entity transfer, in
+&gt; &gt; order to provide efficient support for plug-in applications that
+&gt; &gt; do seeks.  And we have not made Range support mandatory for HTTP/1.1
+&gt; &gt; servers, so "Accept-Ranges: bytes" is the signal Netscape uses
+&gt; &gt; to tell the plug-in that a resource is "seekable".
+&gt; &gt;
+&gt; &gt; But if we allow an intermediate proxy to add an "Accept-Ranges: bytes"
+&gt; &gt; to a response (thus turning this into a true hop-by-hop header) then
+&gt; &gt; the client could be misled if the (1) the proxy evicts the entry
+&gt; &gt; from its cache and (2) the origin server (or the next inbound
+&gt; &gt; cache with a corresponding cache entry) does not support Range.
+&gt; &gt; I.e., the request would be relayed through the Range-supporting
+&gt; &gt; proxy to a server that would return the full (and possibly huge)
+&gt; &gt; entity.
+&gt; 
+&gt; Then we need to inform the implementers (i.e., Netscape) that they
+&gt; are driving without a clue on this one.  For example,
+&gt; 
+&gt;    UA ----------&gt;  A  ----------&gt;  B  ------------&gt; OS
+&gt; 
+&gt; UA makes a request for a 10MB file on OS which is not in UA's cache.
+&gt; 
+&gt;    a) If it is in A's cache, whether or not OS supports ranges is
+&gt;       irrelevant; preventing A from signaling support for ranges would
+&gt;       prevent Netscape from doing range seeking on the cache.
+&gt; 
+&gt;    b) If not in A but in B's cache, whether or not OS supports ranges is
+&gt;       irrelevant; preventing B from signaling support for ranges would
+&gt;       prevent Netscape from doing range seeking on the cache.
+&gt; 
+&gt;    c) If it isn't in A or B's cache, then the response comes first-hand
+&gt;       from OS and thus the client will find out if OS supports ranges.
+&gt; 
+&gt; So, if the desire here is to only send Accept-Ranges when the server
+&gt; is capable of the start-request/break-connection/get-catalog/get-1st-page
+&gt; hack that was the [SEVERELY dumb] design fostered by Adobe for PDF
+&gt; [as opposed to the rational design of just defining a network-pdf type],
+&gt; then we should at least define it in such a way as to be useful when,
+&gt; for example, UA is a palmtop and A is its home-base cache.
+
+This is confused.  We are not interested in knowing if the OS can
+handle ranges.  What we wan't to know is if *ANY* point in the chain
+can provide range service.  Once that is known we can make major
+optimizations.
+
+BTW- Why do you keep bringing up PDF?  Ranges have nothing to do with PDF.
+They were not concieved for PDF and are hardly restricted to PDF
+usage.
+
+&gt; ------- End of Forwarded Message
+&gt; 
+&gt; [previous wording]
+&gt; 
+&gt; 14.5 Accept-Ranges
+&gt; The Accept-Ranges response header allows the server to indicate its
+&gt; acceptance of range requests for a resource:
+&gt; 
+&gt;        Accept-Ranges     = "Accept-Ranges" ":" acceptable-ranges
+&gt; 
+&gt;        acceptable-ranges = 1#range-unit | "none"
+&gt; 
+&gt; Origin servers that accept byte-range requests MAY send
+&gt; 
+&gt;        Accept-Ranges: bytes
+&gt; 
+&gt; but are not required to do so.  Clients MAY generate byte-range requests
+&gt; without having received this header for the plain resource involved.
+&gt; 
+&gt; The Accept-Ranges MUST NOT be added to a response by a proxy (i.e., it
+&gt; may only be added by the origin server), MUST NOT be forwarded by a
+&gt; proxy that does not support the Range header, and MUST NOT be returned
+&gt; to a client whose HTTP version is less than HTTP/1.1.
+
+These "MUST NOT" rules are uneccessary.  Proxies should *absolutely*
+be allowed to add an "accept-ranges" header, it's a very important
+addition of functionality.  Proxies should absolutely forward on
+accept-ranges headers, but should be aware of range requests so
+that it can pass them on to the upstream server if it doesn't
+natively support ranges.  And finally, there is no reason to 
+restrict range headers to 1.1 clients.  There are existing
+1.0 clients that use ranges quite effectively, and there can
+be no confusion since you would never return a range response
+to a client without first receiving a range request.
+
+:lou
+-- 
+Lou Montulli                 <a href="http://www.netscape.com/people/montulli/">http://www.netscape.com/people/montulli/</a>
+       Netscape Communications Corp.
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="1476.html">Roy T. Fielding: "no-transform"</a>
+<li> <b>Previous message:</b> <a href="1474.html">Larry Masinter: "revised suggested registered names for character sets"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="1479.html">Roy T. Fielding: "Re: Accept-Ranges: the controversy that wouldn't die"</a>
+<li> <b>Reply:</b> <a href="1479.html">Roy T. Fielding: "Re: Accept-Ranges: the controversy that wouldn't die"</a>
+<li> <b>Reply:</b> <a href="1481.html">Shel Kaphan: "Minimum HTTP version (was: Accept-Ranges: the controversy that wouldn't die)"</a>
+<!-- reply="end" -->
+</ul>
