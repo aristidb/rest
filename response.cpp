@@ -18,6 +18,7 @@
 #include <map>
 #include <algorithm>
 #include <cassert>
+#include<iostream>//FIXME
 
 using rest::response;
 
@@ -48,6 +49,7 @@ namespace {
 struct response::impl {
   int code;
   std::string type;
+  std::string boundary;
 
   typedef std::map<std::string, std::string,
                    rest::utils::string_icompare>
@@ -165,6 +167,8 @@ void response::swap(response &o) {
 }
 
 void response::defaults() {
+  set_header("Content-Type", p->type);
+
   // Make sure that these headers exist before they are examined for caching:
   set_header("Expires", "");
   set_header("Cache-Control", "");
@@ -177,6 +181,7 @@ void response::set_code(int code) {
 
 void response::set_type(std::string const &type) {
   p->type = type;
+  set_header("Content-Type", type);
 }
 
 void response::set_header(std::string const &name, std::string const &value) {
@@ -312,7 +317,21 @@ void response::set_length(std::size_t len, content_encoding_t enc) {
 bool response::check_ranges(std::vector<std::pair<long, long> > const &ranges) {
   if (ranges.empty())
     return true;
+  std::size_t length = this->length(identity);
+  if (length == std::size_t(-1))
+    return false;
+  typedef std::vector<std::pair<long, long> > ranges_t;
+  for (ranges_t::const_iterator it = ranges.begin(); it != ranges.end(); ++it) {
+    if (it->first >= 0 && std::size_t(it->first) >= length)
+      return false;
+    if (it->second >= 0 && std::size_t(it->second) >= length)
+      return false;
+  }
   set_code(206);
+  if (ranges.size() > 1) {
+    p->boundary = "dummy"; //TODO
+    set_header("Content-Type", "multipart/byte-ranges;boundary=" + p->boundary);
+  }
   return true;
 }
 

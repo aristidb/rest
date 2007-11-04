@@ -1388,9 +1388,6 @@ void http_connection::send(response r, bool entity) {
 
   r.set_header("Server", servername);
 
-  if (!r.get_type().empty())
-    r.set_header("Content-Type", r.get_type());
-
   if (entity) {
     bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
 
