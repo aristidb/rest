@@ -6,9 +6,13 @@
 
 using rest::request;
 
+namespace {
+  static rest::host dummy_host("");
+}
+
 class request::impl {
 public:
-  impl(network::address const &addr) : host_(0), addr(addr) { }
+  impl(network::address const &addr) : host_(&dummy_host), addr(addr) { }
 
   std::string uri;
 
