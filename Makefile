@@ -2,7 +2,7 @@ CXX         := g++
 CXXSTDFLAGS := -pipe -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -I. -Itestsoon/include
 CXXDBGFLAGS := -g3 -ggdb3 -DDEBUG
 CXXOPTFLAGS := -O3 -DNDEBUG -Wno-unused
-LDFLAGS     := -static -L. -lrest -lboost_filesystem -lbz2 -lz
+LDFLAGS     := -static -L. -lrest -lboost_filesystem -lboost_iostreams -lbz2 -lz
 AR          := ar
 ARFLAGS     := rcs
 BUILDDIR    := build
@@ -20,8 +20,8 @@ CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 
 LIBREST_SOURCES := context.cpp keywords.cpp response.cpp uri.cpp \
 	host.cpp server.cpp logger.cpp datetime.cpp socket_device.cpp \
-	http_headers.cpp config.cpp stream.cpp request.cpp \
-	bzip2.cpp zlib.cpp mapped_file.cpp
+	http_headers.cpp config.cpp stream.cpp request.cpp 
+
 ifeq ($(OS), Darwin)
 LIBREST_SOURCES := $(LIBREST_SOURCES) epoll.cpp
 endif
