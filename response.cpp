@@ -331,6 +331,15 @@ bool response::check_ranges(std::vector<std::pair<long, long> > const &ranges) {
   if (ranges.size() > 1) {
     p->boundary = "dummy"; //TODO
     set_header("Content-Type", "multipart/byte-ranges;boundary=" + p->boundary);
+  } else {
+    std::pair<long, long> x = ranges[0];
+    if (x.first < 0)
+      x.first = 0;
+    if (x.second < 0)
+      x.second = length;
+    std::ostringstream range;
+    range << "bytes " << x.first << '-' << x.second << '/' << length;
+    set_header("Content-Range", range.str());
   }
   return true;
 }

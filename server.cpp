@@ -745,7 +745,16 @@ void http_connection::serve() {
       reset();
       response resp(handle_request());
       if (!resp.check_ranges(ranges)) {
+        // Invalid range - send appropriate response
+        std::size_t length = resp.length(rest::response::identity);
         response(416).move(resp);
+        std::ostringstream range;
+        range << "bytes */";
+        if (length != std::size_t(-1))
+          range << length;
+        else
+          range << '*';
+        resp.set_header("Content-Range", range.str()); 
         ranges_t().swap(ranges);
       }
       if (resp.is_nil())
