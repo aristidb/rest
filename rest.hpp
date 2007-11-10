@@ -169,7 +169,8 @@ public:
   bool has_content_encoding(content_encoding_t content_encoding) const;
 
   content_encoding_t choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings) const;
+    std::vector<content_encoding_t> const &encodings,
+    bool ranges) const;
 
   bool is_nil(content_encoding_t content_encoding = identity) const;
   bool empty(content_encoding_t content_encoding = identity) const;
@@ -191,7 +192,9 @@ private:
   void defaults();
 
   void print_cookie_header(std::ostream &out) const;
-  void encode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
+  void encode(
+    std::ostream &out, content_encoding_t enc, bool may_chunk,
+    ranges_t const &ranges = ranges_t()) const;
   void decode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
 
   class impl;

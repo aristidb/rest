@@ -11,6 +11,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/null.hpp>
+#include <boost/iostreams/restrict.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
@@ -264,15 +265,18 @@ bool response::has_content_encoding(content_encoding_t content_encoding) const {
 
 response::content_encoding_t
 response::choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings
+    std::vector<content_encoding_t> const &encodings,
+    bool ranges
   ) const
 {
   if (encodings.empty() || empty(identity))
     return identity;
   typedef std::vector<content_encoding_t>::const_iterator iterator;
-  for (iterator it = encodings.begin(); it != encodings.end(); ++it)
-    if (has_content_encoding(*it))
-      return *it;
+  if (!ranges) {
+    for (iterator it = encodings.begin(); it != encodings.end(); ++it)
+      if (has_content_encoding(*it))
+        return *it;
+  }
   if (p->data[identity].type == impl::data_holder::NIL)
     return identity;
   std::size_t length = p->data[identity].length;
@@ -428,14 +432,55 @@ void response::print_entity(
     bool may_chunk,
     std::vector<std::pair<long, long> > const &ranges) const
 {
+  namespace io = boost::iostreams;
+
   impl::data_holder &d = p->data[enc];
+
+  if (!ranges.empty()) {
+    io::filtering_ostream out2;
+    if (may_chunk)
+      out2.push(utils::chunked_filter());
+    out2.push(boost::ref(out));
+
+    if (enc != identity) {
+      encode(out, enc, false, ranges);
+      return;
+    }
+
+    if (ranges.size() == 1) {
+      std::size_t length = this->length(identity);
+
+      std::pair<long, long> x = ranges[0];
+      if (x.first < 0)
+        x.first = 0;
+      if (x.second < 0)
+        x.second = length;
+
+      switch (d.type) {
+      case impl::data_holder::STRING:
+        out2 << d.string.substr(x.first, x.second);
+        break;
+      case impl::data_holder::STREAM:
+        io::copy(
+          io::restrict(*d.stream->rdbuf(), x.first, x.second - x.first),
+          out2);
+        break;
+      default:
+        assert(false);
+        break;
+      }
+      return;
+    }
+
+    return;
+  }
+
   switch (d.type) {
   case impl::data_holder::STRING:
     out << d.string;
     break;
   case impl::data_holder::STREAM:
     {
-      namespace io = boost::iostreams;
       std::streambuf &in = *d.stream->rdbuf();
       if (d.seekable || !may_chunk)
         io::copy(in, out);
@@ -459,7 +504,8 @@ void response::print_entity(
 }
 
 void response::encode(
-    std::ostream &out, content_encoding_t enc, bool may_chunk) const
+    std::ostream &out, content_encoding_t enc, bool may_chunk,
+    ranges_t const &ranges) const
 {
   namespace io = boost::iostreams;
   io::filtering_ostream out2;

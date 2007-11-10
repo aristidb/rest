@@ -1418,7 +1418,8 @@ void http_connection::send(response r, bool entity) {
   if (entity) {
     bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
 
-    response::content_encoding_t enc = r.choose_content_encoding(encodings);
+    response::content_encoding_t enc =
+      r.choose_content_encoding(encodings, !ranges.empty());
 
     switch (enc) {
     case response::gzip:
@@ -1433,7 +1434,7 @@ void http_connection::send(response r, bool entity) {
     default: break;
     }
 
-    if (!r.chunked(enc)) {
+    if (ranges.empty() && !r.chunked(enc)) {
       std::ostringstream length;
       length << r.length(enc);
       r.set_header("Content-Length", length.str());
