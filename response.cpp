@@ -430,7 +430,7 @@ void response::print_entity(
     std::ostream &out,
     content_encoding_t enc,
     bool may_chunk,
-    std::vector<std::pair<long, long> > const &ranges) const
+    ranges_t const &ranges) const
 {
   namespace io = boost::iostreams;
 
@@ -447,9 +447,10 @@ void response::print_entity(
       return;
     }
 
-    if (ranges.size() == 1) {
-      std::size_t length = this->length(identity);
+    std::size_t length = this->length(identity);
+    assert(length != std::size_t(-1));
 
+    if (ranges.size() == 1) {
       std::pair<long, long> x = ranges[0];
       if (x.first < 0)
         x.first = 0;
@@ -470,9 +471,28 @@ void response::print_entity(
         break;
       }
       return;
-    }
+    } else {
+      for (ranges_t::const_iterator it = ranges.begin();
+          it != ranges.end();
+          ++it)
+      {
+        out2 << "--" << p->boundary << "\r\n";
+        out2 << "Content-Type: " << p->type << "\r\n";
 
-    return;
+        std::pair<long, long> x = *it;
+        if (x.first < 0)
+          x.first = 0;
+        if (x.second < 0)
+          x.second = length;
+        out2 << "Content-Range: ";
+        out2 << "bytes " << x.first << '-' << x.second << '/' << length;
+        out2 << "\r\n";
+
+        print_entity(out2, identity, false, ranges_t(1, x));
+      }
+      out2 << "--" << p->boundary << "--\r\n";
+      return;
+    }
   }
 
   switch (d.type) {
