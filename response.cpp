@@ -443,7 +443,7 @@ void response::print_entity(
     out2.push(boost::ref(out));
 
     if (enc != identity) {
-      encode(out, enc, false, ranges);
+      encode(out2, enc, false, ranges);
       return;
     }
 
@@ -526,7 +526,7 @@ void response::encode(
   if (may_chunk)
     out2.push(utils::chunked_filter());
   out2.push(boost::ref(out));
-  print_entity(out2, identity, false);
+  print_entity(out2, identity, false, ranges);
 }
 
 void response::decode(
