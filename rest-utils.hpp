@@ -272,7 +272,7 @@ void boundary_filter::skip_transport_padding(Source & __restrict source) {
 
 class length_filter : public boost::iostreams::multichar_input_filter {
 public:
-  length_filter(std::streamsize length) : length(length) {}
+  length_filter(boost::uint64_t length) : length(length) {}
 
   template<typename Source>
   std::streamsize read(
@@ -287,14 +287,14 @@ public:
       c = io::read(source, outbuf, n);
     else
       c = io::read(source, outbuf, length);
-    if (c == -1)
+    if (c < 0)
       return -1;
-    length -= c;
+    length -= boost::uint64_t(c);
     return c;
   }
 
 private:
-  std::streamsize length;
+  boost::uint64_t length;
 };
 BOOST_IOSTREAMS_PIPABLE(length_filter, 0)
 

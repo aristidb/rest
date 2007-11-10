@@ -269,7 +269,7 @@ namespace {
 
     request request_;
 
-    typedef std::vector<std::pair<long, long> > ranges_t;
+    typedef std::vector<std::pair<boost::int64_t, boost::int64_t> > ranges_t;
     ranges_t ranges;
 
   public:
@@ -746,11 +746,11 @@ void http_connection::serve() {
       response resp(handle_request());
       if (!resp.check_ranges(ranges)) {
         // Invalid range - send appropriate response
-        std::size_t length = resp.length(rest::response::identity);
+        boost::int64_t length = resp.length(rest::response::identity);
         response(416).move(resp);
         std::ostringstream range;
         range << "bytes */";
-        if (length != std::size_t(-1))
+        if (length < 0)
           range << length;
         else
           range << '*';
@@ -875,7 +875,7 @@ response http_connection::handle_request() {
     if (method == "GET" || method == "HEAD") {
       int code = out.get_code();
       if (code == -1 || (code >= 200 && code <= 299)) {
-        if (out.length(response::identity) != std::size_t(-1))
+        if (out.length(response::identity) >= 0)
           out.set_header("Accept-Ranges", "bytes");
         else
           out.set_header("Accept-Ranges", "none");
@@ -1217,7 +1217,7 @@ void http_connection::analyze_ranges() {
     rest::utils::http::parse_list(*it, x, '-', false);
     if (x.size() != 2)
       goto bad;
-    std::pair<long, long> v(-1, -1);
+    std::pair<boost::int64_t, boost::int64_t> v(-1, -1);
     try {
       if (!x[0].empty()) {
         v.first = boost::lexical_cast<long>(x[0]);
@@ -1338,8 +1338,8 @@ int http_connection::handle_entity(keywords &kw) {
   if (!content_length && !chunked)
     return 411; // Content-length required
   else if (!chunked) {
-    std::size_t const length =
-      boost::lexical_cast<std::size_t>(content_length.get());
+    boost::uint64_t const length =
+      boost::lexical_cast<boost::uint64_t>(content_length.get());
     fin.filt().push(utils::length_filter(length));
   }
 

@@ -159,7 +159,7 @@ public:
   void set_data(input_stream &data, bool seekable,
     content_encoding_t content_encoding = identity);
 
-  void set_length(std::size_t size,
+  void set_length(boost::int64_t size,
     content_encoding_t content_encoding = identity);
 
   int get_code() const;
@@ -175,9 +175,9 @@ public:
   bool is_nil(content_encoding_t content_encoding = identity) const;
   bool empty(content_encoding_t content_encoding = identity) const;
   bool chunked(content_encoding_t content_encoding) const;
-  std::size_t length(content_encoding_t content_encoding) const;
+  boost::int64_t length(content_encoding_t content_encoding) const;
 
-  typedef std::vector<std::pair<long, long> > ranges_t;
+  typedef std::vector<std::pair<boost::int64_t, boost::int64_t> > ranges_t;
 
   bool check_ranges(ranges_t const &ranges);
 

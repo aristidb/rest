@@ -74,7 +74,7 @@ struct response::impl {
     bool seekable;
     std::string string;
     content_encoding_t compute_from;
-    std::size_t length;
+    boost::int64_t length;
 
     void set(std::string const &str) {
       type = STRING;
@@ -87,13 +87,13 @@ struct response::impl {
       in.move(stream);
       seekable = seekable_;
       if (seekable) {
-        std::size_t old_pos = stream->tellg();
+        boost::uint64_t old_pos = stream->tellg();
         stream->seekg(0, std::ios::end);
-        std::size_t new_pos = stream->tellg();
+        boost::uint64_t new_pos = stream->tellg();
         stream->seekg(old_pos, std::ios::beg);
         length = new_pos - old_pos;
       } else {
-        length = std::size_t(-1);
+        length = -1;
       }
     }
 
@@ -111,7 +111,7 @@ struct response::impl {
     }
 
     bool chunked() const {
-      return length == std::size_t(-1);
+      return length < 0;
     }
 
     data_holder() 
@@ -119,7 +119,7 @@ struct response::impl {
       stream(0),
       seekable(false),
       compute_from(identity),
-      length(std::size_t(-1)) { }
+      length(-1) { }
   };
 
   boost::array<data_holder, response::X_NO_OF_ENCODINGS> data;
@@ -279,14 +279,16 @@ response::choose_content_encoding(
   }
   if (p->data[identity].type == impl::data_holder::NIL)
     return identity;
-  std::size_t length = p->data[identity].length;
+  boost::int64_t length = p->data[identity].length;
 
-  if (length != std::size_t(-1)) {
+  if (length >= 0) {
     rest::utils::property_tree &conf = rest::config::get().tree();
 
-    std::size_t min_length =
-      rest::utils::get(conf, std::size_t(0),
+    boost::int64_t min_length =
+      rest::utils::get(conf, boost::int64_t(0),
         "general", "compression", "minimum_size");
+    if (min_length < 0)
+      min_length = 0;
 
     if (length <= min_length)
       return identity;
@@ -310,25 +312,24 @@ bool response::chunked(content_encoding_t enc) const {
   return !empty(enc) && p->data[enc].chunked();
 }
 
-std::size_t response::length(content_encoding_t enc) const {
+boost::int64_t response::length(content_encoding_t enc) const {
   return empty(enc) ? 0 : p->data[enc].length;
 }
 
-void response::set_length(std::size_t len, content_encoding_t enc) {
+void response::set_length(boost::int64_t len, content_encoding_t enc) {
   p->data[enc].length = len;
 }
 
-bool response::check_ranges(std::vector<std::pair<long, long> > const &ranges) {
+bool response::check_ranges(ranges_t const &ranges) {
   if (ranges.empty())
     return true;
-  std::size_t length = this->length(identity);
-  if (length == std::size_t(-1))
+  boost::int64_t length = this->length(identity);
+  if (length < 0)
     return false;
-  typedef std::vector<std::pair<long, long> > ranges_t;
   for (ranges_t::const_iterator it = ranges.begin(); it != ranges.end(); ++it) {
-    if (it->first >= 0 && std::size_t(it->first) >= length)
+    if (it->first >= length)
       return false;
-    if (it->second >= 0 && std::size_t(it->second) >= length)
+    if (it->second >= length)
       return false;
   }
   set_code(206);
@@ -336,7 +337,7 @@ bool response::check_ranges(std::vector<std::pair<long, long> > const &ranges) {
     p->boundary = utils::http::random_boundary();
     set_header("Content-Type", "multipart/byte-ranges;boundary=" + p->boundary);
   } else {
-    std::pair<long, long> x = ranges[0];
+    std::pair<boost::int64_t, boost::int64_t> x = ranges[0];
     if (x.first < 0)
       x.first = 0;
     if (x.second < 0)
@@ -447,11 +448,11 @@ void response::print_entity(
       return;
     }
 
-    std::size_t length = this->length(identity);
-    assert(length != std::size_t(-1));
+    boost::int64_t length = this->length(identity);
+    assert(length >= 0);
 
     if (ranges.size() == 1) {
-      std::pair<long, long> x = ranges[0];
+      std::pair<boost::int64_t, boost::int64_t> x = ranges[0];
       if (x.first < 0)
         x.first = 0;
       if (x.second < 0)
@@ -459,7 +460,7 @@ void response::print_entity(
 
       switch (d.type) {
       case impl::data_holder::STRING:
-        out2 << d.string.substr(x.first, x.second);
+        out2 << d.string.substr(x.first, x.second - x.first);
         break;
       case impl::data_holder::STREAM:
         io::copy(
@@ -479,7 +480,7 @@ void response::print_entity(
         out2 << "\r\n--" << p->boundary << "\r\n";
         out2 << "Content-Type: " << p->type << "\r\n";
 
-        std::pair<long, long> x = *it;
+        std::pair<boost::int64_t, boost::int64_t> x = *it;
         if (x.first < 0)
           x.first = 0;
         if (x.second < 0)
