@@ -333,7 +333,7 @@ bool response::check_ranges(std::vector<std::pair<long, long> > const &ranges) {
   }
   set_code(206);
   if (ranges.size() > 1) {
-    p->boundary = "dummy"; //TODO
+    p->boundary = utils::http::random_boundary();
     set_header("Content-Type", "multipart/byte-ranges;boundary=" + p->boundary);
   } else {
     std::pair<long, long> x = ranges[0];
@@ -476,7 +476,7 @@ void response::print_entity(
           it != ranges.end();
           ++it)
       {
-        out2 << "--" << p->boundary << "\r\n";
+        out2 << "\r\n--" << p->boundary << "\r\n";
         out2 << "Content-Type: " << p->type << "\r\n";
 
         std::pair<long, long> x = *it;
@@ -486,11 +486,11 @@ void response::print_entity(
           x.second = length;
         out2 << "Content-Range: ";
         out2 << "bytes " << x.first << '-' << x.second << '/' << length;
-        out2 << "\r\n";
+        out2 << "\r\n\r\n";
 
         print_entity(out2, identity, false, ranges_t(1, x));
       }
-      out2 << "--" << p->boundary << "--\r\n";
+      out2 << "\r\n--" << p->boundary << "--\r\n";
       return;
     }
   }

@@ -20,7 +20,7 @@ CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 
 LIBREST_SOURCES := context.cpp keywords.cpp response.cpp uri.cpp \
 	host.cpp server.cpp logger.cpp datetime.cpp socket_device.cpp \
-	http_headers.cpp config.cpp stream.cpp request.cpp 
+	http_headers.cpp config.cpp stream.cpp request.cpp random_boundary.cpp
 
 ifeq ($(OS), Darwin)
 LIBREST_SOURCES := $(LIBREST_SOURCES) epoll.cpp

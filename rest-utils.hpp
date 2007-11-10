@@ -422,6 +422,8 @@ namespace http {
   struct remote_close {};
   struct bad_format {};
 
+  std::string random_boundary(std::size_t length = 50);
+
   std::string datetime_string(time_t);
   time_t datetime_value(std::string const &);
 
