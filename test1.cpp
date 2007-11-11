@@ -55,6 +55,15 @@ struct searcher : rest::responder<rest::GET, mode> {
   }
 };
 
+struct rel : rest::responder<rest::GET> {
+  rest::response
+  get(std::string const &path, rest::keywords &, rest::request const &) {
+    rest::response response("text/plain");
+    response.set_data(path);
+    return response;
+  }
+};
+
 int main() {
   rest::context context;
   context.declare_keyword("user", rest::COOKIE);
@@ -71,6 +80,8 @@ int main() {
   search.bind("/keyword/{keyword}", search_obj, KEYWORD);
   search.bind("/keyword/not={keyword}", search_obj, KEYWORD_NOT);
   context.bind("/search/...", search);
+  rel r;
+  context.bind("/foo/...", r);
 
   rest::keywords kw;
   rest::detail::any_path path_id;
@@ -89,4 +100,7 @@ int main() {
   std::istringstream stream("test");
   kw.set_stream("other", rest::input_stream(stream));
   std::cout << "$$ " << kw["other"] << std::endl;
+
+  context.find_responder("/foo/bar/bum=xy", path_id, responder, local, kw);
+  std::cout << "/foo: " << boost::any_cast<std::string>(path_id) << std::endl;
 }

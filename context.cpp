@@ -226,22 +226,28 @@ void context::do_find_responder(
     if (current->type == impl::path_resolver_node::closure) {
       out_keywords.declare(current->data, NORMAL);
       out_keywords.set(current->data, text);
-    } else {
+    } else if (!current->ellipsis) {
       last = text;
     }
-  }
+ }
 
-  if (!current->associated_path_id.empty())
-    path_id = current->associated_path_id;
-  else
-    path_id = det::any_path(last);
-
-  if (current->responder_)
+  if (current->responder_) {
+    if (!current->associated_path_id.empty()) {
+      path_id = current->associated_path_id;
+    } else {
+      if (current->ellipsis) {
+        last.reserve(it->size() + (it.end() - it.base()));
+        last.assign(*it);
+        last.append(it.base(), it.end());
+      }
+      path_id = det::any_path(last);
+    }
     out_responder = current->responder_;
-  else if (current->context_)
+  } else if (current->context_) {
     current->context_->do_find_responder(
         it, end,
         path_id, out_responder, out_context, out_keywords);
+  }
 }
 
 context::impl::path_resolver_node *
