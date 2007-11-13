@@ -2,6 +2,7 @@
 #include "rest/rest.hpp"
 #include "rest/utils.hpp"
 #include "rest/config.hpp"
+#include "rest/input_stream.hpp"
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
@@ -1357,7 +1358,7 @@ int http_connection::handle_entity(keywords &kw) {
   boost::optional<std::string> content_type =
     request_.get_header("Content-Type");
 
-  std::auto_ptr<std::istream> pstream(new pop_filt_stream(fin.reset()));
+  input_stream pstream(new pop_filt_stream(fin.reset()));
   kw.set_entity(
       pstream,
       !content_type ? "application/octet-stream" : content_type.get()
