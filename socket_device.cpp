@@ -1,5 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest/utils.hpp"
+#include "rest/utils/socket_device.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
