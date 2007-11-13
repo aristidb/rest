@@ -1,6 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/utils/boundary_filter.hpp"
-
 #include <sstream>
 #include <fstream>
 #include <boost/ref.hpp>

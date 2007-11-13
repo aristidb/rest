@@ -1,13 +1,13 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest/utils/http.hpp"
-#include "rest/utils/chunked_filter.hpp"
-#include "rest/utils/uri.hpp"
-#include "rest/utils/string.hpp"
 #include "rest/response.hpp"
 #include "rest/cookie.hpp"
 #include "rest/input_stream.hpp"
 #include "rest/output_stream.hpp"
 #include "rest/config.hpp"
+#include "rest/utils/http.hpp"
+#include "rest/utils/chunked_filter.hpp"
+#include "rest/utils/uri.hpp"
+#include "rest/utils/string.hpp"
 #include <boost/array.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
