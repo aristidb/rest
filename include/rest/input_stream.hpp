@@ -36,6 +36,8 @@ public:
   std::istream *get() const { return stream; }
   ~input_stream() { reset(); }
 
+  bool operator!() const { return !stream; }
+
 private:
   std::istream *stream;
   bool own;

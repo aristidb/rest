@@ -95,7 +95,7 @@ public:
     return it;
   }
 
-  boost::scoped_ptr<std::istream> entity;
+  input_stream entity;
   std::string boundary;
   std::auto_ptr<io::filtering_istream> element;
   std::string next_name;
@@ -334,7 +334,7 @@ std::istream &keywords::read(std::string const &keyword, int index) {
 }
 
 void keywords::set_entity(
-    std::auto_ptr<std::istream> &entity, std::string const &content_type)
+    input_stream &entity, std::string const &content_type)
 {
   std::string type;
   std::set<std::string> pset;
@@ -344,7 +344,7 @@ void keywords::set_entity(
   utils::http::parse_parametrised(content_type, type, pset, params);
 
   if (type == "multipart/form-data") {
-    p->entity.reset(entity.release());
+    entity.move(p->entity);
 
     p->boundary = "--" + params["boundary"];
 
@@ -371,7 +371,7 @@ void keywords::set_entity(
       if (it->type == ENTITY) {
         it->state = impl::entry::s_normal;
         it->data.clear();
-        input_stream(entity.release()).move(it->stream);
+        entity.move(it->stream);
         break;
       }
     if (entity.get()) {
