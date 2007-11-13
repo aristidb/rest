@@ -7,7 +7,6 @@
 #include "rest/cookie.hpp"
 #include "rest/input_stream.hpp"
 #include "rest/output_stream.hpp"
-#include "rest/utils.hpp"
 #include "rest/config.hpp"
 #include <boost/array.hpp>
 #include <boost/iostreams/filtering_stream.hpp>

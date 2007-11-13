@@ -9,7 +9,6 @@
 #include "rest/host.hpp"
 #include "rest/context.hpp"
 #include "rest/request.hpp"
-#include "rest/utils.hpp"
 #include "rest/config.hpp"
 #include "rest/input_stream.hpp"
 

@@ -1,7 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/utils/uri.hpp"
 #include "rest/context.hpp"
-#include "rest/utils.hpp"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>

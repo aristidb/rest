@@ -3,7 +3,6 @@
 #include "rest/utils/string.hpp"
 #include "rest/request.hpp"
 #include "rest/host.hpp"
-#include "rest/utils.hpp"
 #include <map>
 #include <boost/none.hpp>
 
