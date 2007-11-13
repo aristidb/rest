@@ -1,9 +1,11 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/host.hpp"
 #include "rest/context.hpp"
-#include "rest/rest.hpp"
+#include "rest/response.hpp"
 #include <vector>
 #include <utility>
 #include <sstream>
+#include <map>
 
 using namespace rest;
 
