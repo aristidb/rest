@@ -1,4 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/request.hpp"
 #include "rest/cookie.hpp"
 #include "rest/input_stream.hpp"
 #include "rest/output_stream.hpp"
