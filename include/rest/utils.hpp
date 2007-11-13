@@ -193,31 +193,6 @@ public:
   { }
 };
 
-template<class Class,typename Type,
-         Type const &(Class::*PtrToMemberFunction)() const>
-class ref_const_mem_fun_const {
-public:
-  typedef typename boost::remove_reference<Type>::type result_type;
-
-  template<typename ChainedPtr>
-  Type const &operator()(ChainedPtr const& x) const {
-    return operator()(*x);
-  }
-
-  Type const &operator()(Class const& x) const {
-    return (x.*PtrToMemberFunction)();
-  }
-
-  Type const &operator()
-    (boost::reference_wrapper<Class const> const& x) const { 
-    return operator()(x.get());
-  }
-
-  Type const &operator()
-    (boost::reference_wrapper<Class> const& x,int=0) const { 
-    return operator()(x.get());
-  }
-};
 }}
 
 #endif

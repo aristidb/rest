@@ -2,11 +2,10 @@
 #ifndef REST_UTILS_CONFIG_HPP
 #define REST_UTILS_CONFIG_HPP
 
-#include "utils.hpp"
-
 #include <string>
 #include <memory>
 #include <cassert>
+#include <sstream>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/filesystem/path.hpp>
@@ -47,13 +46,17 @@ namespace utils {
     ~property_tree();
 
     std::string const &name() const { return name_; }
+
   private:
     typedef boost::multi_index_container<
       property_tree*,
       boost::multi_index::indexed_by<
         boost::multi_index::hashed_unique<
-          ref_const_mem_fun_const<property_tree, std::string,
-                                  &property_tree::name>
+          boost::multi_index::const_mem_fun<
+            property_tree,
+            std::string const &,
+            &property_tree::name
+          >
         >
       >
     > children_t;
@@ -62,8 +65,11 @@ namespace utils {
         property,
         boost::multi_index::indexed_by<
           boost::multi_index::hashed_unique<
-            ref_const_mem_fun_const<property, std::string,
-                                    &property::name>
+            boost::multi_index::const_mem_fun<
+              property,
+              std::string const &,
+              &property::name
+            >
           >
         >
       > property_t;
