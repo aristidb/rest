@@ -1,5 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest/utils.hpp"
+#include "rest/utils/boundary_filter.hpp"
 
 #include <sstream>
 #include <fstream>
@@ -56,7 +56,9 @@ namespace {
 
   void testcase1() {
     std::ifstream x("8zara10.txt");
-    filtering_istream s(boundary_filter("\n-------------------------------END!") | boost::ref(x));
+    filtering_istream s;
+    s.push(boundary_filter("\n-------------------------------END!"));
+    s.push(boost::ref(x));
     std::ostringstream y;
     y << s.rdbuf();
   }
@@ -70,7 +72,9 @@ namespace {
 
   void testcase2() {
     std::ifstream x("longrnd.bin");
-    filtering_istream s(boundary_filter("\n-------------------------------END!") | boost::ref(x));
+    filtering_istream s;
+    s.push(boundary_filter("\n-------------------------------END!"));
+    s.push(boost::ref(x));
     std::ostringstream y;
     y << s.rdbuf();
   }

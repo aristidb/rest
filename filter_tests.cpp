@@ -1,4 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/utils/boundary_filter.hpp"
 #include "rest/utils.hpp"
 #include <testsoon.hpp>
 #include <sstream>
@@ -147,7 +148,9 @@ XTEST((values, (std::string)("")("ab")("abcd")("abcdefg"))) {
 
 XTEST((values, (std::string)("")("ab")("abcd"))) {
   std::istringstream x(value);
-  filtering_istream s(boundary_filter("") | boost::ref(x));
+  filtering_istream s;
+  s.push(boundary_filter(""));
+  s.push(boost::ref(x));
   std::ostringstream y;
   y << s.rdbuf();
   Equals("-" + y.str(), "-");
@@ -155,7 +158,9 @@ XTEST((values, (std::string)("")("ab")("abcd"))) {
 
 TEST() {
   std::istringstream x("x\nf");
-  filtering_istream s(boundary_filter("\nfoo") | boost::ref(x));
+  filtering_istream s;
+  s.push(boundary_filter("\nfoo"));
+  s.push(boost::ref(x));
   std::ostringstream y;
   y << s.rdbuf();
   Equals(y.str(), "x");
@@ -163,7 +168,9 @@ TEST() {
 
 TEST() {
   std::istringstream x("\nfo");
-  filtering_istream s(boundary_filter("\nfoo") | boost::ref(x));
+  filtering_istream s;
+  s.push(boundary_filter("\nfoo"));
+  s.push(boost::ref(x));
   std::ostringstream y;
   y << s.rdbuf();
   Equals("-" + y.str(), "-");
@@ -171,7 +178,9 @@ TEST() {
 
 TEST() {
   std::istringstream x("a\r\nb\r\nc\r\nboundary");
-  filtering_istream s(boundary_filter("\r\nboundary") | boost::ref(x));
+  filtering_istream s;
+  s.push(boundary_filter("\r\nboundary"));
+  s.push(boost::ref(x));
   std::ostringstream y;
   y << s.rdbuf();
   Equals("--" + y.str(), "--a\r\nb\r\nc");
