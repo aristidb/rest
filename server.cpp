@@ -1,4 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/utils/length_filter.hpp"
 #include "rest/utils/socket_device.hpp"
 #include "rest/server.hpp"
 #include "rest/host.hpp"
@@ -1345,6 +1346,7 @@ int http_connection::handle_entity(keywords &kw) {
   else if (!chunked) {
     boost::uint64_t const length =
       boost::lexical_cast<boost::uint64_t>(content_length.get());
+    
     fin.filt().push(utils::length_filter(length));
   }
 

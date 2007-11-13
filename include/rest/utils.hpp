@@ -40,37 +40,6 @@ inline boost::tuple<bool,int> hex2int(int ascii) {
     return boost::make_tuple(false, 0);
 }
 
-class length_filter : public boost::iostreams::multichar_input_filter {
-public:
-  length_filter(boost::uint64_t length) : length(length) {}
-
-  template<typename Source>
-  std::streamsize read(
-      Source & __restrict source,
-      char * __restrict outbuf,
-      std::streamsize n)
-  {
-    if (n <= 0)
-      return n;
-
-    namespace io = boost::iostreams;
-
-    std::streamsize c;
-    if (boost::uint64_t(n) <= length)
-      c = io::read(source, outbuf, n);
-    else
-      c = io::read(source, outbuf, length);
-    if (c < 0)
-      return -1;
-    length -= boost::uint64_t(c);
-    return c;
-  }
-
-private:
-  boost::uint64_t length;
-};
-BOOST_IOSTREAMS_PIPABLE(length_filter, 0)
-
 class chunked_filter {
 public:
   typedef char char_type;
