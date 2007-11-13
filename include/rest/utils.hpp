@@ -280,10 +280,13 @@ public:
       char * __restrict outbuf,
       std::streamsize n)
   {
+    if (n <= 0)
+      return n;
+
     namespace io = boost::iostreams;
 
     std::streamsize c;
-    if (n <= length)
+    if (boost::uint64_t(n) <= length)
       c = io::read(source, outbuf, n);
     else
       c = io::read(source, outbuf, length);
