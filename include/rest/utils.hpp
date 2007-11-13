@@ -29,7 +29,6 @@
 
 namespace rest { namespace utils {
 
-void log(int priority, char const *message, ...);
 
 namespace http {
   struct remote_close {};

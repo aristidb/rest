@@ -1,9 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest/utils.hpp"
+#include "rest/utils/log.hpp"
 #include "rest/config.hpp"
 #include <stdarg.h>
-
-using namespace rest::utils;
 
 void rest::utils::log(int priority, char const *message, ...) {
   static bool open = false;
@@ -12,7 +10,7 @@ void rest::utils::log(int priority, char const *message, ...) {
 #ifdef DEBUG
     opt |= LOG_PERROR;
 #endif
-    rest::utils::property_tree &tree = rest::config::get().tree();
+    property_tree &tree = config::get().tree();
     std::string const &name = 
       rest::utils::get(tree, std::string(), "general", "name");
     assert(!name.empty());

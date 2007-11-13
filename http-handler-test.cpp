@@ -4,7 +4,7 @@
 #include "rest/context.hpp"
 #include "rest/cookie.hpp"
 #include "rest/config.hpp"
-#include "rest/utils.hpp"
+#include "rest/utils/log.hpp"
 #include <boost/lambda/lambda.hpp>
 #include <fstream>
 #include <algorithm>
