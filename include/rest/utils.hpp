@@ -29,20 +29,6 @@
 
 namespace rest { namespace utils {
 
-struct string_icompare {
-  bool operator() (std::string const &a, std::string const &b) const {
-    return std::lexicographical_compare(
-        a.begin(), a.end(),
-        b.begin(), b.end(),
-        *this);
-  }
-
-  bool operator() (char a, char b) const {
-    return std::tolower(a) < std::tolower(b);
-  }
-};
-
-
 namespace uri {
   std::string escape(std::string::const_iterator, std::string::const_iterator);
 
