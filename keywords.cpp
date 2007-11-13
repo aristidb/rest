@@ -1,4 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/utils/http.hpp"
 #include "rest/utils/boundary_filter.hpp"
 #include "rest/utils/uri.hpp"
 #include "rest/utils/string.hpp"

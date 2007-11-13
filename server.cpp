@@ -1,4 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/utils/http.hpp"
 #include "rest/utils/log.hpp"
 #include "rest/utils/exceptions.hpp"
 #include "rest/utils/chunked_filter.hpp"
