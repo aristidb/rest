@@ -184,15 +184,6 @@ namespace utils { namespace http {
                            std::vector<rest::cookie> &cookies);
 }
 
-class errno_error
-  : public std::runtime_error
-{
-public:
-  errno_error(std::string const &s)
-    : std::runtime_error(s + ": `" +  ::strerror(errno) + "'")
-  { }
-};
-
 }}
 
 #endif
