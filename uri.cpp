@@ -1,5 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest.hpp"
+#include "rest/rest.hpp"
 
 namespace rest { namespace utils { namespace uri {
 

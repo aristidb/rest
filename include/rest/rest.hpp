@@ -21,82 +21,8 @@
 
 namespace rest {
 
-class input_stream {
-public:
-  input_stream() : stream(0), own(false) {}
-
-  explicit input_stream(std::istream &stream)
-    : stream(&stream), own(false) {}
-
-  explicit input_stream(std::istream *stream, bool own = true)
-    : stream(stream), own(own)
-  {}
-
-  input_stream(input_stream &o)
-    : stream(o.stream), own(o.own)
-  { o.stream = 0; }
-
-  void move(input_stream &x) {
-    x.reset();
-    x.stream = stream;
-    x.own = own;
-    stream = 0;
-  }
-
-  void reset();
-
-  operator input_stream &() { return *this; }
-  std::istream &operator*() const { return *stream; }
-  std::istream *operator->() const { return stream; }
-  std::istream *get() const { return stream; }
-  ~input_stream() { reset(); }
-
-private:
-  std::istream *stream;
-  bool own;
-
-  input_stream &operator=(input_stream const &); //DUMMY
-};
-
-class output_stream {
-public:
-  output_stream() : stream(0), own(false) {}
-
-  explicit
-  output_stream(std::ostream &stream)
-    : stream(&stream), own(false)
-  {}
-
-  explicit
-  output_stream(std::ostream *stream, bool own = true)
-    : stream(stream), own(own)
-  {}
-
-  output_stream(output_stream &o)
-    : stream(o.stream), own(o.own)
-  { o.stream = 0; }
-
-  void move(output_stream &x) {
-    x.reset();
-    x.stream = stream;
-    x.own = own;
-    stream = 0;
-  }
-
-  operator output_stream &() { return *this; }
-  std::ostream &operator*() const { return *stream; }
-  std::ostream *operator->() const { return stream; }
-  std::ostream *get() const { return stream; }
-  ~output_stream() { reset(); }
-
-  void reset();
-
-private:
-  std::ostream *stream;
-  bool own;
-
-  output_stream &operator=(output_stream const &); //DUMMY
-};
+class input_stream;
+class output_stream;
 
 struct cookie {
   std::string name;
