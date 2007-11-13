@@ -2,6 +2,7 @@
 #ifndef REST_HPP
 #define REST_HPP
 
+#include "network.hpp"
 #include "keywords.hpp"
 #include "response.hpp"
 #include <map>
@@ -28,20 +29,6 @@ class output_stream;
 class cookie;
 
 class request;
-
-namespace network {
-typedef union {
-  boost::uint32_t ip4;
-  boost::uint64_t ip6[2];
-} addr_t;
-
-struct address {
-  int type;
-  addr_t addr;
-};
-
-std::string ntoa(address const &addr);
-}
 
 class host;
 
