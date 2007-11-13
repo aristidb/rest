@@ -1,5 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest-utils.hpp"
+#include "rest/utils.hpp"
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_smallint.hpp>
 #include <boost/random/variate_generator.hpp>

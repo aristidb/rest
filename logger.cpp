@@ -1,6 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest-utils.hpp"
-#include "rest-config.hpp"
+#include "rest/utils.hpp"
+#include "rest/config.hpp"
 #include <stdarg.h>
 
 using namespace rest::utils;

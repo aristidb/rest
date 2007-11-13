@@ -2,7 +2,7 @@
 #ifndef REST_UTILS_CONFIG_HPP
 #define REST_UTILS_CONFIG_HPP
 
-#include "rest-utils.hpp"
+#include "utils.hpp"
 
 #include <string>
 #include <memory>

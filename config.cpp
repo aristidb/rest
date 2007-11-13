@@ -1,5 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest-config.hpp"
+#include "rest/config.hpp"
 
 #include <cassert>
 #include <cstdlib>
