@@ -29,21 +29,6 @@
 
 namespace rest { namespace utils {
 
-namespace uri {
-  std::string escape(std::string::const_iterator, std::string::const_iterator);
-
-  inline std::string escape(std::string const &x) {
-    return escape(x.begin(), x.end());
-  }
-
-  std::string unescape(
-      std::string::const_iterator, std::string::const_iterator, bool form);
-
-  inline std::string unescape(std::string const &x, bool form) {
-    return unescape(x.begin(), x.end(), form);
-  }
-}
-
 inline boost::tuple<bool,int> hex2int(int ascii) {
   if(std::isdigit(ascii))
     return boost::make_tuple(true, ascii - '0');

@@ -1,6 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 
-#include "rest/utils.hpp"
+#include "rest/utils/uri.hpp"
 
 namespace {
 int from_hex(char c) {
