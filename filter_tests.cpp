@@ -2,7 +2,6 @@
 #include "rest/utils/chunked_filter.hpp"
 #include "rest/utils/length_filter.hpp"
 #include "rest/utils/boundary_filter.hpp"
-#include "rest/utils.hpp"
 #include <testsoon.hpp>
 #include <sstream>
 #include <boost/ref.hpp>
