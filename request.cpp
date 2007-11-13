@@ -2,7 +2,6 @@
 #include "rest/request.hpp"
 #include "rest/host.hpp"
 #include "rest/utils.hpp"
-#include "rest/rest.hpp"
 #include <map>
 #include <boost/none.hpp>
 

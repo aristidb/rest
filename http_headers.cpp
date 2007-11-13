@@ -1,7 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/cookie.hpp"
 #include "rest/utils.hpp"
-#include "rest/rest.hpp"
 
 #include <cctype>
 #include <boost/algorithm/string.hpp>

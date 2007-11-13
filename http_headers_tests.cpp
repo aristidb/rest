@@ -1,7 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/cookie.hpp"
 #include "rest/utils.hpp"
-#include "rest/rest.hpp"
 #include <testsoon.hpp>
 
 using namespace rest::utils::http;

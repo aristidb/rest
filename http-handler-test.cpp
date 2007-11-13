@@ -1,8 +1,8 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/server.hpp"
 #include "rest/host.hpp"
 #include "rest/context.hpp"
 #include "rest/cookie.hpp"
-#include "rest/rest.hpp"
 #include "rest/config.hpp"
 #include "rest/utils.hpp"
 #include <boost/lambda/lambda.hpp>

@@ -1,7 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest/rest.hpp"
 
-namespace rest { namespace utils { namespace uri {
+#include "rest/utils.hpp"
 
 namespace {
 int from_hex(char c) {
@@ -24,7 +23,7 @@ char to_hex(int c) {
 }
 
 std::string 
-unescape(
+rest::utils::uri::unescape(
     std::string::const_iterator begin, std::string::const_iterator end,
     bool form)
 {
@@ -43,7 +42,9 @@ unescape(
 }
 
 std::string
-escape(std::string::const_iterator begin, std::string::const_iterator end) {
+rest::utils::uri::escape(
+    std::string::const_iterator begin, std::string::const_iterator end)
+{
   std::string result;
   for (std::string::const_iterator it = begin; it != end; ++it)
     if (0) { // must_escape
@@ -54,5 +55,3 @@ escape(std::string::const_iterator begin, std::string::const_iterator end) {
       result += *it;
   return result;
 }
-
-}}}

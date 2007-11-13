@@ -1,38 +1,19 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#ifndef REST_HPP
-#define REST_HPP
+#ifndef REST_SERER_HPP
+#define REST_SERVER_HPP
 
-#include "responder.hpp"
-#include "cache.hpp"
-#include "network.hpp"
-#include "keywords.hpp"
-#include "response.hpp"
-#include <map>
 #include <string>
 #include <vector>
-#include <iosfwd>
-#include <sys/socket.h>
-#include <boost/cstdint.hpp>
-#include <boost/any.hpp>
+#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/function.hpp>
-#include <boost/optional/optional.hpp>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 namespace rest {
 
-class input_stream;
-class output_stream;
-class cookie;
-
-class request;
-
+namespace utils { class property_tree; }
 class host;
-
-namespace utils {
-  class property_tree;
-}
 
 class server : boost::noncopyable {
 public:
@@ -103,4 +84,3 @@ private:
 }
 
 #endif
-

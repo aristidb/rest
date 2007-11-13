@@ -1,9 +1,9 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/keywords.hpp"
 #include "rest/request.hpp"
 #include "rest/cookie.hpp"
 #include "rest/input_stream.hpp"
 #include "rest/output_stream.hpp"
-#include "rest/rest.hpp"
 #include "rest/utils.hpp"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
