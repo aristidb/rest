@@ -25,7 +25,6 @@
 #include <map>
 #include <algorithm>
 #include <cassert>
-#include<iostream>//FIXME
 
 using rest::response;
 
