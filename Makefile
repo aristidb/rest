@@ -2,7 +2,7 @@ CXX         := g++
 CXXSTDFLAGS := -pipe -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -Iinclude -Itestsoon/include
 CXXDBGFLAGS := -g3 -ggdb3 -DDEBUG
 CXXOPTFLAGS := -O3 -DNDEBUG -Wno-unused
-LDFLAGS     := -static -L. -lrest -lboost_filesystem -lboost_iostreams -lbz2 -lz
+LDFLAGS     := -static -L. -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lbz2 -lz
 AR          := ar
 ARFLAGS     := rcs
 BUILDDIR    := build
