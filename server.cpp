@@ -81,7 +81,7 @@ class server::socket_param::impl {
 public:
   impl(
       std::string const &service,
-      socket_type_t type,
+      network::socket_type_t type,
       std::string const &bind,
       long timeout_read,
       long timeout_write)
@@ -94,7 +94,7 @@ public:
   { }
 
   std::string service;
-  socket_type_t socket_type;
+  network::socket_type_t socket_type;
   std::string bind;
   long timeout_read;
   long timeout_write;
@@ -106,7 +106,7 @@ public:
 
 server::socket_param::socket_param(
     std::string const &service,
-    socket_type_t type,
+    network::socket_type_t type,
     std::string const &bind,
     long timeout_read,
     long timeout_write
@@ -130,8 +130,7 @@ std::string const &server::socket_param::bind() const {
   return p->bind;
 }
 
-server::socket_param::socket_type_t
-server::socket_param::socket_type() const {
+network::socket_type_t server::socket_param::socket_type() const {
   return p->socket_type;
 }
 
@@ -453,7 +452,7 @@ namespace {
 
     utils::log(LOG_NOTICE,
                "created %s socket on %s:%s (timeouts r: %ld w: %ld)",
-               i->socket_type() == server::socket_param::ip4 ? "IPv4" : "IPv6",
+               i->socket_type() == network::ip4 ? "IPv4" : "IPv6",
                i->bind().c_str(), i->service().c_str(), i->timeout_read(),
                i->timeout_write());
 
@@ -486,13 +485,13 @@ void server::impl::read_connections() {
     algo::trim(service);
 
     std::string type_ = utils::get(**j, std::string("ipv4"), "type");
-    socket_param::socket_type_t type;
+    network::socket_type_t type;
     if(algo::istarts_with(type_, "ipv4") ||
        algo::istarts_with(type_, "ip4"))
-      type = socket_param::ip4;
+      type = network::ip4;
     else if(algo::istarts_with(type_, "ipv6") ||
             algo::istarts_with(type_, "ip6"))
-      type = socket_param::ip6;
+      type = network::ip6;
     else
       throw std::runtime_error("unkown socket type specified");
           
@@ -667,22 +666,24 @@ void server::impl::incoming(server::socket_param const &sock,
 {
   network::address addr;
   int connfd = -1;
-  if(sock.socket_type() == server::socket_param::ip4) {
-    sockaddr_in cliaddr;
-    socklen_t clilen = sizeof(cliaddr);
-    connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
-    BOOST_STATIC_ASSERT((sizeof(addr.addr.ip4) == sizeof(cliaddr.sin_addr)));
-    std::memcpy(&addr.addr.ip4, &cliaddr.sin_addr, sizeof(addr.addr.ip4));
-    addr.type = server::socket_param::ip4;
-  }
-  else if(sock.socket_type() == server::socket_param::ip6) {
-    sockaddr_in6 cliaddr;
-    socklen_t clilen = sizeof(cliaddr);
-    connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
-    BOOST_STATIC_ASSERT((sizeof(addr.addr.ip6) == sizeof(cliaddr.sin6_addr)));
-    std::memcpy(addr.addr.ip6, &cliaddr.sin6_addr, sizeof(addr.addr.ip6));
-    addr.type = server::socket_param::ip6;
-  }
+  switch ((addr.type = sock.socket_type())) {
+  case network::ip4: {
+      sockaddr_in cliaddr;
+      socklen_t clilen = sizeof(cliaddr);
+      connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
+      BOOST_STATIC_ASSERT((sizeof(addr.addr.ip4) == sizeof(cliaddr.sin_addr)));
+      std::memcpy(&addr.addr.ip4, &cliaddr.sin_addr, sizeof(addr.addr.ip4));
+    }
+    break;
+  case network::ip6: {
+      sockaddr_in6 cliaddr;
+      socklen_t clilen = sizeof(cliaddr);
+      connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
+      BOOST_STATIC_ASSERT((sizeof(addr.addr.ip6) == sizeof(cliaddr.sin6_addr)));
+      std::memcpy(addr.addr.ip6, &cliaddr.sin6_addr, sizeof(addr.addr.ip6));
+    }
+    break;
+  };
   if(connfd == -1) {
     utils::log(LOG_ERR, "accept failed: %m");
     return;

@@ -2,13 +2,12 @@
 #ifndef REST_SERER_HPP
 #define REST_SERVER_HPP
 
+#include "network.hpp"
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <sys/types.h>
-#include <sys/socket.h>
 
 namespace rest {
 
@@ -24,11 +23,9 @@ public:
 
   class socket_param {
   public:
-    enum socket_type_t { ip4 = AF_INET, ip6 = AF_INET6 };
-
     socket_param(
         std::string const &service,
-        socket_type_t type,
+        network::socket_type_t type,
         std::string const &bind,
         long timeout_read,
         long timeout_write);
@@ -43,7 +40,7 @@ public:
     }
 
     std::string const &service() const;
-    socket_type_t socket_type() const;
+    network::socket_type_t socket_type() const;
     std::string const &bind() const;
 
     long timeout_read() const;
