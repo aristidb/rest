@@ -1,8 +1,8 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/context.hpp"
 #include "rest/input_stream.hpp"
+#include <testsoon.hpp>
 #include <string>
-#include <iostream>
 #include <sstream>
 #include <boost/iostreams/stream.hpp>
 
@@ -65,7 +65,7 @@ struct rel : rest::responder<rest::GET> {
   }
 };
 
-int main() {
+TEST(main) {
   rest::context context;
   context.declare_keyword("user", rest::COOKIE);
   context.declare_keyword("xyz", rest::FORM_PARAMETER);
@@ -92,16 +92,18 @@ int main() {
       "/ %20%2B/object/17?xyz=b+la",
       path_id, responder, local, kw);
 
-  std::cout << responder << '/' << local << std::endl;
-  std::cout << ':' << kw["id"] << std::endl;
-  std::cout << path_id.type().name() << std::endl;
-  std::cout << boost::any_cast<std::string>(path_id) << std::endl << std::endl;
-  std::cout << "xyz=" << kw["xyz"] << std::endl;
+  Not_equals(responder, (void*)0);
+  Not_equals(local, (void*)0);
+  Equals(kw["id"], "17");
+  Equals(path_id.type(), typeid(std::string));
+  Equals(boost::any_cast<std::string>(path_id), "object");
+  Equals(kw["xyz"], "b la");
 
   std::istringstream stream("test");
   kw.set_stream("other", rest::input_stream(stream));
-  std::cout << "$$ " << kw["other"] << std::endl;
+  Equals(kw["other"], "test");
 
   context.find_responder("/foo/bar/bum=xy", path_id, responder, local, kw);
-  std::cout << "/foo: " << boost::any_cast<std::string>(path_id) << std::endl;
+  Equals(path_id.type(), typeid(std::string));
+  Equals(boost::any_cast<std::string>(path_id), "bar/bum=xy");
 }

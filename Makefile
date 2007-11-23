@@ -28,7 +28,7 @@ endif
 LIBREST_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(LIBREST_SOURCES))
 LIBREST_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(LIBREST_SOURCES))
 
-UNIT_SOURCES := unit.cpp filter_tests.cpp http_headers_tests.cpp datetime-test.cpp config_tests.cpp
+UNIT_SOURCES := unit.cpp filter_tests.cpp http_headers_tests.cpp datetime-test.cpp config_tests.cpp test1.cpp
 UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
 UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))
 
@@ -38,7 +38,7 @@ DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
 LIBREST  :=librest.a
 
-BINARIES := $(LIBREST) unit http-handler-test test1 boundary-filter-bench
+BINARIES := $(LIBREST) unit http-handler-test boundary-filter-bench
 
 .PHONY: all rest
 all: $(BINARIES)
@@ -53,9 +53,6 @@ http-handler-test: $(LIBREST) http-handler-test.cpp $(BUILDDIR)/http-handler-tes
 
 unit: librest.a $(UNIT_OBJECTS) $(UNIT_DEPS)
 	$(CXX) $(UNIT_OBJECTS) -o unit $(LDFLAGS)
-
-test1: librest.a test1.cpp $(BUILDDIR)/test1.dep
-	$(CXX) $(CXXFLAGS) test1.cpp -o test1 $(LDFLAGS)
 
 boundary-filter-bench: boundary-filter-bench.cpp $(BUILDDIR)/boundary-filter-bench.dep
 	$(CXX) $(CXXSTDFLAGS) $(CXXOPTFLAGS) $(LDFLAGS) boundary-filter-bench.cpp -o boundary-filter-bench
