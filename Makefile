@@ -18,9 +18,10 @@ endif
 CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 #CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
 
-LIBREST_SOURCES := context.cpp keywords.cpp response.cpp uri.cpp \
-	host.cpp server.cpp logger.cpp socket_device.cpp \
-	http.cpp config.cpp stream.cpp request.cpp
+LIBREST_SOURCES := src/context.cpp src/keywords.cpp src/response.cpp \
+	src/uri.cpp src/host.cpp src/server.cpp src/logger.cpp \
+	src/socket_device.cpp src/http.cpp src/config.cpp src/stream.cpp \
+	src/request.cpp
 
 ifeq ($(OS), Darwin)
 LIBREST_SOURCES := $(LIBREST_SOURCES) epoll.cpp
@@ -32,7 +33,7 @@ UNIT_SOURCES := unit.cpp filter_tests.cpp http_headers_tests.cpp datetime-test.c
 UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
 UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))
 
-SOURCES  := $(wildcard *.cpp)
+SOURCES  := $(wildcard *.cpp) $(wildcard src/*.cpp) $(wildcard test/*.cpp)
 OBJECTS  := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(SOURCES))
 DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
@@ -61,18 +62,15 @@ ifneq ($(MAKECMDGOALS), clean)
 -include $(DEPS)
 endif
 
-$(OBJECTS): $(BUILDDIR)/%.o: %.cpp $(BUILDDIR)/%.dep $(BUILDDIR)/.tag
+$(OBJECTS): $(BUILDDIR)/%.o: %.cpp $(BUILDDIR)/%.dep
+	@echo Build $@
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(DEPS): $(BUILDDIR)/%.dep: %.cpp $(BUILDDIR)/.tag
+$(DEPS): $(BUILDDIR)/%.dep: %.cpp
 	@echo Dep: $<
+	@mkdir -p $(dir $(@))
 	@$(CXX) $(CXXFLAGS) -MM $< -MT $@ -MT $(<:.cpp=.o) -o $@ || \
 		echo $@ $(<:.cpp=.o): $< > $@
-
-%.tag:
-	@echo Create build-directory
-	@mkdir -p $(dir $(@))
-	@touch $@
 
 .PHONY: clean
 clean:
