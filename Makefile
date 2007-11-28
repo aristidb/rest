@@ -24,12 +24,15 @@ LIBREST_SOURCES := src/context.cpp src/keywords.cpp src/response.cpp \
 	src/request.cpp
 
 ifeq ($(OS), Darwin)
-LIBREST_SOURCES := $(LIBREST_SOURCES) epoll.cpp
+LIBREST_SOURCES := $(LIBREST_SOURCES) src/compat/epoll.cpp
 endif
+
 LIBREST_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(LIBREST_SOURCES))
 LIBREST_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(LIBREST_SOURCES))
 
-UNIT_SOURCES := unit.cpp filter_tests.cpp http_headers_tests.cpp datetime-test.cpp config_tests.cpp test1.cpp
+UNIT_SOURCES := test/unit.cpp test/filter_tests.cpp \
+	test/http_headers_tests.cpp test/datetime-test.cpp \
+	test/config_tests.cpp test/test1.cpp
 UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
 UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))
 
@@ -37,7 +40,7 @@ SOURCES  := $(wildcard *.cpp) $(wildcard src/*.cpp) $(wildcard test/*.cpp)
 OBJECTS  := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(SOURCES))
 DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
-LIBREST  :=librest.a
+LIBREST  := librest.a
 
 BINARIES := $(LIBREST) unit http-handler-test boundary-filter-bench
 
@@ -49,14 +52,14 @@ rest: $(LIBREST)
 $(LIBREST): $(LIBREST_OBJECTS) $(LIBREST_DEPS)
 	$(AR) $(ARFLAGS) librest.a $(LIBREST_OBJECTS)
 
-http-handler-test: $(LIBREST) http-handler-test.cpp $(BUILDDIR)/http-handler-test.dep
-	$(CXX) $(CXXFLAGS) http-handler-test.cpp -o http-handler-test $(LDFLAGS)
+http-handler-test: $(BUILDDIR)/test/http-handler-test.o $(LIBREST) $(BUILDDIR)/test/http-handler-test.dep
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
-unit: librest.a $(UNIT_OBJECTS) $(UNIT_DEPS)
+unit: $(UNIT_OBJECTS) $(LIBREST) $(UNIT_DEPS)
 	$(CXX) $(UNIT_OBJECTS) -o unit $(LDFLAGS)
 
-boundary-filter-bench: boundary-filter-bench.cpp $(BUILDDIR)/boundary-filter-bench.dep
-	$(CXX) $(CXXSTDFLAGS) $(CXXOPTFLAGS) $(LDFLAGS) boundary-filter-bench.cpp -o boundary-filter-bench
+boundary-filter-bench: $(BUILDDIR)/test/boundary-filter-bench.o $(BUILDDIR)/test/boundary-filter-bench.dep
+	$(CXX) $(CXXSTDFLAGS) $(CXXOPTFLAGS) $(LDFLAGS) $< -o $@
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(DEPS)

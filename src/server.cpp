@@ -55,7 +55,7 @@
 
 
 #ifdef APPLE
-#include "epoll.h"
+#include "compat/epoll.h"
 #else
 #include <sys/epoll.h>
 #endif
