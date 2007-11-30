@@ -59,7 +59,7 @@ rest::utils::uri::escape(
 }
 
 void
-rest::utils::uri::make_relative(std::string &uri) {
+rest::utils::uri::make_basename(std::string &uri) {
   typedef boost::iterator_range<std::string::iterator> spart;
   spart scheme = algo::find_first(uri, "://");
   if (scheme.empty())

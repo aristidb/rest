@@ -492,7 +492,7 @@ response http_connection::handle_request() {
     utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
                uri.c_str(), version.c_str());
 
-    utils::uri::make_relative(uri);
+    utils::uri::make_basename(uri);
     request_.set_uri(uri);
 
     if (version == "HTTP/1.0") {

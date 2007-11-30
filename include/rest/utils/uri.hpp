@@ -19,7 +19,7 @@ inline std::string unescape(std::string const &x, bool form) {
   return unescape(x.begin(), x.end(), form);
 }
 
-void make_relative(std::string &uri);
+void make_basename(std::string &uri);
 
 }}}
 
