@@ -272,42 +272,6 @@ namespace {
       return nfds;
     }
   }
-
-  int create_listenfd(sockets_container::iterator i, int backlog) {
-    addrinfo *res;
-    network::getaddrinfo(*i, &res);
-    addrinfo *const ressave = res;
-
-    int listenfd;
-    do {
-      listenfd = network::socket(i->socket_type());
-
-      int const one = 1;
-      ::setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-
-      if(::bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
-        break;
-
-      ::close(listenfd);
-    } while( (res = res->ai_next) != 0x0 );
-    ::freeaddrinfo(ressave);
-
-    if(res == 0x0)
-      throw utils::errno_error("could not start server (listen)");
-
-    if(::listen(listenfd, backlog) == -1)
-      throw utils::errno_error("could not start server (listen)");
-
-    i->fd(listenfd);
-
-    utils::log(LOG_NOTICE,
-               "created %s socket on %s:%s (timeouts r: %ld w: %ld)",
-               i->socket_type() == network::ip4 ? "IPv4" : "IPv6",
-               i->bind().c_str(), i->service().c_str(), i->timeout_read(),
-               i->timeout_write());
-
-    return listenfd;
-  }
 }
 
 void server::impl::read_connections() {
@@ -369,7 +333,7 @@ int server::impl::initialize_sockets() {
       i != socket_params.end();
       ++i)
   {
-    int listenfd = create_listenfd(i, listenq);
+    int listenfd = network::create_listenfd(*i, listenq);
 
     close_on_fork.insert(listenfd);
 

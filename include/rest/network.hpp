@@ -33,6 +33,7 @@ int socket(int type);
 void close_on_exec(int fd);
 void getaddrinfo(socket_param const &sock, ::addrinfo **res);
 int accept(socket_param const &sock, address &remote);
+int create_listenfd(socket_param &sock, int backlog);
 
 }}
 
