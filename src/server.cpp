@@ -12,6 +12,7 @@
 #include "rest/utils/chunked_filter.hpp"
 #include "rest/utils/length_filter.hpp"
 #include "rest/utils/socket_device.hpp"
+#include "rest/utils/uri.hpp"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
@@ -408,7 +409,7 @@ void server::serve() {
   ::signal(SIGUSR1, &impl::restart_handler);
   ::siginterrupt(SIGUSR1, 0);
 
-  // TODO SIGPIPE auf ignore setzen?
+  // TODO: ignore SIGPIPE?
 
   std::string const &servername =
     utils::get(tree, std::string(), "general", "name");
@@ -518,15 +519,6 @@ void http_connection::serve() {
 }
 
 namespace {
-  void assure_relative_uri(std::string &uri) {
-    typedef boost::iterator_range<std::string::iterator> spart;
-    spart scheme = algo::find_first(uri, "://");
-    if (scheme.empty())
-      return;
-    spart rest(scheme.end(), uri.end());
-    spart abs = algo::find_first(rest, "/");
-    uri.assign(abs.begin(), uri.end());
-  }
 }
 
 response http_connection::handle_request() {
@@ -537,7 +529,7 @@ response http_connection::handle_request() {
     utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
                uri.c_str(), version.c_str());
 
-    assure_relative_uri(uri);
+    utils::uri::make_relative(uri);
     request_.set_uri(uri);
 
     if (version == "HTTP/1.0") {

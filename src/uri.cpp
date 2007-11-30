@@ -1,5 +1,8 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/utils/uri.hpp"
+#include <boost/algorithm/string/find.hpp>
+
+namespace algo = boost::algorithm;
 
 namespace {
 int from_hex(char c) {
@@ -53,4 +56,15 @@ rest::utils::uri::escape(
     } else
       result += *it;
   return result;
+}
+
+void
+rest::utils::uri::make_relative(std::string &uri) {
+  typedef boost::iterator_range<std::string::iterator> spart;
+  spart scheme = algo::find_first(uri, "://");
+  if (scheme.empty())
+    return;
+  spart rest(scheme.end(), uri.end());
+  spart abs = algo::find_first(rest, "/");
+  uri.assign(abs.begin(), uri.end());
 }
