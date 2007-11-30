@@ -12,6 +12,7 @@
 #include "rest/utils/chunked_filter.hpp"
 #include "rest/utils/length_filter.hpp"
 #include "rest/utils/socket_device.hpp"
+#include "rest/utils/complete_filtering_stream.hpp"
 #include "rest/utils/uri.hpp"
 
 #include <boost/lexical_cast.hpp>
@@ -518,9 +519,6 @@ void http_connection::serve() {
   }
 }
 
-namespace {
-}
-
 response http_connection::handle_request() {
   try {
     std::string method, uri, version;
@@ -988,40 +986,9 @@ void http_connection::analyze_ranges() {
     return;
 }
 
-namespace {
-  class pop_filt_stream : public std::istream {
-  public:
-    typedef io::filtering_streambuf<io::input> buf_t;
-
-    explicit pop_filt_stream(buf_t *buf = new buf_t) : buf(buf) {
-      rdbuf(buf);
-    }
-
-    ~pop_filt_stream() {
-      if (buf) {
-        if (buf->is_complete()) {
-          ignore(std::numeric_limits<int>::max());
-          buf->pop();
-        }
-        delete buf;
-      }
-    }
-
-    buf_t &filt() { return *buf; }
-
-    buf_t *reset() {
-      buf_t *ptr = buf;
-      buf = 0;
-      return ptr;
-    }
-
-  private:
-    buf_t *buf;
-  };
-}
-
 int http_connection::handle_entity(keywords &kw) {
-  pop_filt_stream fin;
+  std::auto_ptr<io::filtering_streambuf<io::input> > fin
+    (new io::filtering_streambuf<io::input>);
 
   boost::optional<std::string> content_encoding =
     request_.get_header("Content-Encoding");
@@ -1036,11 +1003,11 @@ int http_connection::handle_entity(keywords &kw) {
       if (algo::iequals(content_encoding.get(), "gzip") ||
            (flags.test(HTTP_1_0_COMPAT) &&
              algo::iequals(content_encoding.get(), "x-gzip")))
-        fin.filt().push(io::gzip_decompressor());
+        fin->push(io::gzip_decompressor());
       else if (algo::iequals(content_encoding.get(), "bzip2"))
-        fin.filt().push(io::bzip2_decompressor());
+        fin->push(io::bzip2_decompressor());
       else if (algo::iequals(content_encoding.get(), "deflate"))
-        fin.filt().push(io::zlib_decompressor());
+        fin->push(io::zlib_decompressor());
       else if (!algo::iequals(content_encoding.get(), "identity"))
         return 415;
     }
@@ -1051,7 +1018,7 @@ int http_connection::handle_entity(keywords &kw) {
 
   bool chunked = false;
 
-  if(transfer_encoding) {
+  if (transfer_encoding) {
     std::vector<std::string> te;
     utils::http::parse_list(transfer_encoding.get(), te);
     for (std::vector<std::string>::iterator it = te.begin();
@@ -1062,11 +1029,11 @@ int http_connection::handle_entity(keywords &kw) {
         if (it != --te.end())
           return 400;
         chunked = true;
-        fin.filt().push(utils::chunked_filter());
+        fin->push(utils::chunked_filter());
       } else if (algo::iequals(*it, "gzip")) {
-        fin.filt().push(io::gzip_decompressor());
+        fin->push(io::gzip_decompressor());
       } else if (algo::iequals(*it, "deflate")) {
-        fin.filt().push(io::zlib_decompressor());
+        fin->push(io::zlib_decompressor());
       } else if (!algo::iequals(*it, "identity")) {
         return 501;
       }
@@ -1076,13 +1043,13 @@ int http_connection::handle_entity(keywords &kw) {
   boost::optional<std::string> content_length =
     request_.get_header("Content-Length");
 
-  if (!content_length && !chunked)
+  if (!content_length && !chunked) {
     return 411; // Content-length required
-  else if (!chunked) {
+  } else if (!chunked) {
     boost::uint64_t const length =
       boost::lexical_cast<boost::uint64_t>(content_length.get());
     
-    fin.filt().push(utils::length_filter(length));
+    fin->push(utils::length_filter(length));
   }
 
   if (!flags.test(HTTP_1_0_COMPAT)) {
@@ -1094,12 +1061,12 @@ int http_connection::handle_entity(keywords &kw) {
     }
   }
 
-  fin.filt().push(boost::ref(conn), 0, 0);
+  fin->push(boost::ref(conn), 0, 0);
 
   boost::optional<std::string> content_type =
     request_.get_header("Content-Type");
 
-  input_stream pstream(new pop_filt_stream(fin.reset()));
+  input_stream pstream(new utils::complete_filtering_stream(fin.release()));
   kw.set_entity(
       pstream,
       !content_type ? "application/octet-stream" : content_type.get()
