@@ -7,7 +7,13 @@
 #include <string>
 #include <boost/cstdint.hpp>
 
-namespace rest { namespace network {
+struct addrinfo;
+
+namespace rest {
+
+class socket_param;
+
+namespace network {
 
 enum socket_type_t { ip4 = AF_INET, ip6 = AF_INET6 };
 
@@ -25,6 +31,7 @@ std::string ntoa(address const &addr);
 
 int socket(int type);
 void close_on_exec(int fd);
+void getaddrinfo(socket_param const &sock, ::addrinfo **res);
 
 }}
 

@@ -1,10 +1,12 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include <rest/network.hpp>
+#include <rest/socket_param.hpp>
 #include <rest/utils/exceptions.hpp>
 #include <cstddef>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -30,3 +32,17 @@ void rest::network::close_on_exec(int fd) {
     throw utils::errno_error("fcntl");
 }
 
+void rest::network::getaddrinfo(socket_param const &sock, addrinfo **res) {
+  addrinfo hints;
+  std::memset(&hints, 0, sizeof(hints));
+  hints.ai_family = sock.socket_type();
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = IPPROTO_TCP;
+  hints.ai_flags = AI_PASSIVE;
+
+  char const *hostname = sock.bind().empty() ? 0x0 : sock.bind().c_str();
+  int n = ::getaddrinfo(hostname, sock.service().c_str(), &hints, res);
+  if(n != 0)
+    throw std::runtime_error(std::string("getaddrinfo failed: ") +
+                             gai_strerror(n));
+}

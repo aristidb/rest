@@ -270,24 +270,9 @@ namespace {
     }
   }
 
-  void getaddrinfo(sockets_container::iterator i, addrinfo **res) {
-    addrinfo hints;
-    std::memset(&hints, 0, sizeof(hints));
-    hints.ai_family = i->socket_type();
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
-
-    char const *hostname = i->bind().empty() ? 0x0 : i->bind().c_str();
-    int n = ::getaddrinfo(hostname, i->service().c_str(), &hints, res);
-    if(n != 0)
-      throw std::runtime_error(std::string("getaddrinfo failed: ") +
-                               gai_strerror(n));
-  }
-
   int create_listenfd(sockets_container::iterator i, int backlog) {
     addrinfo *res;
-    getaddrinfo(i, &res);
+    network::getaddrinfo(*i, &res);
     addrinfo *const ressave = res;
 
     int listenfd;
