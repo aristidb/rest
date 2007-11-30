@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/server.hpp"
+#include "rest/process.hpp"
 #include "rest/host.hpp"
 #include "rest/context.hpp"
 #include "rest/request.hpp"
@@ -98,9 +99,14 @@ public:
       ;
   }
 
-  static bool restart;
+  static sig_atomic_t restart_flag;
   static void restart_handler(int) {
-    restart = true;
+    restart_flag = 1;
+  }
+
+  static void term_handler(int sig) {
+    utils::log(LOG_NOTICE, "server is going down (SIG %d)", sig);
+    exit(4);
   }
 
   void read_connections();
@@ -110,7 +116,7 @@ public:
                  rest::network::address const &addr, std::string const &name);
 };
 
-bool server::impl::restart = false;
+sig_atomic_t server::impl::restart_flag = 0;
 int const server::impl::DEFAULT_LISTENQ = 5;
 long const server::impl::DEFAULT_TIMEOUT = 10;
 
@@ -378,83 +384,6 @@ int server::impl::initialize_sockets() {
   return epollfd;
 }
 
-namespace {
-  std::vector<char*> getargs(std::string const &path, std::string &data) {
-    std::ifstream in(path.c_str());
-    data.assign(std::istreambuf_iterator<char>(in.rdbuf()),
-                std::istreambuf_iterator<char>());
-
-    std::vector<char*> ret;
-    ret.push_back(&data[0]);
-    std::size_t const size = data.size();
-
-    for(std::size_t i = 0; i < size; ++i)
-      if(data[i] == '\0' && i+1 < size)
-        ret.push_back(&data[i+1]);
-    ret.push_back(0);
-
-    return ret;
-  }
-
-  void do_restart() {
-    utils::log(LOG_NOTICE, "server restart");
-
-    std::string cmdbuffer;
-    std::string envbuffer;
-
-    char resolved_cmd[8192];
-    int n = readlink("/proc/self/exe", resolved_cmd, sizeof(resolved_cmd) - 1);
-    if (n < 0) {
-      utils::log(LOG_ERR, "restart failed: readlink: %m");
-      return;
-    }
-    resolved_cmd[n] = '\0';
-
-    if(::execve(resolved_cmd, &getargs("/proc/self/cmdline", cmdbuffer)[0],
-                &getargs("/proc/self/environ", envbuffer)[0]) == -1)
-    {
-      utils::log(LOG_ERR, "restart failed: execve: %m");
-    }
-  }
-
-  bool set_gid(gid_t gid) {
-    if(::setgroups(1, &gid) == -1) {
-      if(errno != EPERM)
-        throw utils::errno_error("setgroups failed");
-      return false;
-    }
-    return true;
-  }
-
-  bool set_uid(uid_t uid) {
-    if(::setuid(uid) == -1) {
-      if(errno != EPERM)
-        throw utils::errno_error("setuid failed");
-      return false;
-    }
-    return true;
-  }
-
-  void drop_privileges(utils::property_tree const &tree) {
-    long gid = utils::get(tree, -1, "general", "gid");
-    if(gid != -1)
-      set_gid(gid);
-    else
-      utils::log(LOG_WARNING, "no gid set: group privileges not droped");
-
-    long uid = utils::get(tree, -1, "general", "uid");
-    if(uid != -1)
-      set_uid(uid);
-    else
-      utils::log(LOG_WARNING, "no uid set: user privilieges not droped");
-  }
-
-  void term_handler(int sig) {
-    utils::log(LOG_NOTICE, "server is going down (SIG %d)", sig);
-    exit(4);
-  }
-}
-
 void server::serve() {
   utils::log(LOG_NOTICE, "server started");
 
@@ -475,7 +404,7 @@ void server::serve() {
 
   typedef void(*sighnd_t)(int);
 
-  ::signal(SIGTERM, &term_handler);
+  ::signal(SIGTERM, &impl::term_handler);
   ::siginterrupt(SIGTERM, 0);
 
   ::signal(SIGCHLD, &impl::sigchld_handler);
@@ -498,8 +427,8 @@ void server::serve() {
   for(;;) {
     epoll_event events[EVENTS_N];
     int nfds = epoll::wait(epollfd, events, EVENTS_N);
-    if(impl::restart)
-      do_restart();
+    if (impl::restart_flag)
+      process::restart();
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
       assert(ptr);
