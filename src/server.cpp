@@ -716,20 +716,6 @@ void server::impl::incoming(server::socket_param const &sock,
 #endif
 }
 
-namespace rest {
-namespace network {
-enum {
-    MAX_IP_LEN = 41
-};
-
-std::string ntoa(address const &a) {
-  char buf[MAX_IP_LEN] = { 0 };
-  if(!::inet_ntop(a.type, &a.addr, buf, MAX_IP_LEN - 1))
-    throw utils::errno_error("inet_ntop");
-  return buf;
-}
-}}
-
 int server::impl::connection(socket_param const &sock, int connfd,
                              network::address const &addr,
                              std::string const &servername)

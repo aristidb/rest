@@ -21,7 +21,7 @@ CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 LIBREST_SOURCES := src/context.cpp src/keywords.cpp src/response.cpp \
 	src/uri.cpp src/host.cpp src/server.cpp src/logger.cpp \
 	src/socket_device.cpp src/http.cpp src/config.cpp src/stream.cpp \
-	src/request.cpp
+	src/request.cpp src/network.cpp
 
 ifeq ($(OS), Darwin)
 LIBREST_SOURCES := $(LIBREST_SOURCES) src/compat/epoll.cpp
