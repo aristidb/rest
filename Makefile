@@ -18,10 +18,7 @@ endif
 CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 #CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
 
-LIBREST_SOURCES := src/context.cpp src/keywords.cpp src/response.cpp \
-	src/uri.cpp src/host.cpp src/server.cpp src/logger.cpp \
-	src/socket_device.cpp src/http.cpp src/config.cpp src/stream.cpp \
-	src/request.cpp src/network.cpp
+LIBREST_SOURCES := $(wildcard src/*.cpp)
 
 ifeq ($(OS), Darwin)
 LIBREST_SOURCES := $(LIBREST_SOURCES) src/compat/epoll.cpp

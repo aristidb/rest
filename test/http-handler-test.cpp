@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
     conf.load(argc, argv);
 
     rest::server s(tree);
-    std::for_each(s.sockets_begin(), s.sockets_end(), rest::host::add(h));
+    std::for_each(s.sockets().begin(), s.sockets().end(), rest::host::add(h));
 
     s.serve();
     return 0;

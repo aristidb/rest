@@ -12,10 +12,6 @@
 #include "rest/utils/length_filter.hpp"
 #include "rest/utils/socket_device.hpp"
 
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/key_extractors.hpp>
-
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/function.hpp>
@@ -65,114 +61,9 @@
 #endif
 
 using namespace rest;
-using namespace boost::multi_index;
 namespace det = rest::detail;
 namespace io = boost::iostreams;
 namespace algo = boost::algorithm;
-
-typedef
-  boost::multi_index_container<
-    boost::reference_wrapper<host const>,
-    indexed_by<
-      hashed_unique<const_mem_fun<host, std::string, &host::get_host> > > >
-  hosts_cont_t;
-
-class server::socket_param::impl {
-public:
-  impl(
-      std::string const &service,
-      network::socket_type_t type,
-      std::string const &bind,
-      long timeout_read,
-      long timeout_write)
-  : service(service),
-    socket_type(type),
-    bind(bind),
-    timeout_read(timeout_read),
-    timeout_write(timeout_write),
-    fd(-1)
-  { }
-
-  std::string service;
-  network::socket_type_t socket_type;
-  std::string bind;
-  long timeout_read;
-  long timeout_write;
-
-  hosts_cont_t hosts;
-  
-  int fd;
-};
-
-server::socket_param::socket_param(
-    std::string const &service,
-    network::socket_type_t type,
-    std::string const &bind,
-    long timeout_read,
-    long timeout_write
-  )
-: p(new impl(service, type, bind, timeout_read, timeout_write))
-{ }
-
-int server::socket_param::fd() const {
-  return p->fd;
-}
-
-void server::socket_param::fd(int f) {
-  p->fd = f;
-} 
-
-std::string const &server::socket_param::service() const {
-  return p->service;
-}
-
-std::string const &server::socket_param::bind() const {
-  return p->bind;
-}
-
-network::socket_type_t server::socket_param::socket_type() const {
-  return p->socket_type;
-}
-
-long server::socket_param::timeout_read() const {
-  return p->timeout_read;
-}
-
-long server::socket_param::timeout_write() const {
-  return p->timeout_write;
-}
-
-void server::socket_param::add_host(host const &h) {
-  if (!p->hosts.insert(boost::ref(h)).second)
-    throw std::logic_error("cannot serve two hosts with same name");
-}
-
-host const *server::socket_param::get_host(std::string const &name) const {
-  std::string::const_iterator begin = name.begin();
-  std::string::const_iterator end = name.end();
-  std::string::const_iterator delim = std::find(begin, end, ':');
-
-  std::string the_host(begin, delim);
-
-  hosts_cont_t::const_iterator it = p->hosts.find(the_host);
-  while(it == p->hosts.end() &&
-        !the_host.empty())
-  {
-    std::string::const_iterator begin = the_host.begin();
-    std::string::const_iterator end = the_host.end();
-    std::string::const_iterator delim = std::find(begin, end, '.');
-
-    if (delim == end)
-      the_host.clear();
-    else
-      the_host.assign(++delim, end);
-
-    it = p->hosts.find(the_host);
-  }
-  if(it == p->hosts.end())
-    return 0x0;
-  return it->get_pointer();
-}
 
 class server::impl {
 public:
@@ -223,29 +114,13 @@ bool server::impl::restart = false;
 int const server::impl::DEFAULT_LISTENQ = 5;
 long const server::impl::DEFAULT_TIMEOUT = 10;
 
-server::sockets_iterator server::add_socket(socket_param const &s) {
+sockets_container::iterator server::add_socket(socket_param const &s) {
   p->socket_params.push_back(s);
   return --p->socket_params.end();
 }
 
-server::sockets_iterator server::sockets_begin() {
-  return p->socket_params.begin();
-}
-server::sockets_iterator server::sockets_end() {
-  return p->socket_params.end();
-}
-server::sockets_const_iterator server::sockets_begin() const {
-  return p->socket_params.begin();
-}
-server::sockets_const_iterator server::sockets_end() const {
-  return p->socket_params.end();
-}
-
-void server::sockets_erase(sockets_iterator i) {
-  p->socket_params.erase(i);
-}
-void server::sockets_erase(sockets_iterator begin, sockets_iterator end) {
-  p->socket_params.erase(begin, end);
+sockets_container &server::sockets() {
+  return p->socket_params;
 }
 
 void server::set_listen_q(int no) {
@@ -259,7 +134,7 @@ typedef io::stream_buffer<utils::socket_device> connection_streambuf;
 
 namespace {
   class http_connection {
-    server::socket_param const &sock;
+    socket_param const &sock;
     int connfd;
     connection_streambuf conn;
 
@@ -281,7 +156,7 @@ namespace {
     ranges_t ranges;
 
   public:
-    http_connection(server::socket_param const &sock, int connfd,
+    http_connection(socket_param const &sock, int connfd,
                     rest::network::address const &addr,
                     std::string const &servername)
     : sock(sock),
@@ -408,7 +283,7 @@ namespace {
     return sock;
   }
 
-  void getaddrinfo(server::sockets_iterator i, addrinfo **res) {
+  void getaddrinfo(sockets_container::iterator i, addrinfo **res) {
     addrinfo hints;
     std::memset(&hints, 0, sizeof(hints));
     hints.ai_family = i->socket_type();
@@ -423,7 +298,7 @@ namespace {
                                gai_strerror(n));
   }
 
-  int create_listenfd(server::sockets_iterator i, int backlog) {
+  int create_listenfd(sockets_container::iterator i, int backlog) {
     addrinfo *res;
     getaddrinfo(i, &res);
     addrinfo *const ressave = res;
@@ -515,7 +390,7 @@ int server::impl::initialize_sockets() {
   epoll_event epolle;
   epolle.events = EPOLLIN|EPOLLERR;
 
-  for(sockets_iterator i = socket_params.begin();
+  for(sockets_container::iterator i = socket_params.begin();
       i != socket_params.end();
       ++i)
   {
@@ -661,7 +536,7 @@ void server::serve() {
   }
 }
 
-void server::impl::incoming(server::socket_param const &sock,
+void server::impl::incoming(socket_param const &sock,
                             std::string const &servername)
 {
   network::address addr;
