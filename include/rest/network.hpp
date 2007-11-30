@@ -32,6 +32,7 @@ std::string ntoa(address const &addr);
 int socket(int type);
 void close_on_exec(int fd);
 void getaddrinfo(socket_param const &sock, ::addrinfo **res);
+int accept(socket_param const &sock, address &remote);
 
 }}
 

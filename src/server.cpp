@@ -436,26 +436,8 @@ void server::impl::incoming(socket_param const &sock,
                             std::string const &servername)
 {
   network::address addr;
-  int connfd = -1;
-  switch ((addr.type = sock.socket_type())) {
-  case network::ip4: {
-      sockaddr_in cliaddr;
-      socklen_t clilen = sizeof(cliaddr);
-      connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
-      BOOST_STATIC_ASSERT((sizeof(addr.addr.ip4) == sizeof(cliaddr.sin_addr)));
-      std::memcpy(&addr.addr.ip4, &cliaddr.sin_addr, sizeof(addr.addr.ip4));
-    }
-    break;
-  case network::ip6: {
-      sockaddr_in6 cliaddr;
-      socklen_t clilen = sizeof(cliaddr);
-      connfd = ::accept(sock.fd(), (sockaddr *) &cliaddr, &clilen);
-      BOOST_STATIC_ASSERT((sizeof(addr.addr.ip6) == sizeof(cliaddr.sin6_addr)));
-      std::memcpy(addr.addr.ip6, &cliaddr.sin6_addr, sizeof(addr.addr.ip6));
-    }
-    break;
-  };
-  if(connfd == -1) {
+  int connfd = network::accept(sock, addr);
+  if (connfd < 0) {
     utils::log(LOG_ERR, "accept failed: %m");
     return;
   }
