@@ -1,4 +1,5 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include "rest/utils/no_flush_writer.hpp"
 #include "rest/server.hpp"
 #include "rest/process.hpp"
 #include "rest/host.hpp"
@@ -1039,33 +1040,10 @@ int http_connection::handle_entity(keywords &kw) {
   return 0;
 }
 
-class noflush_writer {
-public:
-  typedef char char_type;
-
-  struct category
-    :
-      io::sink_tag
-  {};
-
-  noflush_writer(std::streambuf *buf) : buf(buf) {}
-
-  std::streamsize write(char const *data, std::streamsize length) {
-    return io::write(*buf, data, length);
-  }
-
-  void real_flush() {
-    io::flush(*buf);
-  }
-
-private:
-  std::streambuf *buf;
-};
-
 void http_connection::send(response r, bool entity) {
   conn->push_cork();
 
-  io::stream<noflush_writer> out(&conn);
+  io::stream<utils::no_flush_writer> out(&conn);
 
   if (flags.test(HTTP_1_0_COMPAT))
     out << "HTTP/1.0 ";
