@@ -250,17 +250,12 @@ namespace {
 }
 
 namespace {
-  void close_on_exec(int fd) {
-    if(::fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
-      throw utils::errno_error("fcntl");
-  }
-
   namespace epoll {
     int create(int size) {
       int epollfd = ::epoll_create(size);
       if(epollfd == -1)
         throw utils::errno_error("could not start server (epoll_create)");
-      close_on_exec(epollfd);
+      network::close_on_exec(epollfd);
       return epollfd;
     }
 
@@ -273,14 +268,6 @@ namespace {
       }
       return nfds;
     }
-  }
-
-  int socket(int type) {
-    int sock = ::socket(type, SOCK_STREAM, 0);
-    if(sock == -1)
-      throw utils::errno_error("could not start server (socket)");
-    close_on_exec(sock);
-    return sock;
   }
 
   void getaddrinfo(sockets_container::iterator i, addrinfo **res) {
@@ -305,7 +292,7 @@ namespace {
 
     int listenfd;
     do {
-      listenfd = socket(i->socket_type());
+      listenfd = network::socket(i->socket_type());
 
       int const one = 1;
       ::setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));

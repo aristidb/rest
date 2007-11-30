@@ -23,6 +23,9 @@ struct address {
 
 std::string ntoa(address const &addr);
 
+int socket(int type);
+void close_on_exec(int fd);
+
 }}
 
 #endif
