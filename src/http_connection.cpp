@@ -715,8 +715,6 @@ int http_connection::handle_entity(keywords &kw) {
 }
 
 void http_connection::send(response r, bool entity) {
-  p->conn->push_cork();
-
   io::stream<utils::no_flush_writer> out(&p->conn);
 
   if (p->flags.test(impl::HTTP_1_0_COMPAT))
@@ -774,8 +772,6 @@ void http_connection::send(response r, bool entity) {
   }
 
   io::flush(out);
-  p->conn->loosen_cork();
   out->real_flush();
-  p->conn->pull_cork();
 }
 

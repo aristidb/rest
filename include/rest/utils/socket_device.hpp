@@ -22,10 +22,6 @@ struct socket_device {
 
   void close(std::ios_base::open_mode);
 
-  void push_cork();
-  void loosen_cork();
-  void pull_cork();
-
   std::streamsize read(char *, std::streamsize);
   std::streamsize write(char const *, std::streamsize);
 
