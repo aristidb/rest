@@ -3,6 +3,7 @@
 #include "rest/host.hpp"
 #include "rest/context.hpp"
 #include "rest/input_stream.hpp"
+#include "rest/request.hpp"
 #include "rest/utils/http.hpp"
 #include "rest/utils/log.hpp"
 #include "rest/utils/uri.hpp"
@@ -10,6 +11,7 @@
 #include "rest/utils/length_filter.hpp"
 #include "rest/utils/complete_filtering_stream.hpp"
 #include "rest/utils/no_flush_writer.hpp"
+#include "rest/utils/socket_device.hpp"
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
@@ -20,11 +22,54 @@
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <map>
 #include <sstream>
+#include <bitset>
 
 using namespace rest;
 namespace det = rest::detail;
 namespace algo = boost::algorithm;
 namespace io = boost::iostreams;
+
+typedef 
+  boost::iostreams::stream_buffer<utils::socket_device>
+  connection_streambuf;
+
+class http_connection::impl {
+public:
+  socket_param const &sock;
+  int connfd;
+  connection_streambuf conn;
+
+  std::string const &servername;
+
+  bool open_;
+  enum {
+    NO_ENTITY,
+    HTTP_1_0_COMPAT,
+    X_NO_FLAG
+  };
+  typedef std::bitset<X_NO_FLAG> state_flags;
+  state_flags flags;
+  std::vector<response::content_encoding_t> encodings;
+
+  request request_;
+
+  typedef std::vector<std::pair<boost::int64_t, boost::int64_t> > ranges_t;
+  ranges_t ranges;
+
+  impl(
+      socket_param const &sock,
+      int connfd,
+      network::address const &addr,
+      std::string const &servername
+  )
+    : sock(sock),
+      connfd(connfd),
+      conn(connfd, sock.timeout_read(), sock.timeout_write()),
+      servername(servername),
+      open_(true),
+      request_(addr)
+  {}
+};
 
 namespace {
   typedef boost::function<
@@ -64,12 +109,32 @@ namespace {
   );
 }
 
+http_connection::http_connection(
+    socket_param const &sock,
+    int connfd,
+    network::address const &addr,
+    std::string const &servername) 
+ : p(new impl(sock, connfd, addr, servername))
+{}
+
+http_connection::~http_connection()
+{}
+
+void http_connection::reset() {
+  p->flags.reset();
+  p->encodings.clear();
+}
+
+void http_connection::send(response r) {
+  send(r, !p->flags.test(impl::NO_ENTITY));
+}
+
 void http_connection::serve() {
   try {
-    while (open()) {
+    while (p->open_) {
       reset();
       response resp(handle_request());
-      if (!resp.check_ranges(ranges)) {
+      if (!resp.check_ranges(p->ranges)) {
         // Invalid range - send appropriate response
         boost::int64_t length = resp.length(rest::response::identity);
         response(416).move(resp);
@@ -80,13 +145,13 @@ void http_connection::serve() {
         else
           range << '*';
         resp.set_header("Content-Range", range.str()); 
-        ranges_t().swap(ranges);
+        impl::ranges_t().swap(p->ranges);
       }
       if (resp.is_nil())
-        request_.get_host().make_standard_response(resp);
-      request_.clear();
+        p->request_.get_host().make_standard_response(resp);
+      p->request_.clear();
       send(resp);
-      ranges_t().swap(ranges);
+      impl::ranges_t().swap(p->ranges);
     }
   }
   catch (utils::http::remote_close&) {
@@ -96,36 +161,36 @@ void http_connection::serve() {
 response http_connection::handle_request() {
   try {
     std::string method, uri, version;
-    boost::tie(method, uri, version) = utils::http::get_request_line(conn);
+    boost::tie(method, uri, version) = utils::http::get_request_line(p->conn);
 
     utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
                uri.c_str(), version.c_str());
 
     utils::uri::make_basename(uri);
-    request_.set_uri(uri);
+    p->request_.set_uri(uri);
 
     if (version == "HTTP/1.0") {
-      flags.set(HTTP_1_0_COMPAT);
-      open_ = false;
+      p->flags.set(impl::HTTP_1_0_COMPAT);
+      p->open_ = false;
     } else if (version != "HTTP/1.1") {
       return response(505);
     }
 
-    request_.read_headers(conn);
+    p->request_.read_headers(p->conn);
 
     int ret = set_header_options();
     if (ret != 0)
       return response(ret);
 
-    boost::optional<std::string> host_header = request_.get_header("Host");
+    boost::optional<std::string> host_header = p->request_.get_header("Host");
     if (!host_header)
       throw utils::http::bad_format();
 
-    host const *h = sock.get_host(host_header.get());
+    host const *h = p->sock.get_host(host_header.get());
     if (!h)
       return response(404);
 
-    request_.set_host(*h);
+    p->request_.set_host(*h);
 
     context &global = h->get_context();
 
@@ -139,7 +204,7 @@ response http_connection::handle_request() {
     if (!responder && !(method == "OPTIONS" && uri == "*"))
       return response(404);
 
-    kw.set_request_data(request_);
+    kw.set_request_data(p->request_);
 
     time_t now;
     std::time(&now);
@@ -167,7 +232,7 @@ response http_connection::handle_request() {
       method_handler_map::const_iterator m = method_handlers.find(method);
       if (m == method_handlers.end())
         return response(501);
-      m->second(this, responder, path_id, kw, request_).move(out);
+      m->second(this, responder, path_id, kw, p->request_).move(out);
     } else {
       response(mod_code).move(out);
     }
@@ -206,21 +271,21 @@ int http_connection::handle_modification_tags(
 {
   int code = 0;
   boost::optional<std::string> el;
-  el = request_.get_header("If-Modified-Since");
+  el = p->request_.get_header("If-Modified-Since");
   if (el) {
     time_t if_modified_since = utils::http::datetime_value(el.get());
     if (if_modified_since < last_modified)
       return 0;
     code = 304;
   }
-  el = request_.get_header("If-Unmodified-Since");
+  el = p->request_.get_header("If-Unmodified-Since");
   if (el) {
     time_t if_unmodified_since = utils::http::datetime_value(el.get());
     if (if_unmodified_since >= last_modified)
       return 0;
     code = 412;
   }
-  el = request_.get_header("If-Match");
+  el = p->request_.get_header("If-Match");
   if (el) {
     if (el.get() == "*") {
       if (!etag.empty())
@@ -233,7 +298,7 @@ int http_connection::handle_modification_tags(
     }
     code = 412;
   }
-  el = request_.get_header("If-None-Match");
+  el = p->request_.get_header("If-None-Match");
   if (el) {
     if (el.get() == "*") {
       if (etag.empty())
@@ -248,15 +313,15 @@ int http_connection::handle_modification_tags(
     if (code != 412)
       code = (method == "GET" || method == "HEAD") ? 304 : 412;
   }
-  el = request_.get_header("If-Range");
+  el = p->request_.get_header("If-Range");
   if (el) {
     time_t v = utils::http::datetime_value(el.get());
     if (v == time_t(-1)) {
       if (el.get() != etag) 
-        request_.erase_header("Range");
+        p->request_.erase_header("Range");
     } else {
       if (v <= last_modified)
-        request_.erase_header("Range");
+        p->request_.erase_header("Range");
     }
   }
   return code;
@@ -370,7 +435,7 @@ response http_connection::handle_head(
   request const &req)
 {
   //TODO: better implementation
-  flags.set(NO_ENTITY);
+  p->flags.set(impl::NO_ENTITY);
   det::get_base *getter = responder->x_getter();
   if (!getter || !responder->x_exists(path_id, kw))
     return response(404);
@@ -453,7 +518,7 @@ void http_connection::tell_allow(response &resp, det::responder_base *responder)
 
 int http_connection::set_header_options() {
   boost::optional<std::string> connect_header =
-    request_.get_header("Connection");
+    p->request_.get_header("Connection");
   if (connect_header) {
     std::vector<std::string> tokens;
     utils::http::parse_list(connect_header.get(), tokens);
@@ -462,9 +527,9 @@ int http_connection::set_header_options() {
         ++it) {
       algo::to_lower(*it);
       if (*it == "close")
-        open_ = false;
-      if (flags.test(HTTP_1_0_COMPAT))
-        request_.erase_header(*it);
+        p->open_ = false;
+      if (p->flags.test(impl::HTTP_1_0_COMPAT))
+        p->request_.erase_header(*it);
     }
   }
 
@@ -472,7 +537,7 @@ int http_connection::set_header_options() {
 
   qlist_t qlist;
   boost::optional<std::string> accept_encoding =
-    request_.get_header("Accept-Encoding");
+    p->request_.get_header("Accept-Encoding");
   if (accept_encoding)
     utils::http::parse_qlist(accept_encoding.get(), qlist);
 
@@ -485,15 +550,15 @@ int http_connection::set_header_options() {
     }
     else {
       if(i->second == "gzip" || i->second == "x-gzip") {
-        encodings.push_back(response::gzip);
+        p->encodings.push_back(response::gzip);
         found = true;
       }
       else if(i->second == "bzip2" || i->second == "x-bzip2") {
-        encodings.push_back(response::bzip2);
+        p->encodings.push_back(response::bzip2);
         found = true;
       }
       else if(i->second == "deflate") {
-        encodings.push_back(response::deflate);
+        p->encodings.push_back(response::deflate);
         found = true;
       }
       else if(i->second == "identity")
@@ -505,7 +570,7 @@ int http_connection::set_header_options() {
 }
 
 void http_connection::analyze_ranges() {
-  boost::optional<std::string> range_ = request_.get_header("Range");
+  boost::optional<std::string> range_ = p->request_.get_header("Range");
   if (!range_)
     return;
   std::string const &range = range_.get();
@@ -550,13 +615,13 @@ void http_connection::analyze_ranges() {
     if (v.first != -1 && v.second != -1 && v.first > v.second)
       goto bad;
       
-    ranges.push_back(v);
+    p->ranges.push_back(v);
   }
 
   return;
 
   bad:
-    ranges_t().swap(ranges);
+    impl::ranges_t().swap(p->ranges);
     return;
 }
 
@@ -565,7 +630,7 @@ int http_connection::handle_entity(keywords &kw) {
     (new io::filtering_streambuf<io::input>);
 
   boost::optional<std::string> content_encoding =
-    request_.get_header("Content-Encoding");
+    p->request_.get_header("Content-Encoding");
 
   if (content_encoding) {
     std::vector<std::string> ce;
@@ -575,7 +640,7 @@ int http_connection::handle_entity(keywords &kw) {
         ++it)
     {
       if (algo::iequals(content_encoding.get(), "gzip") ||
-           (flags.test(HTTP_1_0_COMPAT) &&
+           (p->flags.test(impl::HTTP_1_0_COMPAT) &&
              algo::iequals(content_encoding.get(), "x-gzip")))
         fin->push(io::gzip_decompressor());
       else if (algo::iequals(content_encoding.get(), "bzip2"))
@@ -588,7 +653,7 @@ int http_connection::handle_entity(keywords &kw) {
   }
 
   boost::optional<std::string> transfer_encoding =
-    request_.get_header("Transfer-Encoding");
+    p->request_.get_header("Transfer-Encoding");
 
   bool chunked = false;
 
@@ -615,7 +680,7 @@ int http_connection::handle_entity(keywords &kw) {
   }
 
   boost::optional<std::string> content_length =
-    request_.get_header("Content-Length");
+    p->request_.get_header("Content-Length");
 
   if (!content_length && !chunked) {
     return 411; // Content-length required
@@ -626,8 +691,8 @@ int http_connection::handle_entity(keywords &kw) {
     fin->push(utils::length_filter(length));
   }
 
-  if (!flags.test(HTTP_1_0_COMPAT)) {
-    boost::optional<std::string> expect = request_.get_header("expect");
+  if (!p->flags.test(impl::HTTP_1_0_COMPAT)) {
+    boost::optional<std::string> expect = p->request_.get_header("expect");
     if (expect) {
       if (!algo::iequals(expect.get(), "100-continue"))
         return 417;
@@ -635,10 +700,10 @@ int http_connection::handle_entity(keywords &kw) {
     }
   }
 
-  fin->push(boost::ref(conn), 0, 0);
+  fin->push(boost::ref(p->conn), 0, 0);
 
   boost::optional<std::string> content_type =
-    request_.get_header("Content-Type");
+    p->request_.get_header("Content-Type");
 
   input_stream pstream(new utils::complete_filtering_stream(fin.release()));
   kw.set_entity(
@@ -650,11 +715,11 @@ int http_connection::handle_entity(keywords &kw) {
 }
 
 void http_connection::send(response r, bool entity) {
-  conn->push_cork();
+  p->conn->push_cork();
 
-  io::stream<utils::no_flush_writer> out(&conn);
+  io::stream<utils::no_flush_writer> out(&p->conn);
 
-  if (flags.test(HTTP_1_0_COMPAT))
+  if (p->flags.test(impl::HTTP_1_0_COMPAT))
     out << "HTTP/1.0 ";
   else
     out << "HTTP/1.1 ";
@@ -668,18 +733,18 @@ void http_connection::send(response r, bool entity) {
   out << code << " " << response::reason(code) << "\r\n";
 
   if (code >= 400)
-    open_ = false;
+    p->open_ = false;
 
-  if (!flags.test(HTTP_1_0_COMPAT) && !open_ && code != 100)
+  if (!p->flags.test(impl::HTTP_1_0_COMPAT) && !p->open_ && code != 100)
     r.add_header_part("Connection", "close");
 
-  r.set_header("Server", servername);
+  r.set_header("Server", p->servername);
 
   if (entity) {
-    bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
+    bool may_chunk = !p->flags.test(impl::HTTP_1_0_COMPAT);
 
     response::content_encoding_t enc =
-      r.choose_content_encoding(encodings, !ranges.empty());
+      r.choose_content_encoding(p->encodings, !p->ranges.empty());
 
     switch (enc) {
     case response::gzip:
@@ -694,7 +759,7 @@ void http_connection::send(response r, bool entity) {
     default: break;
     }
 
-    if (ranges.empty() && !r.chunked(enc)) {
+    if (p->ranges.empty() && !r.chunked(enc)) {
       std::ostringstream length;
       length << r.length(enc);
       r.set_header("Content-Length", length.str());
@@ -703,14 +768,14 @@ void http_connection::send(response r, bool entity) {
     }
 
     r.print_headers(out);
-    r.print_entity(out, enc, may_chunk, ranges);
+    r.print_entity(out, enc, may_chunk, p->ranges);
   } else {
     r.print_headers(out);
   }
 
   io::flush(out);
-  conn->loosen_cork();
+  p->conn->loosen_cork();
   out->real_flush();
-  conn->pull_cork();
+  p->conn->pull_cork();
 }
 

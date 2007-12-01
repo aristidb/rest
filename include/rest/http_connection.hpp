@@ -3,71 +3,32 @@
 #define REST_HTTP_CONNECTION_HPP
 
 #include "socket_param.hpp"
-#include "request.hpp"
+#include "network.hpp"
 #include "response.hpp"
-#include "keywords.hpp"
 #include "responder.hpp"
-#include "utils/socket_device.hpp"
-#include <boost/iostreams/stream_buffer.hpp>
-#include <bitset>
 #include <string>
+#include <boost/scoped_ptr.hpp>
 
 namespace rest {
 
-typedef 
-  boost::iostreams::stream_buffer<utils::socket_device>
-  connection_streambuf;
+class keywords;
 
 class http_connection {
-  socket_param const &sock;
-  int connfd;
-  connection_streambuf conn;
-
-  std::string const &servername;
-
-  bool open_;
-  enum {
-    NO_ENTITY,
-    HTTP_1_0_COMPAT,
-    X_NO_FLAG
-  };
-  typedef std::bitset<X_NO_FLAG> state_flags;
-  state_flags flags;
-  std::vector<response::content_encoding_t> encodings;
-
-  request request_;
-
-  typedef std::vector<std::pair<boost::int64_t, boost::int64_t> > ranges_t;
-  ranges_t ranges;
-
 public:
   http_connection(socket_param const &sock, int connfd,
                   rest::network::address const &addr,
-                  std::string const &servername)
-  : sock(sock),
-    connfd(connfd),
-    conn(connfd, sock.timeout_read(), sock.timeout_write()),
-    servername(servername),
-    open_(true),
-    request_(addr)
-  { }
-
-  bool open() const { return open_; }
+                  std::string const &servername);
+  ~http_connection();
 
   int set_header_options();
 
-  void reset() {
-    flags.reset();
-    encodings.clear();
-  }
+  void reset();
 
   response handle_request();
   int handle_entity(keywords &kw);
 
   void send(response r, bool entity);
-  void send(response r) {
-    send(r, !flags.test(NO_ENTITY));
-  }
+  void send(response r);
 
   void serve();
 
@@ -127,6 +88,10 @@ public:
     detail::any_path const &,
     keywords &,
     request const &);
+
+private:
+  class impl;
+  boost::scoped_ptr<impl> p;
 };
 
 }
