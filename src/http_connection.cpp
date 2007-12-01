@@ -23,6 +23,7 @@
 #include <map>
 #include <sstream>
 #include <bitset>
+#include <memory>
 
 using namespace rest;
 namespace det = rest::detail;
@@ -37,7 +38,7 @@ class http_connection::impl {
 public:
   socket_param const &sock;
   int connfd;
-  connection_streambuf conn;
+  std::auto_ptr<std::streambuf> conn;
 
   std::string const &servername;
 
@@ -64,7 +65,7 @@ public:
   )
     : sock(sock),
       connfd(connfd),
-      conn(connfd, sock.timeout_read(), sock.timeout_write()),
+      conn(new connection_streambuf(connfd, sock.timeout_read(), sock.timeout_write())),
       servername(servername),
       open_(true),
       request_(addr)
@@ -161,7 +162,7 @@ void http_connection::serve() {
 response http_connection::handle_request() {
   try {
     std::string method, uri, version;
-    boost::tie(method, uri, version) = utils::http::get_request_line(p->conn);
+    boost::tie(method, uri, version) = utils::http::get_request_line(*p->conn);
 
     utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
                uri.c_str(), version.c_str());
@@ -176,7 +177,7 @@ response http_connection::handle_request() {
       return response(505);
     }
 
-    p->request_.read_headers(p->conn);
+    p->request_.read_headers(*p->conn);
 
     int ret = set_header_options();
     if (ret != 0)
@@ -700,7 +701,7 @@ int http_connection::handle_entity(keywords &kw) {
     }
   }
 
-  fin->push(boost::ref(p->conn), 0, 0);
+  fin->push(boost::ref(*p->conn), 0, 0);
 
   boost::optional<std::string> content_type =
     p->request_.get_header("Content-Type");
@@ -715,7 +716,7 @@ int http_connection::handle_entity(keywords &kw) {
 }
 
 void http_connection::send(response r, bool entity) {
-  io::stream<utils::no_flush_writer> out(&p->conn);
+  io::stream<utils::no_flush_writer> out(p->conn.get());
 
   if (p->flags.test(impl::HTTP_1_0_COMPAT))
     out << "HTTP/1.0 ";
