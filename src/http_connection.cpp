@@ -37,7 +37,6 @@ typedef
 class http_connection::impl {
 public:
   socket_param const &sock;
-  int connfd;
   std::auto_ptr<std::streambuf> conn;
 
   std::string const &servername;
@@ -64,8 +63,8 @@ public:
       std::string const &servername
   )
     : sock(sock),
-      connfd(connfd),
-      conn(new connection_streambuf(connfd, sock.timeout_read(), sock.timeout_write())),
+      conn(new connection_streambuf(
+            connfd, sock.timeout_read(), sock.timeout_write())),
       servername(servername),
       open_(true),
       request_(addr)
