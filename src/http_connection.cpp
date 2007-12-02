@@ -769,7 +769,7 @@ void http_connection::send(response r, bool entity) {
     }
 
     r.print_headers(out);
-    r.print_entity(out, enc, may_chunk, p->ranges);
+    r.print_entity(*out.rdbuf(), enc, may_chunk, p->ranges);
   } else {
     r.print_headers(out);
   }

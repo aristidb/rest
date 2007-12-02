@@ -433,7 +433,7 @@ void response::print_headers(std::ostream &out) const {
 }
 
 void response::print_entity(
-    std::ostream &out,
+    std::streambuf &out,
     content_encoding_t enc,
     bool may_chunk,
     ranges_t const &ranges) const
@@ -449,7 +449,7 @@ void response::print_entity(
     out2.push(boost::ref(out));
 
     if (enc != identity) {
-      encode(out2, enc, false, ranges);
+      encode(*out2.rdbuf(), enc, false, ranges);
       return;
     }
 
@@ -494,7 +494,7 @@ void response::print_entity(
         out2 << "bytes " << x.first << '-' << x.second << '/' << length;
         out2 << "\r\n\r\n";
 
-        print_entity(out2, identity, false, ranges_t(1, x));
+        print_entity(*out2.rdbuf(), identity, false, ranges_t(1, x));
       }
       out2 << "\r\n--" << p->boundary << "--\r\n";
       return;
@@ -503,7 +503,7 @@ void response::print_entity(
 
   switch (d.type) {
   case impl::data_holder::STRING:
-    out << d.string;
+    utils::write_string(out, d.string);
     break;
   case impl::data_holder::STREAM:
     {
@@ -530,11 +530,11 @@ void response::print_entity(
 }
 
 void response::encode(
-    std::ostream &out, content_encoding_t enc, bool may_chunk,
+    std::streambuf &out, content_encoding_t enc, bool may_chunk,
     ranges_t const &ranges) const
 {
   namespace io = boost::iostreams;
-  io::filtering_ostream out2;
+  io::filtering_ostreambuf out2;
   switch (enc) {
   case deflate:
     out2.push(io::zlib_compressor());
@@ -556,10 +556,10 @@ void response::encode(
 }
 
 void response::decode(
-    std::ostream &out, content_encoding_t enc, bool may_chunk) const
+    std::streambuf &out, content_encoding_t enc, bool may_chunk) const
 {
   namespace io = boost::iostreams;
-  io::filtering_istream in;
+  io::filtering_istreambuf in;
   switch (enc) {
   case deflate:
     in.push(io::zlib_decompressor());
@@ -588,10 +588,12 @@ void response::decode(
     break;
   }
 
-  io::filtering_ostream out2;
-  if (may_chunk)
+  if (may_chunk) {
+    io::filtering_ostreambuf out2;
     out2.push(utils::chunked_filter());
-  out2.push(boost::ref(out));
-
-  io::copy(in, out2);
+    out2.push(boost::ref(out));
+    io::copy(in, out2);
+  } else {
+    io::copy(in, out);
+  }
 }

@@ -82,7 +82,7 @@ public:
 
   void print_headers(std::ostream &out) const;
   void print_entity(
-    std::ostream &out,
+    std::streambuf &out,
     content_encoding_t enc,
     bool may_chunk,
     ranges_t const &ranges = ranges_t()) const;
@@ -92,9 +92,10 @@ private:
 
   void print_cookie_header(std::ostream &out) const;
   void encode(
-    std::ostream &out, content_encoding_t enc, bool may_chunk,
+    std::streambuf &out, content_encoding_t enc, bool may_chunk,
     ranges_t const &ranges = ranges_t()) const;
-  void decode(std::ostream &out, content_encoding_t enc, bool may_chunk) const;
+  void decode(
+    std::streambuf &out, content_encoding_t enc, bool may_chunk) const;
 
   class impl;
   boost::scoped_ptr<impl> p;
