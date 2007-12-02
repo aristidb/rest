@@ -6,6 +6,10 @@
 #include <utility>
 #include <sstream>
 #include <map>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/key_extractors.hpp>
+#include <stdexcept>
 
 using namespace rest;
 
@@ -71,3 +75,55 @@ void host::set_standard_response(
   p->standard_responses.insert(
     std::make_pair(code, std::make_pair(mime, text)));
 }
+
+typedef
+  boost::multi_index_container<
+    boost::reference_wrapper<host const>,
+    boost::multi_index::indexed_by<
+      boost::multi_index::hashed_unique<
+        boost::multi_index::const_mem_fun<host, std::string, &host::get_host>
+      >
+    >
+  >
+  hosts_cont_t;
+
+class host_container::impl {
+public:
+  hosts_cont_t hosts;
+};
+
+host_container::host_container() : p(new impl) {}
+host_container::~host_container() {}
+
+void host_container::add_host(host const &h) {
+  if (!p->hosts.insert(boost::ref(h)).second)
+    throw std::logic_error("cannot serve two hosts with same name");
+}
+
+host const *host_container::get_host(std::string const &name) const {
+  std::string::const_iterator begin = name.begin();
+  std::string::const_iterator end = name.end();
+  std::string::const_iterator delim = std::find(begin, end, ':');
+
+  std::string the_host(begin, delim);
+
+  hosts_cont_t::const_iterator it = p->hosts.find(the_host);
+  while(it == p->hosts.end() &&
+        !the_host.empty())
+  {
+    std::string::const_iterator begin = the_host.begin();
+    std::string::const_iterator end = the_host.end();
+    std::string::const_iterator delim = std::find(begin, end, '.');
+
+    if (delim == end)
+      the_host.clear();
+    else
+      the_host.assign(++delim, end);
+
+    it = p->hosts.find(the_host);
+  }
+  if(it == p->hosts.end())
+    return 0x0;
+  return it->get_pointer();
+}
+

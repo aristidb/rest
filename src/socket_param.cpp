@@ -2,25 +2,8 @@
 #include <rest/socket_param.hpp>
 #include <rest/host.hpp>
 #include <string>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/key_extractors.hpp>
-#include <stdexcept>
 
 using rest::socket_param;
-using rest::host;
-using namespace boost::multi_index;
-
-typedef
-  boost::multi_index_container<
-    boost::reference_wrapper<host const>,
-    indexed_by<
-      hashed_unique<
-        const_mem_fun<host, std::string, &host::get_host>
-      >
-    >
-  >
-  hosts_cont_t;
 
 class socket_param::impl {
 public:
@@ -44,7 +27,7 @@ public:
   long timeout_read;
   long timeout_write;
 
-  hosts_cont_t hosts;
+  host_container hosts;
   
   int fd;
 };
@@ -87,35 +70,6 @@ long socket_param::timeout_write() const {
   return p->timeout_write;
 }
 
-void socket_param::add_host(host const &h) {
-  if (!p->hosts.insert(boost::ref(h)).second)
-    throw std::logic_error("cannot serve two hosts with same name");
+rest::host_container &socket_param::hosts() {
+  return p->hosts;
 }
-
-host const *socket_param::get_host(std::string const &name) const {
-  std::string::const_iterator begin = name.begin();
-  std::string::const_iterator end = name.end();
-  std::string::const_iterator delim = std::find(begin, end, ':');
-
-  std::string the_host(begin, delim);
-
-  hosts_cont_t::const_iterator it = p->hosts.find(the_host);
-  while(it == p->hosts.end() &&
-        !the_host.empty())
-  {
-    std::string::const_iterator begin = the_host.begin();
-    std::string::const_iterator end = the_host.end();
-    std::string::const_iterator delim = std::find(begin, end, '.');
-
-    if (delim == end)
-      the_host.clear();
-    else
-      the_host.assign(++delim, end);
-
-    it = p->hosts.find(the_host);
-  }
-  if(it == p->hosts.end())
-    return 0x0;
-  return it->get_pointer();
-}
-

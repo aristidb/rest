@@ -26,7 +26,7 @@ public:
 
     template<typename T>
     void operator() (T &s) const {
-      s.add_host(h);
+      s.hosts().add_host(h);
     }
 
     host const &h;
@@ -49,6 +49,19 @@ public:
 private:
   void do_store(void *, void (*)(void*));
 
+  class impl;
+  boost::scoped_ptr<impl> p;
+};
+
+class host_container {
+public:
+  host_container();
+  ~host_container();
+
+  void add_host(host const &);
+  host const *get_host(std::string const &name) const;
+
+private:
   class impl;
   boost::scoped_ptr<impl> p;
 };

@@ -9,7 +9,7 @@
 
 namespace rest {
 
-class host;
+class host_container;
 
 class socket_param {
 public:
@@ -36,8 +36,11 @@ public:
   long timeout_read() const;
   long timeout_write() const;
 
-  void add_host(host const &);
-  host const *get_host(std::string const &name) const;
+  host_container &hosts();
+
+  host_container const &hosts() const {
+    return const_cast<socket_param *>(this)->hosts();
+  }
 
 public: // internal
   int fd() const;

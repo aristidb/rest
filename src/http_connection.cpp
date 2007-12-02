@@ -36,12 +36,14 @@ typedef
 
 class http_connection::impl {
 public:
-  socket_param const &sock;
+  host_container const &hosts;
+
   std::auto_ptr<std::streambuf> conn;
 
   std::string const &servername;
 
   bool open_;
+
   enum {
     NO_ENTITY,
     HTTP_1_0_COMPAT,
@@ -49,6 +51,7 @@ public:
   };
   typedef std::bitset<X_NO_FLAG> state_flags;
   state_flags flags;
+
   std::vector<response::content_encoding_t> encodings;
 
   request request_;
@@ -62,7 +65,7 @@ public:
       network::address const &addr,
       std::string const &servername
   )
-    : sock(sock),
+    : hosts(sock.hosts()),
       conn(new connection_streambuf(
             connfd, sock.timeout_read(), sock.timeout_write())),
       servername(servername),
@@ -186,7 +189,7 @@ response http_connection::handle_request() {
     if (!host_header)
       throw utils::http::bad_format();
 
-    host const *h = p->sock.get_host(host_header.get());
+    host const *h = p->hosts.get_host(host_header.get());
     if (!h)
       return response(404);
 
