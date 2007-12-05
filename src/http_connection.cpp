@@ -16,6 +16,7 @@
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/iostreams/combine.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -24,6 +25,7 @@
 #include <sstream>
 #include <bitset>
 #include <memory>
+#include <iostream>
 
 using namespace rest;
 namespace det = rest::detail;
@@ -33,6 +35,15 @@ namespace io = boost::iostreams;
 typedef 
   boost::iostreams::stream_buffer<utils::socket_device>
   connection_streambuf;
+
+typedef 
+    io::combination<
+        std::istream, 
+        std::ostream 
+    >
+    stdio_combination;
+
+typedef io::stream_buffer<stdio_combination> stdio_streambuf;
 
 class http_connection::impl {
 public:
@@ -68,6 +79,19 @@ public:
     : hosts(sock.hosts()),
       conn(new connection_streambuf(
             connfd, sock.timeout_read(), sock.timeout_write())),
+      servername(servername),
+      open_(true),
+      request_(addr)
+  {}
+
+  impl(
+      host_container const &hosts,
+      std::auto_ptr<std::streambuf> conn,
+      network::address const &addr,
+      std::string const &servername
+  )
+    : hosts(hosts),
+      conn(conn),
       servername(servername),
       open_(true),
       request_(addr)
@@ -118,6 +142,22 @@ http_connection::http_connection(
     network::address const &addr,
     std::string const &servername) 
  : p(new impl(sock, connfd, addr, servername))
+{}
+
+http_connection::http_connection(host_container const &hosts, 
+    std::istream& in, std::ostream& out, 
+    rest::network::address const &addr,
+    std::string const &servername)
+  : p(new impl(
+        hosts,
+        std::auto_ptr<std::streambuf>(
+          new stdio_streambuf( ///TODO: exception savety
+            boost::iostreams::combine(
+              boost::ref(in), 
+              boost::ref(out)))
+        ),
+        addr,
+        servername))
 {}
 
 http_connection::~http_connection()

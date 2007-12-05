@@ -6,6 +6,7 @@
 #include "network.hpp"
 #include "response.hpp"
 #include "responder.hpp"
+#include <iosfwd>
 #include <string>
 #include <boost/scoped_ptr.hpp>
 
@@ -18,6 +19,12 @@ public:
   http_connection(socket_param const &sock, int connfd,
                   rest::network::address const &addr,
                   std::string const &servername);
+
+  http_connection(host_container const& hosts, 
+                  std::istream& in, std::ostream& out, 
+                  rest::network::address const &addr,
+                  std::string const &servername);
+
   ~http_connection();
 
   int set_header_options();
