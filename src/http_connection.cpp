@@ -144,18 +144,24 @@ http_connection::http_connection(
  : p(new impl(sock, connfd, addr, servername))
 {}
 
+namespace {
+  std::auto_ptr<std::streambuf>
+  new_stdio_streambuf(std::istream &in, std::ostream &out) {
+    return std::auto_ptr<std::streambuf>(
+      new stdio_streambuf(
+        boost::iostreams::combine(
+          boost::ref(in),
+          boost::ref(out))));
+  }
+}
+
 http_connection::http_connection(host_container const &hosts, 
     std::istream& in, std::ostream& out, 
     rest::network::address const &addr,
     std::string const &servername)
   : p(new impl(
         hosts,
-        std::auto_ptr<std::streambuf>(
-          new stdio_streambuf( ///TODO: exception savety
-            boost::iostreams::combine(
-              boost::ref(in), 
-              boost::ref(out)))
-        ),
+        new_stdio_streambuf(in, out),
         addr,
         servername))
 {}
