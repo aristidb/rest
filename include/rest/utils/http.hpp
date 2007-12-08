@@ -70,23 +70,36 @@ void get_until(char end, Source &in, std::string &ret,
 }
 
 template<class Source>
-request_line get_request_line(Source &in) {
+request_line get_request_line(
+    Source &in,
+    boost::tuple<std::size_t, std::size_t, std::size_t> const &max_sizes =
+      boost::make_tuple(0, 0, 0))
+{
   while (expect(in, '\r'))
     if (!expect(in, '\n'))
       throw bad_format();
-  request_line ret;
-  get_until(' ', in, ret.get<REQUEST_METHOD>());
-  if (ret.get<REQUEST_METHOD>().empty())
+
+  request_line x;
+
+  get_until(' ', in, x.get<REQUEST_METHOD>(), false, 
+            max_sizes.get<REQUEST_METHOD>());
+  if (x.get<REQUEST_METHOD>().empty())
     throw bad_format();
-  get_until(' ', in, ret.get<REQUEST_URI>());
-  if (ret.get<REQUEST_URI>().empty())
+
+  get_until(' ', in, x.get<REQUEST_URI>(), false,
+            max_sizes.get<REQUEST_URI>());
+  if (x.get<REQUEST_URI>().empty())
     throw bad_format();
-  get_until('\r', in, ret.get<REQUEST_HTTP_VERSION>());
-  if (ret.get<REQUEST_HTTP_VERSION>().empty())
+
+  get_until('\r', in, x.get<REQUEST_HTTP_VERSION>(), false,
+            max_sizes.get<REQUEST_HTTP_VERSION>());
+  if (x.get<REQUEST_HTTP_VERSION>().empty())
     throw bad_format();
+
   if(!expect(in, '\n'))
     throw bad_format();
-  return ret;
+
+  return x;
 }
 
 // reads a header field from `in' and adds it to `fields'
