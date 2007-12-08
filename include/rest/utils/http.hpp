@@ -70,6 +70,9 @@ void get_until(char end, Source &in, std::string &ret,
   }
 }
 
+#define REST_RESERVE_LIKE(x, s) \
+  (x).reserve(sizeof(x) - 1)
+
 template<class Source>
 request_line get_request_line(
     Source &in,
@@ -82,6 +85,7 @@ request_line get_request_line(
 
   request_line x;
 
+  REST_RESERVE_LIKE(x.get<REQUEST_METHOD>(), "OPTIONS");
   get_until(' ', in, x.get<REQUEST_METHOD>(), false, 
             max_sizes.get<REQUEST_METHOD>());
   if (x.get<REQUEST_METHOD>().empty())
@@ -92,6 +96,7 @@ request_line get_request_line(
   if (x.get<REQUEST_URI>().empty())
     throw bad_format();
 
+  REST_RESERVE_LIKE(x.get<REQUEST_HTTP_VERSION>(), "HTTP/1.0");
   get_until('\r', in, x.get<REQUEST_HTTP_VERSION>(), false,
             max_sizes.get<REQUEST_HTTP_VERSION>());
   if (x.get<REQUEST_HTTP_VERSION>().empty())
@@ -114,8 +119,9 @@ void get_header_field(
     std::size_t max_value_length)
 {
   namespace io = boost::iostreams;
-  std::string name;
 
+  std::string name;
+  REST_RESERVE_LIKE(name, "If-Unmodified-Since");
   get_until(':', in, name, false, max_name_length);
   boost::algorithm::to_lower(name);
 
@@ -153,6 +159,8 @@ void get_header_field(
     ++xend;
   value.erase(xend.base(), value.end());
 }
+
+#undef REST_RESERVE_LIKE
 
 template<class Source, class HeaderFields>
 void read_headers(
