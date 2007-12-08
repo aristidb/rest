@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <cstddef>
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/iostreams/read.hpp>
 #include <boost/tuple/tuple.hpp>
 
@@ -96,7 +97,7 @@ request_line get_request_line(
   if (x.get<REQUEST_HTTP_VERSION>().empty())
     throw bad_format();
 
-  if(!expect(in, '\n'))
+  if (!expect(in, '\n'))
     throw bad_format();
 
   return x;
@@ -106,33 +107,32 @@ request_line get_request_line(
 // see RFC 2616 chapter 4.2
 // Warning: Field names are converted to all lower-case!
 template<class Source, class HeaderFields>
-void get_header_field(Source &in, HeaderFields &fields) {
+void get_header_field(
+    Source &in,
+    HeaderFields &fields,
+    std::size_t max_name_length,
+    std::size_t max_value_length)
+{
   namespace io = boost::iostreams;
   std::string name;
-  int t = 0;
-  for (;;) {
-    t = io::get(in);
-    if (t == '\n' || t == '\r')
-      throw bad_format();
-    else if (t == EOF)
-      throw remote_close();
-    else if (t == ':') {
-      remove_spaces(in);
-      break;
-    }
-    else
-      name += std::tolower(t);
-  }
+
+  get_until(':', in, name, false, max_name_length);
+  boost::algorithm::to_lower(name);
+
+  remove_spaces(in);
+
   std::string &value = fields[name];
   if (!value.empty())
     value += ", ";
 
-  for(;;) {
-    t = io::get(in);
-    if(t == '\n' || t == '\r') {
+  for (;;) {
+    int t;
+    if ((t = io::get(in)) == EOF)
+      throw remote_close();
+    if (t == '\n' || t == '\r') {
       // Newlines in header fields are allowed when followed
       // by an SP (space or horizontal tab)
-      if(t == '\r')
+      if (t == '\r')
         expect(in, '\n');
       t = io::get(in);
       if (!isspht(t)) {
@@ -141,11 +141,11 @@ void get_header_field(Source &in, HeaderFields &fields) {
       }
       remove_spaces(in);
       value += ' ';
-    }
-    else if (t == EOF)
-      throw remote_close();
-    else
+    } else {
+      if (max_value_length != 0 && value.size() >= max_value_length)
+        throw bad_format();
       value += t;
+    }
   }
 
   std::string::reverse_iterator xend = value.rbegin();
@@ -155,10 +155,20 @@ void get_header_field(Source &in, HeaderFields &fields) {
 }
 
 template<class Source, class HeaderFields>
-void read_headers(Source &source, HeaderFields &fields) {
-  do {
-    get_header_field(source, fields);
-  } while (!(expect(source, '\r') && expect(source, '\n')));
+void read_headers(
+    Source &source,
+    HeaderFields &fields,
+    std::size_t max_name_length = 0,
+    std::size_t max_value_length = 0)
+{
+  for (;;) {
+    get_header_field(source, fields, max_name_length, max_value_length);
+    if (expect(source, '\r')) {
+      if (!expect(source, '\n'))
+        throw bad_format();
+      return;
+    }
+  }
 }
 
 void parse_parametrised(
