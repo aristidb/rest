@@ -55,12 +55,15 @@ enum { REQUEST_METHOD, REQUEST_URI, REQUEST_HTTP_VERSION };
 
 template<class Source>
 void get_until(char end, Source &in, std::string &ret,
-               bool allow_cr_or_lf = false) {
+               bool allow_cr_or_lf = false,
+               std::size_t max_length = 0) {
   int t;
   while ((t = boost::iostreams::get(in)) != end) {
     if(t == EOF)
       throw remote_close();
     if (!allow_cr_or_lf && (t == '\r' || t == '\n'))
+      throw bad_format();
+    if (max_length != 0 && ret.size() >= max_length)
       throw bad_format();
     ret += t;
   }
