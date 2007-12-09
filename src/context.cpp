@@ -187,7 +187,7 @@ void context::do_bind(
   current->associated_path_id = associated;
 }
 
-#undef CHECK_PATH_LENq
+#undef CHECK_PATH_LEN
 
 void context::find_responder(
   std::string const &path,
