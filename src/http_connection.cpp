@@ -229,7 +229,7 @@ response http_connection::handle_request() {
         *p->conn,
         boost::make_tuple(
           method_name_length,
-          utils::get(p->tree, 0, "general", "uri_length"),
+          utils::get(p->tree, 1023, "general", "max_uri_length"),
           sizeof("HTTP/1.1") - 1 + 5 // 5 additional chars for higher versions
         ));
 
