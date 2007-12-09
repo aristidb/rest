@@ -1,12 +1,16 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
-#include "rest/context.hpp"
-#include "rest/utils/uri.hpp"
+#include <rest/context.hpp>
+#include <rest/utils/uri.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
 #include <boost/tokenizer.hpp>
 #include <stdexcept>
 #include <algorithm>
+
+#ifndef NDEBUG
+#include <rest/config.hpp>
+#endif
 
 using namespace rest;
 namespace det = rest::detail;
@@ -148,11 +152,25 @@ void context::prepare_keywords(keywords &kw) const {
     kw.declare(it->keyword, it->type);
 }
 
+#ifndef NDEBUG
+#define CHECK_PATH_LEN(path) {                                          \
+    std::size_t const n = rest::utils::get(rest::config::get().tree(),  \
+                                           0ul,                         \
+                                           "general", "uri_length");    \
+    if(n != 0)                                                          \
+      assert(path.size() > n);                                          \
+  } while(false)                                                        \
+  /* */
+#else
+#define CHECK_PATH_LEN(path) while(false)
+#endif
+
 void context::do_bind(
   std::string const &path,
   det::responder_base &responder_,
   det::any_path const &associated)
 {
+  CHECK_PATH_LEN(path);
   impl::path_resolver_node *current = p->make_bindable(path);
   current->responder_ = &responder_;
   current->associated_path_id = associated;
@@ -163,10 +181,13 @@ void context::do_bind(
   context &context_,
   det::any_path const &associated)
 {
+  CHECK_PATH_LEN(path);
   impl::path_resolver_node *current = p->make_bindable(path);
   current->context_ = &context_;
   current->associated_path_id = associated;
 }
+
+#undef CHECK_PATH_LENq
 
 void context::find_responder(
   std::string const &path,
@@ -295,3 +316,8 @@ context::impl::make_bindable(std::string const &path) {
   }
   return current;
 }
+// Local Variables: **
+// mode: C++ **
+// coding: utf-8 **
+// c-electric-flag: nil **
+// End: **

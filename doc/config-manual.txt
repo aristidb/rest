@@ -12,4 +12,4 @@ Can be changed with -c-Flag or by setting -DDEFAULT_CONFIG_PATH during compile t
 /general/name                   setvername [default: "musikdings.rest/0.1"]
 /general/uid                    set server uid
 /general/gid                    set sever gid
-
+/general/uri_length             maximal length of an uri [default: 0 (not limit)]

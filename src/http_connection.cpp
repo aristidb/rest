@@ -12,6 +12,7 @@
 #include "rest/utils/complete_filtering_stream.hpp"
 #include "rest/utils/no_flush_writer.hpp"
 #include "rest/utils/socket_device.hpp"
+#include <rest/config.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
@@ -37,11 +38,11 @@ typedef
   connection_streambuf;
 
 typedef 
-    io::combination<
-        std::istream, 
-        std::ostream 
-    >
-    stdio_combination;
+  io::combination<
+    std::istream, 
+    std::ostream 
+  >
+  stdio_combination;
 
 typedef io::stream_buffer<stdio_combination> stdio_streambuf;
 
@@ -52,6 +53,7 @@ public:
   std::auto_ptr<std::streambuf> conn;
 
   std::string const &servername;
+  rest::utils::property_tree &tree;
 
   bool open_;
 
@@ -80,9 +82,10 @@ public:
       conn(new connection_streambuf(
             connfd, sock.timeout_read(), sock.timeout_write())),
       servername(servername),
+      tree(config::get().tree()),
       open_(true),
       request_(addr)
-  {}
+  { }
 
   impl(
       host_container const &hosts,
@@ -93,9 +96,10 @@ public:
     : hosts(hosts),
       conn(conn),
       servername(servername),
+      tree(config::get().tree()),
       open_(true),
       request_(addr)
-  {}
+  { }
 };
 
 namespace {
@@ -152,8 +156,8 @@ http_connection::http_connection(
     int connfd,
     network::address const &addr,
     std::string const &servername) 
- : p(new impl(sock, connfd, addr, servername))
-{}
+  : p(new impl(sock, connfd, addr, servername))
+{ }
 
 namespace {
   std::auto_ptr<std::streambuf>
@@ -175,10 +179,9 @@ http_connection::http_connection(host_container const &hosts,
         new_stdio_streambuf(in, out),
         addr,
         servername))
-{}
+{ }
 
-http_connection::~http_connection()
-{}
+http_connection::~http_connection() { }
 
 void http_connection::reset() {
   p->flags.reset();
@@ -226,7 +229,7 @@ response http_connection::handle_request() {
         *p->conn,
         boost::make_tuple(
           method_name_length,
-          0,
+          utils::get(p->tree, 0, "general", "uri_length"),
           sizeof("HTTP/1.1") - 1 + 5 // 5 additional chars for higher versions
         ));
 
@@ -841,4 +844,8 @@ void http_connection::send(response r, bool entity) {
   io::flush(out);
   out->real_flush();
 }
-
+// Local Variables: **
+// mode: C++ **
+// coding: utf-8 **
+// c-electric-flag: nil **
+// End: **

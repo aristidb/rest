@@ -16,8 +16,8 @@ namespace rest { class cookie; }
 
 namespace rest { namespace utils { namespace http {
 
-struct remote_close {};
-struct bad_format {};
+struct remote_close { };
+struct bad_format { };
 
 std::string random_boundary(std::size_t length = 50);
 
@@ -113,10 +113,10 @@ request_line get_request_line(
 // Warning: Field names are converted to all lower-case!
 template<class Source, class HeaderFields>
 void get_header_field(
-    Source &in,
-    HeaderFields &fields,
-    std::size_t max_name_length,
-    std::size_t max_value_length)
+  Source &in,
+  HeaderFields &fields,
+  std::size_t max_name_length,
+  std::size_t max_value_length)
 {
   namespace io = boost::iostreams;
 
