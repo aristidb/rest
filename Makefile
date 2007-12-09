@@ -10,7 +10,7 @@ override BUILDDIR := $(strip $(BUILDDIR))
 
 OS	    := $(shell uname)
 ifeq ($(OS), Darwin)
-LDFLAGS     := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem
+LDFLAGS     := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX)
 CXXOPTFLAGS := $(CXXOPTFLAGS) -fast -mcpu=G4 -mtune=G4
 CXXSTDFLAGS := $(CXXSTDFLAGS) -DAPPLE
 endif
@@ -33,7 +33,7 @@ UNIT_SOURCES := test/unit.cpp test/filter_tests.cpp \
 UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
 UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))
 
-SOURCES  := $(wildcard *.cpp) $(wildcard src/*.cpp) $(wildcard test/*.cpp)
+SOURCES  := $(wildcard *.cpp) $(wildcard src/*.cpp) $(wildcard test/*.cpp) $(wildcard src/compat/*.cpp)
 OBJECTS  := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(SOURCES))
 DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
