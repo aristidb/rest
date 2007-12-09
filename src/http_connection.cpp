@@ -25,7 +25,7 @@
 #include <sstream>
 #include <bitset>
 #include <memory>
-#include <iostream>
+#include <algorithm>
 
 using namespace rest;
 namespace det = rest::detail;
@@ -134,6 +134,17 @@ namespace {
     method_handlers_raw + 
       sizeof(method_handlers_raw) / sizeof(*method_handlers_raw)
   );
+
+  std::size_t const get_method_name_length() {
+    std::size_t len = 0;
+    for (method_handler_map::const_iterator it = method_handlers.begin();
+        it != method_handlers.end();
+        ++it)
+      len = std::max(len, it->first.size());
+    return len;
+  }
+
+  static std::size_t const method_name_length = get_method_name_length();
 }
 
 http_connection::http_connection(
@@ -210,7 +221,14 @@ void http_connection::serve() {
 response http_connection::handle_request() {
   try {
     std::string method, uri, version;
-    boost::tie(method, uri, version) = utils::http::get_request_line(*p->conn);
+
+    boost::tie(method, uri, version) = utils::http::get_request_line(
+        *p->conn,
+        boost::make_tuple(
+          method_name_length,
+          0,
+          sizeof("HTTP/1.1") - 1 + 5 // 5 additional chars for higher versions
+        ));
 
     utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
                uri.c_str(), version.c_str());
