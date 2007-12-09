@@ -53,9 +53,7 @@ rest::network::address const &request::get_client_address() const {
 }
 
 void request::clear() {
-  p->uri = std::string();
-  p->host_ = 0;
-  p->headers.clear();
+  p.reset(new impl(p->addr));
 }
 
 void request::read_headers(std::streambuf &buf) {
