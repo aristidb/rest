@@ -285,8 +285,8 @@ int server::impl::connection(socket_param const &sock, int connfd,
                              std::string const &servername)
 {
   try {
-    http_connection conn(sock, connfd, addr, servername);
-    conn.serve();
+    http_connection conn(sock.hosts(), addr, servername);
+    conn.serve(sock, connfd);
   }
   catch(std::exception &e) {
     utils::log(LOG_ERR, "unexpected exception: %s", e.what());

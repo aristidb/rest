@@ -73,28 +73,11 @@ public:
   ranges_t ranges;
 
   impl(
-      socket_param const &sock,
-      int connfd,
-      network::address const &addr,
-      std::string const &servername
-  )
-    : hosts(sock.hosts()),
-      conn(new connection_streambuf(
-            connfd, sock.timeout_read(), sock.timeout_write())),
-      servername(servername),
-      tree(config::get().tree()),
-      open_(true),
-      request_(addr)
-  { }
-
-  impl(
       host_container const &hosts,
-      std::auto_ptr<std::streambuf> conn,
       network::address const &addr,
       std::string const &servername
   )
     : hosts(hosts),
-      conn(conn),
       servername(servername),
       tree(config::get().tree()),
       open_(true),
@@ -152,36 +135,29 @@ namespace {
 }
 
 http_connection::http_connection(
-    socket_param const &sock,
-    int connfd,
-    network::address const &addr,
-    std::string const &servername) 
-  : p(new impl(sock, connfd, addr, servername))
-{ }
+    host_container const &hosts, 
+    rest::network::address const &addr,
+    std::string const &servername)
+: p(new impl(hosts, addr, servername))
+{}
 
-namespace {
-  std::auto_ptr<std::streambuf>
-  new_stdio_streambuf(std::istream &in, std::ostream &out) {
-    return std::auto_ptr<std::streambuf>(
-      new stdio_streambuf(
+http_connection::~http_connection() { }
+
+void http_connection::serve(socket_param const &sock, int connfd) {
+  p->conn.reset(new connection_streambuf(
+        connfd, sock.timeout_read(), sock.timeout_write()));
+
+  serve();
+}
+
+void http_connection::serve(std::istream &in, std::ostream &out) {
+  p->conn.reset(new stdio_streambuf(
         boost::iostreams::combine(
           boost::ref(in),
           boost::ref(out))));
-  }
+
+  serve();
 }
-
-http_connection::http_connection(host_container const &hosts, 
-    std::istream& in, std::ostream& out, 
-    rest::network::address const &addr,
-    std::string const &servername)
-  : p(new impl(
-        hosts,
-        new_stdio_streambuf(in, out),
-        addr,
-        servername))
-{ }
-
-http_connection::~http_connection() { }
 
 void http_connection::reset() {
   p->flags.reset();
@@ -219,6 +195,12 @@ void http_connection::serve() {
   }
   catch (utils::http::remote_close&) {
   }
+  catch (...) {
+    p->conn.reset();
+    throw;
+  }
+
+  p->conn.reset();
 }
 
 response http_connection::handle_request() {
