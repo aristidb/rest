@@ -1,0 +1,53 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
+#include <rest/http_connection.hpp>
+#include <rest/host.hpp>
+#include <sstream>
+#include <testsoon.hpp>
+
+namespace {
+  rest::network::address ip4(boost::uint32_t x) {
+    rest::network::address addr;
+    addr.type = rest::network::ip4;
+    addr.addr.ip4 = x;
+    return addr;
+  }
+}
+
+TEST_GROUP(no_hosts) {
+
+struct group_fixture_t {
+  std::stringstream output;
+  rest::network::address addr;
+  rest::host_container hosts;
+  rest::http_connection connection;
+
+  group_fixture_t() 
+  : addr(ip4(0)),
+    connection(hosts, addr, "SERVERNAME")
+  {
+  }
+
+  void serve(std::string const &input) {
+    std::istringstream in(input);
+    connection.serve(in, output);
+  }
+};
+
+GFTEST(no request) {
+  group_fixture.serve("");
+  Equals(group_fixture.output.str(), "");
+}
+
+GFTEST(incomplete request) {
+  group_fixture.serve("GET incomplete");
+  Equals(group_fixture.output.str(), "");
+}
+
+GFTEST(bad http version) {
+  group_fixture.serve("GET / HHHHHTTP/1.0\r\n");
+  std::string first_line;
+  std::getline(group_fixture.output, first_line);
+  Equals(first_line, "HTTP/1.1 505 HTTP Version Not Supported\r");
+}
+
+}

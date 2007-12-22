@@ -16,16 +16,17 @@ class keywords;
 
 class http_connection {
 public:
-  http_connection(socket_param const &sock, int connfd,
-                  rest::network::address const &addr,
-                  std::string const &servername);
-
-  http_connection(host_container const& hosts, 
-                  std::istream& in, std::ostream& out, 
+  http_connection(host_container const &hosts, 
                   rest::network::address const &addr,
                   std::string const &servername);
 
   ~http_connection();
+
+  void serve(socket_param const &sock, int connfd);
+  void serve(std::istream &in, std::ostream &out);
+
+private:
+  void serve();
 
   int set_header_options();
 
@@ -36,8 +37,6 @@ public:
 
   void send(response r, bool entity);
   void send(response r);
-
-  void serve();
 
   int handle_modification_tags(
     time_t, std::string const &, std::string const &);
@@ -64,6 +63,7 @@ public:
 
   void tell_allow(response &resp, detail::responder_base *responder);
 
+public: //internal
   response handle_get(
     detail::responder_base *,
     detail::any_path const &,
