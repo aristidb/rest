@@ -12,19 +12,21 @@
 #include <unistd.h>
 
 struct tester : rest::responder<rest::ALL, rest::NO_PATH> {
-  std::string etag() const {
+  std::string etag(rest::keywords&, rest::request const&) const {
     return "\"zxyl\"";
   }
 
-  time_t last_modified(time_t now) const {
+  time_t last_modified(
+    time_t now, rest::keywords&, rest::request const&) const
+  {
     return now;
   }
 
-  time_t expires(time_t now) const {
+  time_t expires(time_t now, rest::keywords&, rest::request const&) const {
     return now + 10;
   }
 
-  rest::cache::flags cache() const {
+  rest::cache::flags cache(rest::keywords&, rest::request const&) const {
     return rest::cache::private_ | rest::cache::no_transform;
   }
 

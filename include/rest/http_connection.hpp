@@ -47,13 +47,17 @@ public:
     detail::any_path const &,
     response &,
     time_t,
-    time_t);
+    time_t,
+    keywords &,
+    request const &);
 
   void handle_header_caching(
     detail::responder_base *,
     detail::any_path const &,
     response &,
     bool &,
+    keywords &,
+    request const &,
     std::string const &);
 
   void analyze_ranges();
@@ -104,3 +108,8 @@ private:
 }
 
 #endif
+// Local Variables: **
+// mode: C++ **
+// coding: utf-8 **
+// c-electric-flag: nil **
+// End: **

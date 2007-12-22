@@ -281,15 +281,16 @@ response http_connection::handle_request() {
 
     time_t last_modified = time_t(-1);
     if (responder)
-      last_modified = responder->x_last_modified(path_id, now);
+      last_modified = responder->x_last_modified(path_id, now, kw,
+                                                 p->request_);
     if (last_modified != time_t(-1) && last_modified > now)
       last_modified = now;
     std::string etag;
     if (responder)
-      etag = responder->x_etag(path_id);
+      etag = responder->x_etag(path_id, kw, p->request_);
     time_t expires = time_t(-1);
     if (responder)
-      expires = responder->x_expires(path_id, now);
+      expires = responder->x_expires(path_id, now, kw, p->request_);
 
     int mod_code = handle_modification_tags(
           last_modified == time_t(-1) ? now : last_modified,
@@ -318,7 +319,7 @@ response http_connection::handle_request() {
       out.set_header("ETag", etag);
 
     if (responder)
-      handle_caching(responder, path_id, out, now, expires);
+      handle_caching(responder, path_id, out, now, expires, kw, p->request_);
 
     if (method == "GET" || method == "HEAD") {
       int code = out.get_code();
@@ -402,10 +403,12 @@ void http_connection::handle_caching(
   det::any_path const &path_id,
   response &resp,
   time_t now,
-  time_t expires)
+  time_t expires,
+  keywords &kw,
+  request const &req)
 {
   bool cripple_expires = false;
-  cache::flags general = responder->x_cache(path_id);
+  cache::flags general = responder->x_cache(path_id, kw, req);
 
   if (general & cache::private_) {
     cripple_expires = true;
@@ -432,6 +435,8 @@ void http_connection::handle_caching(
       boost::cref(path_id),
       boost::ref(resp),
       boost::ref(cripple_expires),
+      boost::ref(kw),
+      boost::cref(req),
       _1));
 
   if (expires != time_t(-1)) {
@@ -455,9 +460,11 @@ void http_connection::handle_header_caching(
   det::any_path const &path_id,
   response &resp,
   bool &cripple_expires,
+  keywords &kw,
+  request const &req,
   std::string const &header)
 {
-  cache::flags flags = responder->x_cache(path_id, header);
+  cache::flags flags = responder->x_cache(path_id, header, kw, req);
   if (flags & cache::no_cache) {
     cripple_expires = true;
     std::string x;

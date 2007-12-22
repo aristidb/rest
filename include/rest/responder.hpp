@@ -75,27 +75,33 @@ namespace detail {
 
     virtual bool x_exists(any_path const &, keywords &) const = 0;
 
-    virtual std::string x_etag(any_path const &) const = 0;
-    virtual time_t x_last_modified(any_path const &, time_t) const = 0;
-    virtual time_t x_expires(any_path const &, time_t) const = 0;
+    virtual std::string x_etag(
+      any_path const &, keywords &, request const &) const = 0;
+    virtual time_t x_last_modified(
+      any_path const &, time_t, keywords &, request const &) const = 0;
+    virtual time_t x_expires(
+      any_path const &, time_t, keywords &, request const &) const = 0;
 
-    virtual cache::flags x_cache(any_path const &) const = 0;
-    virtual cache::flags x_cache(any_path const &, std::string const &) const=0;
+    virtual cache::flags x_cache(
+      any_path const &, keywords &, request const &) const = 0;
+    virtual cache::flags x_cache(
+      any_path const &, std::string const &, keywords &, request const &)
+      const = 0;
 
-    virtual ~responder_base() {}
+    virtual ~responder_base() { }
   };
 
-  #define REST_METHOD_DEFINITION(method) \
-    template<typename, bool> struct i_ ## method {}; \
-    template<typename Path> \
-    struct i_ ## method<Path, true> : method ## _base { \
-      typedef typename path_helper<Path>::path_parameter path_parameter; \
-      typedef typename path_helper<Path>::path_type path_type; \
+  #define REST_METHOD_DEFINITION(method)                                      \
+    template<typename, bool> struct i_ ## method { };                         \
+    template<typename Path>                                                   \
+    struct i_ ## method<Path, true> : method ## _base {                       \
+      typedef typename path_helper<Path>::path_parameter path_parameter;      \
+      typedef typename path_helper<Path>::path_type path_type;                \
       virtual response method(path_parameter, keywords &, request const &)=0; \
-    private: \
-      response x_ ## method( \
-          any_path const &path, keywords &kw, request const &req) \
-      { \
+    private:                                                                  \
+      response x_ ## method(                                                  \
+          any_path const &path, keywords &kw, request const &req)             \
+      {                                                                       \
         response result(response::empty_tag()); \
         method(unpack<path_type>(path), kw, req).move(result); \
         return result; \
@@ -152,23 +158,30 @@ protected:
     return true;
   }
 
-  virtual time_t last_modified(path_parameter, time_t) const {
+  virtual time_t last_modified(
+    path_parameter, time_t, keywords &, request const &) const
+  {
     return time_t(-1);
   }
 
-  virtual std::string etag(path_parameter) const {
+  virtual std::string etag(path_parameter, keywords &, request const &) const {
     return std::string();
   }
 
-  virtual time_t expires(path_parameter, time_t) const {
+  virtual time_t expires(
+    path_parameter, time_t, keywords &, request const &) const
+  {
     return time_t(-1);
   }
 
-  virtual cache::flags cache(path_parameter) const {
+  virtual cache::flags cache(path_parameter, keywords &, request const&) const
+  {
     return cache::NO_FLAGS;
   }
 
-  virtual cache::flags cache(path_parameter, std::string const &header) const {
+  virtual cache::flags cache(
+    path_parameter, std::string const &header, keywords&, request const&) const
+  {
     return cache::default_header_flags(header);
   }
 
@@ -177,26 +190,37 @@ private:
     return exists(detail::unpack<path_type>(path), kw);
   }
 
-  time_t x_last_modified(detail::any_path const &path, time_t now) const {
-    return last_modified(detail::unpack<path_type>(path), now);
+  time_t x_last_modified(
+    detail::any_path const &path, time_t now, keywords &kw, request const &r)
+    const
+  {
+    return last_modified(detail::unpack<path_type>(path), now, kw, r);
   }
 
-  std::string x_etag(detail::any_path const &path) const {
-    return etag(detail::unpack<path_type>(path));
+  std::string x_etag(
+    detail::any_path const &path, keywords &kw, request const &r) const
+  {
+    return etag(detail::unpack<path_type>(path), kw, r);
   }
 
-  time_t x_expires(detail::any_path const &path, time_t now) const {
-    return expires(detail::unpack<path_type>(path), now);
-  }
-
-  cache::flags x_cache(detail::any_path const &path) const {
-    return cache(detail::unpack<path_type>(path));
+  time_t x_expires(
+    detail::any_path const &path, time_t now, keywords &kw, request const &r)
+    const
+  {
+    return expires(detail::unpack<path_type>(path), now, kw, r);
   }
 
   cache::flags x_cache(
-      detail::any_path const &path, std::string const &header) const
+    detail::any_path const &path, keywords &kw, request const &r) const
   {
-    return cache(detail::unpack<path_type>(path), header);
+    return cache(detail::unpack<path_type>(path), kw, r);
+  }
+
+  cache::flags x_cache(
+    detail::any_path const &path, std::string const &header, keywords &kw,
+    request const &r) const
+  {
+    return cache(detail::unpack<path_type>(path), header, kw, r);
   }
 
 private:
@@ -229,27 +253,29 @@ public:
   responder &get_interface() { return *this; }
 
 protected:
-  virtual bool exists(keywords &) const {
+  virtual bool exists(keywords&) const {
     return true;
   }
 
-  virtual time_t last_modified(time_t) const {
+  virtual time_t last_modified(time_t, keywords&, request const&) const {
     return time_t(-1);
   }
 
-  virtual std::string etag() const {
+  virtual std::string etag(keywords&, request const&) const {
     return std::string();
   }
 
-  virtual time_t expires(time_t) const {
+  virtual time_t expires(time_t, keywords&, request const&) const {
     return time_t(-1);
   }
 
-  virtual cache::flags cache() const {
+  virtual cache::flags cache(keywords&, request const&) const {
     return cache::NO_FLAGS;
   }
 
-  virtual cache::flags cache(std::string const &header) const {
+  virtual cache::flags cache(
+    std::string const &header, keywords&, request const&) const
+  {
     return cache::default_header_flags(header);
   }
 
@@ -258,24 +284,37 @@ private:
     return exists(kw);
   }
 
-  time_t x_last_modified(detail::any_path const &, time_t now) const {
-    return last_modified(now);
+  time_t x_last_modified(
+    detail::any_path const &, time_t now, keywords &kw, request const &r)
+    const
+  {
+    return last_modified(now, kw, r);
   }
 
-  std::string x_etag(detail::any_path const &) const {
-    return etag();
+  std::string x_etag(
+    detail::any_path const &, keywords &kw, request const &r) const
+  {
+    return etag(kw, r);
   }
 
-  time_t x_expires(detail::any_path const &, time_t now) const {
-    return expires(now);
+  time_t x_expires(
+    detail::any_path const &, time_t now, keywords &kw, request const &r)
+    const
+  {
+    return expires(now, kw, r);
   }
 
-  cache::flags x_cache(detail::any_path const &) const {
-    return cache();
+  cache::flags x_cache(
+    detail::any_path const &, keywords &kw, request const &r) const
+  {
+    return cache(kw, r);
   }
 
-  cache::flags x_cache(detail::any_path const&, std::string const&header)const{
-    return cache(header);
+  cache::flags x_cache(
+    detail::any_path const &, std::string const &header, keywords &kw,
+    request const &r) const
+  {
+    return cache(header, kw, r);
   }
 
 private:
@@ -296,3 +335,8 @@ private:
 }
 
 #endif
+// Local Variables: **
+// mode: C++ **
+// coding: utf-8 **
+// c-electric-flag: nil **
+// End: **
