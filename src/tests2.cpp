@@ -2,6 +2,7 @@
 
 #include <testsoon.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <boost/tuple/tuple_io.hpp>
 
 using namespace boost::lambda;
 
@@ -88,4 +89,14 @@ XTEST(
   Check(value && 0);
 }
 
+TEST_GROUP(tuples) {
 
+XTEST((2tuples, (int, int)(4, 4)(5, 5))) {
+  Equals(value.get<0>(), value.get<1>());
+}
+
+XTEST((2tuples, (char const *, std::size_t)("hey", 3)("hallo", 5))) {
+  Equals(std::strlen(value.get<0>()), value.get<1>());
+}
+
+}

@@ -314,6 +314,25 @@ XTEST((array, (char const *, array))) {
 }
 @endcode
 
+@subsubsection tut_2tuples Parameter: 2tuples
+
+If, for example, you want to test a function which takes one parameter and returns a value depending on the parameter for some cases where both parameter and returned value are known, you can use 2tuples.
+
+Parameter syntax:
+<pre>(2tuples, (element0_type, element1_type)(element0_1, element1_1)(element0_2, element1_2)...(element0_N, element1_N))</pre>
+
+The type of value will be boost::tuple<element0_type, element1_type>. You should also include <boost/tuple/tuple_io.hpp>
+
+Example:
+@code
+#include <boost/tuple/tuple_io.hpp>
+
+// Check if strlen works properly ;-)
+XTEST((2tuples, (char const *, std::size_t)("hey", 3)("hallo", 5))) {
+  Equals(std::strlen(value.get<0>()), value.get<1>());
+}
+@endcode
+
 @section Remarks
 
 Please note that the above tutorial is no introduction to unit testing. If you
