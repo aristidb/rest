@@ -5,7 +5,7 @@
 #include "rest/cookie.hpp"
 #include "rest/config.hpp"
 #include "rest/utils/log.hpp"
-#include <boost/lambda/lambda.hpp>
+#include <stdexcept>
 #include <fstream>
 #include <algorithm>
 #include <sys/types.h>
@@ -74,8 +74,7 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
   rest::response put(
       std::string const &, rest::keywords &, rest::request const &)
   {
-    rest::response ok(200);
-    return ok;
+    throw std::runtime_error("Bad one");
   }
 
   rest::response delete_(
@@ -117,8 +116,6 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
     return resp;
   }
 };
-
-using namespace boost::lambda;
 
 int main(int argc, char **argv) {
   try {

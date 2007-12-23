@@ -285,7 +285,18 @@ response http_connection::handle_request() {
       method_handler_map::const_iterator m = method_handlers.find(method);
       if (m == method_handlers.end())
         return response(501);
-      m->second(this, responder, path_id, kw, p->request_).move(out);
+      try {
+        m->second(this, responder, path_id, kw, p->request_).move(out);
+      } catch (std::exception &e) {
+        response(500).move(out);
+        out.set_type("text/plain");
+        out.set_data(
+          std::string("Internal error: exception thrown: ") + e.what());
+      } catch (...) {
+        response(500).move(out);
+        out.set_type("text/plain");
+        out.set_data("Internal error: unknown exception");
+      }
     } else {
       response(mod_code).move(out);
     }
