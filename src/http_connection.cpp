@@ -263,7 +263,7 @@ response http_connection::handle_request() {
 
     time_t last_modified = time_t(-1);
     if (responder)
-      last_modified = responder->x_last_modified(path_id, now, kw,
+      last_modified = responder->x_last_modified(now, path_id, kw,
                                                  p->request_);
     if (last_modified != time_t(-1) && last_modified > now)
       last_modified = now;
@@ -272,7 +272,7 @@ response http_connection::handle_request() {
       etag = responder->x_etag(path_id, kw, p->request_);
     time_t expires = time_t(-1);
     if (responder)
-      expires = responder->x_expires(path_id, now, kw, p->request_);
+      expires = responder->x_expires(now, path_id, kw, p->request_);
 
     int mod_code = handle_modification_tags(
           last_modified == time_t(-1) ? now : last_modified,
@@ -446,7 +446,7 @@ void http_connection::handle_header_caching(
   request const &req,
   std::string const &header)
 {
-  cache::flags flags = responder->x_cache(path_id, header, kw, req);
+  cache::flags flags = responder->x_cache(header, path_id, kw, req);
   if (flags & cache::no_cache) {
     cripple_expires = true;
     std::string x;
@@ -478,7 +478,7 @@ response http_connection::handle_get(
   request const &req)
 {
   det::get_base *getter = responder->x_getter();
-  if (!getter || !responder->x_exists(path_id, kw))
+  if (!getter || !responder->x_exists(path_id, kw, req))
     return response(404);
   response r(getter->x_get(path_id, kw, req));
   int code = r.get_code();
@@ -496,7 +496,7 @@ response http_connection::handle_head(
   //TODO: better implementation
   p->flags.set(impl::NO_ENTITY);
   det::get_base *getter = responder->x_getter();
-  if (!getter || !responder->x_exists(path_id, kw))
+  if (!getter || !responder->x_exists(path_id, kw, req))
     return response(404);
 
   return getter->x_get(path_id, kw, req);
@@ -510,7 +510,7 @@ response http_connection::handle_post(
   request const &req)
 {
   det::post_base *poster = responder->x_poster();
-  if (!poster || !responder->x_exists(path_id, kw))
+  if (!poster || !responder->x_exists(path_id, kw, req))
     return response(404);
 
   int ret = handle_entity(kw);
@@ -544,7 +544,7 @@ response http_connection::handle_delete(
   request const &req)
 {
   det::delete__base *deleter = responder->x_deleter();
-  if (!deleter || !responder->x_exists(path_id, kw))
+  if (!deleter || !responder->x_exists(path_id, kw, req))
     return response(404);
   return deleter->x_delete_(path_id, kw, req);
 }

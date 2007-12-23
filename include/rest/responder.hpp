@@ -24,7 +24,6 @@ enum response_type {
   ALL = GET | PUT | POST | DELETE
 };
 
-struct NO_PATH {};
 struct DEDUCED_PATH {};
 
 namespace detail {
@@ -73,49 +72,37 @@ namespace detail {
     virtual post_base *x_poster() = 0;
     virtual delete__base *x_deleter() = 0;
 
-    virtual bool x_exists(any_path const &, keywords &) const = 0;
+    virtual bool x_exists(any_path const&, keywords&, request const&) const = 0;
 
     virtual std::string x_etag(
       any_path const &, keywords &, request const &) const = 0;
     virtual time_t x_last_modified(
-      any_path const &, time_t, keywords &, request const &) const = 0;
+      time_t, any_path const &, keywords &, request const &) const = 0;
     virtual time_t x_expires(
-      any_path const &, time_t, keywords &, request const &) const = 0;
+      time_t, any_path const &, keywords &, request const &) const = 0;
 
     virtual cache::flags x_cache(
       any_path const &, keywords &, request const &) const = 0;
     virtual cache::flags x_cache(
-      any_path const &, std::string const &, keywords &, request const &)
+      std::string const &, any_path const &, keywords &, request const &)
       const = 0;
 
     virtual ~responder_base() { }
   };
 
-  #define REST_METHOD_DEFINITION(method)                                      \
-    template<typename, bool> struct i_ ## method { };                         \
-    template<typename Path>                                                   \
-    struct i_ ## method<Path, true> : method ## _base {                       \
-      typedef typename path_helper<Path>::path_parameter path_parameter;      \
-      typedef typename path_helper<Path>::path_type path_type;                \
+  #define REST_METHOD_DEFINITION(method) \
+    template<typename, bool> struct i_ ## method {}; \
+    template<typename Path> \
+    struct i_ ## method<Path, true> : method ## _base { \
+      typedef typename path_helper<Path>::path_parameter path_parameter; \
+      typedef typename path_helper<Path>::path_type path_type; \
       virtual response method(path_parameter, keywords &, request const &)=0; \
-    private:                                                                  \
-      response x_ ## method(                                                  \
-          any_path const &path, keywords &kw, request const &req)             \
-      {                                                                       \
-        response result(response::empty_tag()); \
-        method(unpack<path_type>(path), kw, req).move(result); \
-        return result; \
-      } \
-    }; \
-    template<> \
-    struct i_ ## method<NO_PATH, true> : method ## _base { \
-      virtual response method(keywords &, request const &) = 0; \
     private: \
       response x_ ## method( \
-          any_path const &, keywords &kw, request const &req) \
+          any_path const &path, keywords &kw, request const &req) \
       { \
         response result(response::empty_tag()); \
-        method(kw, req).move(result); \
+        method(unpack<path_type>(path), kw, req).move(result); \
         return result; \
       } \
     }; \
@@ -154,12 +141,12 @@ public:
   }
 
 protected:
-  virtual bool exists(path_parameter, keywords &) const {
+  virtual bool exists(path_parameter, keywords &, request const &) const {
     return true;
   }
 
   virtual time_t last_modified(
-    path_parameter, time_t, keywords &, request const &) const
+    time_t, path_parameter, keywords &, request const &) const
   {
     return time_t(-1);
   }
@@ -169,7 +156,7 @@ protected:
   }
 
   virtual time_t expires(
-    path_parameter, time_t, keywords &, request const &) const
+    time_t, path_parameter, keywords &, request const &) const
   {
     return time_t(-1);
   }
@@ -180,21 +167,23 @@ protected:
   }
 
   virtual cache::flags cache(
-    path_parameter, std::string const &header, keywords&, request const&) const
+    std::string const &header, path_parameter, keywords&, request const&) const
   {
     return cache::default_header_flags(header);
   }
 
 private:
-  bool x_exists(detail::any_path const &path, keywords &kw) const {
-    return exists(detail::unpack<path_type>(path), kw);
+  bool x_exists(
+      detail::any_path const &path, keywords &kw, request const &req) const
+  {
+    return exists(detail::unpack<path_type>(path), kw, req);
   }
 
   time_t x_last_modified(
-    detail::any_path const &path, time_t now, keywords &kw, request const &r)
-    const
+    time_t now, detail::any_path const &path, keywords &kw, request const &r
+    ) const
   {
-    return last_modified(detail::unpack<path_type>(path), now, kw, r);
+    return last_modified(now, detail::unpack<path_type>(path), kw, r);
   }
 
   std::string x_etag(
@@ -204,10 +193,10 @@ private:
   }
 
   time_t x_expires(
-    detail::any_path const &path, time_t now, keywords &kw, request const &r)
-    const
+    time_t now, detail::any_path const &path, keywords &kw, request const &r
+    ) const
   {
-    return expires(detail::unpack<path_type>(path), now, kw, r);
+    return expires(now, detail::unpack<path_type>(path), kw, r);
   }
 
   cache::flags x_cache(
@@ -217,116 +206,27 @@ private:
   }
 
   cache::flags x_cache(
-    detail::any_path const &path, std::string const &header, keywords &kw,
-    request const &r) const
+      std::string const &header,
+      detail::any_path const &path,
+      keywords &kw,
+      request const &r) const
   {
-    return cache(detail::unpack<path_type>(path), header, kw, r);
+    return cache(header, detail::unpack<path_type>(path), kw, r);
   }
 
 private:
   detail::get_base *x_getter() {
     return (ResponseType & GET) ? (detail::get_base *) this : 0;
   }
+
   detail::put_base *x_putter() {
     return (ResponseType & PUT) ? (detail::put_base *) this : 0;
   }
+
   detail::post_base *x_poster() {
     return (ResponseType & POST) ? (detail::post_base *) this : 0;
   }
-  detail::delete__base *x_deleter() {
-    return (ResponseType & DELETE) ? (detail::delete__base *) this : 0;
-  }
-};
 
-template<unsigned ResponseType>
-class responder<ResponseType, NO_PATH>
-: public
-  detail::responder_base,
-  detail::i_get<NO_PATH, ResponseType & GET>,
-  detail::i_put<NO_PATH, ResponseType & PUT>,
-  detail::i_post<NO_PATH, ResponseType & POST>,
-  detail::i_delete_<NO_PATH, ResponseType & DELETE>
-{
-public:
-  static unsigned const flags = ResponseType;
-
-  responder &get_interface() { return *this; }
-
-protected:
-  virtual bool exists(keywords&) const {
-    return true;
-  }
-
-  virtual time_t last_modified(time_t, keywords&, request const&) const {
-    return time_t(-1);
-  }
-
-  virtual std::string etag(keywords&, request const&) const {
-    return std::string();
-  }
-
-  virtual time_t expires(time_t, keywords&, request const&) const {
-    return time_t(-1);
-  }
-
-  virtual cache::flags cache(keywords&, request const&) const {
-    return cache::NO_FLAGS;
-  }
-
-  virtual cache::flags cache(
-    std::string const &header, keywords&, request const&) const
-  {
-    return cache::default_header_flags(header);
-  }
-
-private:
-  bool x_exists(detail::any_path const &, keywords &kw) const {
-    return exists(kw);
-  }
-
-  time_t x_last_modified(
-    detail::any_path const &, time_t now, keywords &kw, request const &r)
-    const
-  {
-    return last_modified(now, kw, r);
-  }
-
-  std::string x_etag(
-    detail::any_path const &, keywords &kw, request const &r) const
-  {
-    return etag(kw, r);
-  }
-
-  time_t x_expires(
-    detail::any_path const &, time_t now, keywords &kw, request const &r)
-    const
-  {
-    return expires(now, kw, r);
-  }
-
-  cache::flags x_cache(
-    detail::any_path const &, keywords &kw, request const &r) const
-  {
-    return cache(kw, r);
-  }
-
-  cache::flags x_cache(
-    detail::any_path const &, std::string const &header, keywords &kw,
-    request const &r) const
-  {
-    return cache(header, kw, r);
-  }
-
-private:
-  detail::get_base *x_getter() {
-    return (ResponseType & GET) ? (detail::get_base *) this : 0;
-  }
-  detail::put_base *x_putter() {
-    return (ResponseType & PUT) ? (detail::put_base *) this : 0;
-  }
-  detail::post_base *x_poster() {
-    return (ResponseType & POST) ? (detail::post_base *) this : 0;
-  }
   detail::delete__base *x_deleter() {
     return (ResponseType & DELETE) ? (detail::delete__base *) this : 0;
   }

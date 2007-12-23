@@ -11,26 +11,35 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-struct tester : rest::responder<rest::ALL, rest::NO_PATH> {
-  std::string etag(rest::keywords&, rest::request const&) const {
+struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
+  std::string etag(
+    std::string const &, rest::keywords &, rest::request const &) const
+ {
     return "\"zxyl\"";
   }
 
   time_t last_modified(
-    time_t now, rest::keywords&, rest::request const&) const
+    time_t now, std::string const &, rest::keywords &, rest::request const &
+      ) const
   {
     return now;
   }
 
-  time_t expires(time_t now, rest::keywords&, rest::request const&) const {
+  time_t expires(
+    time_t now, std::string const&, rest::keywords&, rest::request const&) const
+  {
     return now + 10;
   }
 
-  rest::cache::flags cache(rest::keywords&, rest::request const&) const {
+  rest::cache::flags cache(
+      std::string const &, rest::keywords&, rest::request const&) const
+  {
     return rest::cache::private_ | rest::cache::no_transform;
   }
 
-  rest::response get(rest::keywords &kw, rest::request const &) {
+  rest::response get(
+      std::string const &, rest::keywords &kw, rest::request const &)
+  {
     rest::response resp("text/html");
     resp.add_cookie(rest::cookie("hello", "world"));
     resp.add_cookie(rest::cookie("foo", "bar"));
@@ -61,14 +70,23 @@ struct tester : rest::responder<rest::ALL, rest::NO_PATH> {
 
     return resp;
   }
-  rest::response put(rest::keywords &, rest::request const &) {
+
+  rest::response put(
+      std::string const &, rest::keywords &, rest::request const &)
+  {
     rest::response ok(200);
     return ok;
   }
-  rest::response delete_(rest::keywords &, rest::request const &) {
+
+  rest::response delete_(
+      std::string const &, rest::keywords &, rest::request const &)
+  {
     return rest::response(200);
   }
-  rest::response post(rest::keywords &kw, rest::request const &) {
+
+  rest::response post(
+      std::string const &, rest::keywords &kw, rest::request const &)
+  {
     rest::response resp("text/plain");
 
     std::ostringstream out;
