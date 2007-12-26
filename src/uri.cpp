@@ -33,14 +33,17 @@ rest::utils::uri::unescape(
   std::string result;
   for (std::string::const_iterator it = begin; it != end; ++it)
     if (*it == '%' && it + 2 < end) {
-      char code = char(from_hex(it[1]) * 16 + from_hex(it[2]));
+      char code = from_hex(*(it + 1)) * 0x10 + from_hex(*(it + 2));
       if (code != '\0')
         result += code;
       it += 2;
-    } else if (form && *it == '+')
+    }
+    else if (form && *it == '+') {
       result += ' ';
-    else
+    }
+    else {
       result += *it;
+    }
   return result;
 }
 
@@ -72,14 +75,13 @@ rest::utils::uri::escape(
 {
   std::string result;
   for(std::string::const_iterator it = begin; it != end; ++it) {
-    if(is_unreserved(*it) || (escape_reserved && is_reserved(*it))) {
-      // escape
+    if(is_unreserved(*it) || (!escape_reserved && is_reserved(*it))) {
+      result += *it;
+    }
+    else { // escape
       unsigned char ch = *it;
       char buf[3] = { '%', to_hex(ch >> 4), to_hex(ch & 0xF) };
       result.append(buf, buf + 3);
-    }
-    else {
-      result += *it;
     }
   }
   return result;
