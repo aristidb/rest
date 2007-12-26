@@ -6,10 +6,12 @@
 
 namespace rest { namespace utils { namespace uri {
 
-std::string escape(std::string::const_iterator, std::string::const_iterator);
+std::string escape(
+  std::string::const_iterator, std::string::const_iterator,
+  bool escape_reserved = false);
 
-inline std::string escape(std::string const &x) {
-  return escape(x.begin(), x.end());
+inline std::string escape(std::string const &x, bool escape_reserved = false) {
+  return escape(x.begin(), x.end(), escape_reserved);
 }
 
 std::string unescape(
@@ -24,3 +26,8 @@ void make_basename(std::string &uri);
 }}}
 
 #endif
+// Local Variables: **
+// mode: C++ **
+// coding: utf-8 **
+// c-electric-flag: nil **
+// End: **
