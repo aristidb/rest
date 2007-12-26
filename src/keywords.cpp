@@ -9,7 +9,7 @@
 #include "rest/utils/uri.hpp"
 #include "rest/utils/string.hpp"
 #include <boost/multi_index_container.hpp>
-#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -77,11 +77,15 @@ public:
   boost::multi_index_container<
     entry,
     indexed_by<
-      hashed_unique<
+      ordered_unique<
         composite_key<
           entry,
           member<entry, std::string, &entry::keyword>,
           member<entry, int, &entry::index>
+        >,
+        composite_key_compare<
+          rest::utils::string_icompare,
+          std::less<int>
         >
       >
     >
