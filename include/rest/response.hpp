@@ -25,6 +25,7 @@ public:
   response(int code);
   response(std::string const &type);
   response(std::string const &type, std::string const &data);
+  response(int code, std::string const &type, std::string const &data);
   response(response &r);
   ~response();
 
@@ -106,3 +107,8 @@ private:
 }
 
 #endif
+// Local Variables: **
+// mode: C++ **
+// coding: utf-8 **
+// c-electric-flag: nil **
+// End: **

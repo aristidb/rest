@@ -8,7 +8,7 @@ using namespace rest::utils::uri;
 TEST_GROUP(escape) {
 XTEST((values, (std::string)
        ("hallo")("?hallo+")("123&54$")
-       (";/?:@&=+$,")("-_.!~*'()")))
+       (";/?:@&=+$,")("-_.!~*'()")("_Test_")))
 {
   Equals(value, escape(value, false));
 }
@@ -51,5 +51,14 @@ XTEST((2tuples, (std::string, std::string)
        ("hallo%20welt", "hallo welt")))
 {
   Equals(value.get<1>(), unescape(value.get<0>(), false));
+}
+}
+
+TEST_GROUP(escape_unescape) {
+XTEST((values, (std::string)
+       ("hallo")("?hallo+")("123&54$")
+       (";/?:@&=+$,")("-_.!~*'()")("_Test_")))
+{
+  Equals(value, unescape(escape(value), false));
 }
 }

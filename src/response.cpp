@@ -132,6 +132,7 @@ struct response::impl {
   impl() : code(-1) { }
   impl(int code) : code(code) { }
   impl(std::string const &type) : code(-1), type(type) { }
+  impl(int code, std::string const &type) : code(code), type(type) { }
 };
 
 response::response(empty_tag_t) {}
@@ -150,6 +151,13 @@ response::response(std::string const &type) : p(new impl(type)) {
 
 response::response(std::string const &type, std::string const &data)
   : p(new impl(type))
+{
+  defaults();
+  p->data[identity].set(data);
+}
+
+response::response(int code, std::string const &type, std::string const &data)
+  : p(new impl(code, type))
 {
   defaults();
   p->data[identity].set(data);
@@ -597,3 +605,8 @@ void response::decode(
     io::copy(in, out);
   }
 }
+// Local Variables: **
+// mode: C++ **
+// coding: utf-8 **
+// c-electric-flag: nil **
+// End: **
