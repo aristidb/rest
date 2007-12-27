@@ -186,8 +186,10 @@ void http_connection::serve() {
         resp.set_header("Content-Range", range.str()); 
         impl::ranges_t().swap(p->ranges);
       }
+      host const &h = p->request_.get_host();
       if (resp.is_nil())
-        p->request_.get_host().make_standard_response(resp);
+        h.make_standard_response(resp);
+      h.prepare_response(resp);
       p->request_.clear();
       send(resp);
       impl::ranges_t().swap(p->ranges);

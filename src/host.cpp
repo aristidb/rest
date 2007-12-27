@@ -24,6 +24,8 @@ public:
   typedef std::map<int, std::pair<std::string, std::string> > std_resp_t;
   std_resp_t standard_responses;
 
+  boost::function<void (response &)> response_preparer;
+
   impl(std::string const &name) : name(name) {}
 
   ~impl() {
@@ -127,3 +129,11 @@ host const *host_container::get_host(std::string const &name) const {
   return it->get_pointer();
 }
 
+void host::set_response_preparer(boost::function<void (response &)> const &f) {
+  p->response_preparer = f;
+}
+
+void host::prepare_response(response &r) const {
+  if (p->response_preparer)
+    p->response_preparer(r);
+}

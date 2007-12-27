@@ -5,6 +5,7 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/function.hpp>
 
 namespace rest {
 
@@ -35,6 +36,9 @@ public:
   void make_standard_response(response &) const;
   void set_standard_response(
     int code, std::string const &mime, std::string const &text);
+
+  void prepare_response(response &) const;
+  void set_response_preparer(boost::function<void (response &)> const &);
 
 private:
   template<class T>
