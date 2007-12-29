@@ -78,6 +78,15 @@ void host::set_standard_response(
     std::make_pair(code, std::make_pair(mime, text)));
 }
 
+void host::set_response_preparer(boost::function<void (response &)> const &f) {
+  p->response_preparer = f;
+}
+
+void host::prepare_response(response &r) const {
+  if (p->response_preparer)
+    p->response_preparer(r);
+}
+
 typedef
   boost::multi_index_container<
     boost::reference_wrapper<host const>,
@@ -127,13 +136,4 @@ host const *host_container::get_host(std::string const &name) const {
   if(it == p->hosts.end())
     return 0x0;
   return it->get_pointer();
-}
-
-void host::set_response_preparer(boost::function<void (response &)> const &f) {
-  p->response_preparer = f;
-}
-
-void host::prepare_response(response &r) const {
-  if (p->response_preparer)
-    p->response_preparer(r);
 }
