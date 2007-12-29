@@ -714,13 +714,17 @@ int http_connection::handle_entity(keywords &kw) {
       if (algo::iequals(content_encoding.get(), "gzip") ||
            (p->flags.test(impl::HTTP_1_0_COMPAT) &&
              algo::iequals(content_encoding.get(), "x-gzip")))
+      {
         fin->push(io::gzip_decompressor());
-      else if (algo::iequals(content_encoding.get(), "bzip2"))
+      } else if (algo::iequals(content_encoding.get(), "bzip2")) {
         fin->push(io::bzip2_decompressor());
-      else if (algo::iequals(content_encoding.get(), "deflate"))
-        fin->push(io::zlib_decompressor());
-      else if (!algo::iequals(content_encoding.get(), "identity"))
+      } else if (algo::iequals(content_encoding.get(), "deflate")) {
+        io::zlib_params z;
+        z.noheader = true;
+        fin->push(io::zlib_decompressor(z));
+      } else if (!algo::iequals(content_encoding.get(), "identity")) {
         return 415;
+      }
     }
   }
 

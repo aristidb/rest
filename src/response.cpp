@@ -544,9 +544,12 @@ void response::encode(
   namespace io = boost::iostreams;
   io::filtering_ostreambuf out2;
   switch (enc) {
-  case deflate:
-    out2.push(io::zlib_compressor());
+  case deflate: {
+    io::zlib_params z;
+    z.noheader = true;
+    out2.push(io::zlib_compressor(z));
     break;
+    }
   case gzip:
     out2.push(io::gzip_compressor());
     break;
@@ -569,9 +572,12 @@ void response::decode(
   namespace io = boost::iostreams;
   io::filtering_istreambuf in;
   switch (enc) {
-  case deflate:
-    in.push(io::zlib_decompressor());
+  case deflate: {
+    io::zlib_params z;
+    z.noheader = true;
+    in.push(io::zlib_decompressor(z));
     break;
+    }
   case gzip:
     in.push(io::gzip_decompressor());
     break;
