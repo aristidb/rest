@@ -278,13 +278,13 @@ bool response::has_content_encoding(content_encoding_t content_encoding) const {
 
 response::content_encoding_t
 response::choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings,
+    std::set<content_encoding_t> const &encodings,
     bool ranges
   ) const
 {
   if (encodings.empty() || empty(identity))
     return identity;
-  typedef std::vector<content_encoding_t>::const_iterator iterator;
+  typedef std::set<content_encoding_t>::const_iterator iterator;
   if (!ranges) {
     for (iterator it = encodings.begin(); it != encodings.end(); ++it)
       if (has_content_encoding(*it))
@@ -307,7 +307,7 @@ response::choose_content_encoding(
       return identity;
   }
 
-  return encodings[0];
+  return encodings.empty() ? identity : *encodings.begin();
 }
 
 bool response::is_nil(content_encoding_t enc) const {

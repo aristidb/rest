@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <iosfwd>
 #include <boost/function.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -69,7 +70,7 @@ public:
   bool has_content_encoding(content_encoding_t content_encoding) const;
 
   content_encoding_t choose_content_encoding(
-    std::vector<content_encoding_t> const &encodings,
+    std::set<content_encoding_t> const &encodings,
     bool ranges) const;
 
   bool is_nil(content_encoding_t content_encoding = identity) const;

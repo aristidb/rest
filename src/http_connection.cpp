@@ -65,7 +65,7 @@ public:
   typedef std::bitset<X_NO_FLAG> state_flags;
   state_flags flags;
 
-  std::vector<response::content_encoding_t> encodings;
+  std::set<response::content_encoding_t> encodings;
 
   request request_;
 
@@ -622,15 +622,15 @@ int http_connection::set_header_options() {
     }
     else {
       if(i->second == "gzip" || i->second == "x-gzip") {
-        p->encodings.push_back(response::gzip);
+        p->encodings.insert(response::gzip);
         found = true;
       }
       else if(i->second == "bzip2" || i->second == "x-bzip2") {
-        p->encodings.push_back(response::bzip2);
+        p->encodings.insert(response::bzip2);
         found = true;
       }
       else if(i->second == "deflate") {
-        p->encodings.push_back(response::deflate);
+        p->encodings.insert(response::deflate);
         found = true;
       }
       else if(i->second == "identity")
