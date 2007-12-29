@@ -63,6 +63,8 @@ private:
 
   void tell_allow(response &resp, detail::responder_base *responder);
 
+  static bool never_cache(int method);
+
 public: //internal
   response handle_get(
     detail::responder_base *,

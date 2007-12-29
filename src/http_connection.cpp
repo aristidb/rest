@@ -206,9 +206,19 @@ void http_connection::serve() {
 }
 
 response http_connection::handle_request() {
-  try {
-    std::string method, uri, version;
+  time_t now;
+  std::time(&now);
 
+  response out(response::empty_tag());
+
+  std::string method, uri, version;
+  std::string host_header;
+  time_t expires = time_t(-1);
+  det::responder_base *responder = 0;
+  keywords kw;
+  det::any_path path_id;
+
+  try {
     boost::tie(method, uri, version) = utils::http::get_request_line(
         *p->conn,
         boost::make_tuple(
@@ -227,7 +237,7 @@ response http_connection::handle_request() {
       p->flags.set(impl::HTTP_1_0_COMPAT);
       p->open_ = false;
     } else if (version != "HTTP/1.1") {
-      return response(505);
+      throw 505;
     }
 
     p->request_.read_headers(*p->conn);
@@ -236,43 +246,36 @@ response http_connection::handle_request() {
     if (ret != 0)
       return response(ret);
 
-    boost::optional<std::string> host_header = p->request_.get_header("Host");
-    if (!host_header)
+    boost::optional<std::string> host_header_ = p->request_.get_header("Host");
+    if (!host_header_)
       throw utils::http::bad_format();
+    host_header = host_header_.get();
 
-    host const *h = p->hosts.get_host(host_header.get());
-    if (!h)
-      return response(404);
+    host const *h = p->hosts.get_host(host_header);
+    if (!h) 
+      throw 404;
 
     p->request_.set_host(*h);
 
     context &global = h->get_context();
 
-    keywords kw;
-
-    det::any_path path_id;
-    det::responder_base *responder;
     context *local;
     global.find_responder(uri, path_id, responder, local, kw);
 
     if (!responder && !(method == "OPTIONS" && uri == "*"))
-      return response(404);
+      throw 404;
 
     kw.set_request_data(p->request_);
-
-    time_t now;
-    std::time(&now);
 
     time_t last_modified = time_t(-1);
     if (responder)
       last_modified = responder->x_last_modified(now, path_id, kw,
-                                                 p->request_);
+                                                   p->request_);
     if (last_modified != time_t(-1) && last_modified > now)
       last_modified = now;
     std::string etag;
     if (responder)
       etag = responder->x_etag(path_id, kw, p->request_);
-    time_t expires = time_t(-1);
     if (responder)
       expires = responder->x_expires(now, path_id, kw, p->request_);
 
@@ -280,13 +283,11 @@ response http_connection::handle_request() {
           last_modified == time_t(-1) ? now : last_modified,
           etag,
           method);
-
-    response out(response::empty_tag());
-
+    
     if (!mod_code) {
       method_handler_map::const_iterator m = method_handlers.find(method);
       if (m == method_handlers.end())
-        return response(501);
+        throw 501;
       try {
         m->second(this, responder, path_id, kw, p->request_).move(out);
       } catch (std::exception &e) {
@@ -303,33 +304,33 @@ response http_connection::handle_request() {
       response(mod_code).move(out);
     }
 
-    tell_allow(out, responder);
-
-    out.set_header("Date", utils::http::datetime_string(now));
     if (last_modified != time_t(-1))
       out.set_header(
           "Last-Modified",
           utils::http::datetime_string(last_modified));
     if (!etag.empty())
       out.set_header("ETag", etag);
-
-    if (responder)
-      handle_caching(responder, path_id, out, now, expires, kw, p->request_);
-
-    if (method == "GET" || method == "HEAD") {
-      int code = out.get_code();
-      if (code == -1 || (code >= 200 && code <= 299)) {
-        if (out.length(response::identity) >= 0)
-          out.set_header("Accept-Ranges", "bytes");
-        else
-          out.set_header("Accept-Ranges", "none");
-      }
-    }
-
-    return out;
   } catch (utils::http::bad_format &) {
-    return response(400);
+    response(400).move(out);
+  } catch (int code) {
+    response(code).move(out);
   }
+
+  out.set_header("Date", utils::http::datetime_string(now));
+  tell_allow(out, responder);
+  handle_caching(responder, path_id, out, now, expires, kw, p->request_);
+
+  if (method == "GET" || method == "HEAD") {
+    int code = out.get_code();
+    if (code == -1 || (code >= 200 && code <= 299)) {
+      if (out.length(response::identity) >= 0)
+        out.set_header("Accept-Ranges", "bytes");
+      else
+        out.set_header("Accept-Ranges", "none");
+    }
+  }
+
+  return out;
 }
 
 int http_connection::handle_modification_tags(
@@ -403,7 +404,9 @@ void http_connection::handle_caching(
   request const &req)
 {
   bool cripple_expires = false;
-  cache::flags general = responder->x_cache(path_id, kw, req);
+  cache::flags general = cache::private_ | cache::no_cache | cache::no_store;
+  if (responder && !never_cache(resp.get_code()))
+    general = responder->x_cache(path_id, kw, req);
 
   if (general & cache::private_) {
     cripple_expires = true;
@@ -423,16 +426,18 @@ void http_connection::handle_caching(
   if (general & cache::no_transform)
     resp.add_header_part("Cache-Control", "no-transform");
 
-  resp.list_headers(boost::bind(
-      &http_connection::handle_header_caching,
-      this,
-      responder,
-      boost::cref(path_id),
-      boost::ref(resp),
-      boost::ref(cripple_expires),
-      boost::ref(kw),
-      boost::cref(req),
-      _1));
+  if (responder) {
+    resp.list_headers(boost::bind(
+        &http_connection::handle_header_caching,
+        this,
+        responder,
+        boost::cref(path_id),
+        boost::ref(resp),
+        boost::ref(cripple_expires),
+        boost::ref(kw),
+        boost::cref(req),
+        _1));
+  }
 
   if (expires != time_t(-1)) {
     std::ostringstream s_max_age;
@@ -448,6 +453,23 @@ void http_connection::handle_caching(
 
   if (cripple_expires)
     resp.set_header("Expires", "0");
+}
+
+bool http_connection::never_cache(int code) {
+  switch (code) {
+  case -1:  // ---
+  case 200: // OK
+  case 203: // Non-Authoritative Information
+  case 206: // Partial content
+    return false;
+  case 300: // Multiple Choices
+  case 301: // Moved Permanently
+    return false;
+  case 410: // Gone
+    return false;
+  default:
+    return true;
+  };
 }
 
 void http_connection::handle_header_caching(
