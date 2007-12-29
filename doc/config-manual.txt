@@ -1,15 +1,17 @@
 Default Path: /etc/musikdings/rest
 Can be changed with -c-Flag or by setting -DDEFAULT_CONFIG_PATH during compile time
 
-/connections
+/connections -
 /connections/listenq            the number of sockets queued by listen (see listen(2)) [default: 5]
 /connections/*                  subnodes specifies sockets to listen to
 /connections/*/type             type of socket (either 'ipv6' or 'ipv4') [default: ipv4]
 /connections/*/port             specifies the port
 /connections/*/bind             address to bind to (see bind(2)) [default: INADDR_ANY]
 
-/general
+/general -
 /general/name                   setvername [default: "musikdings.rest/0.1"]
 /general/uid                    set server uid
 /general/gid                    set sever gid
 /general/max_uri_length         0 or maximal length of an uri [default: 1023]
+/general/compression -
+/general/compression/minimum_size minimum size of files to compress 
