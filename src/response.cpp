@@ -205,12 +205,12 @@ void response::set_header(std::string const &name, std::string const &value) {
 void response::add_header_part(
     std::string const &name, std::string const &value)
 {
-  impl::header_map::iterator i = p->header.find(name);
-  if(i == p->header.end() || i->second.empty()) {
+  impl::header_map::iterator it = p->header.find(name);
+  if (it == p->header.end() || it->second.empty()) {
     set_header(name, value);
-  } else {
-    i->second += ", ";
-    i->second += value;
+  } else if (it->second != "*") {
+    it->second += ", ";
+    it->second += value;
   }
 }
 
