@@ -162,6 +162,7 @@ void http_connection::serve(std::istream &in, std::ostream &out) {
 void http_connection::reset() {
   p->flags.reset();
   p->encodings.clear();
+  impl::ranges_t().swap(p->ranges);
 }
 
 void http_connection::send(response r) {
@@ -172,7 +173,9 @@ void http_connection::serve() {
   try {
     while (p->open_) {
       reset();
+
       response resp(handle_request());
+
       if (!resp.check_ranges(p->ranges)) {
         // Invalid range - send appropriate response
         boost::int64_t length = resp.length(rest::response::identity);
@@ -186,13 +189,15 @@ void http_connection::serve() {
         resp.set_header("Content-Range", range.str()); 
         impl::ranges_t().swap(p->ranges);
       }
+
       host const &h = p->request_.get_host();
       if (resp.is_nil())
         h.make_standard_response(resp);
       h.prepare_response(resp);
+
       p->request_.clear();
+
       send(resp);
-      impl::ranges_t().swap(p->ranges);
     }
   }
   catch (utils::http::remote_close&) {
