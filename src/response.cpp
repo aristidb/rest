@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/response.hpp"
+#include "rest/headers.hpp"
 #include "rest/cookie.hpp"
 #include "rest/input_stream.hpp"
 #include "rest/output_stream.hpp"
@@ -129,6 +130,8 @@ struct response::impl {
 
   boost::array<data_holder, response::X_NO_OF_ENCODINGS> data;
 
+  headers headers_;
+
   impl() : code(-1) { }
   impl(int code) : code(code) { }
   impl(std::string const &type) : code(-1), type(type) { }
@@ -181,12 +184,18 @@ void response::swap(response &o) {
 }
 
 void response::defaults() {
-  set_header("Content-Type", p->type);
+  headers &h = get_headers();
+
+  h.set_header("Content-Type", p->type);
 
   // Make sure that these headers exist before they are examined for caching:
-  set_header("Expires", "");
-  set_header("Cache-Control", "");
-  set_header("Pragma", "");
+  h.set_header("Expires", "");
+  h.set_header("Cache-Control", "");
+  h.set_header("Pragma", "");
+}
+
+rest::headers &response::get_headers() {
+  return p->headers_;
 }
 
 void response::set_code(int code) {
@@ -195,42 +204,18 @@ void response::set_code(int code) {
 
 void response::set_type(std::string const &type) {
   p->type = type;
-  set_header("Content-Type", type);
-}
-
-void response::set_header(std::string const &name, std::string const &value) {
-  p->header[name] = value;
-}
-
-void response::add_header_part(
-    std::string const &name, std::string const &value)
-{
-  impl::header_map::iterator it = p->header.find(name);
-  if (it == p->header.end() || it->second.empty()) {
-    set_header(name, value);
-  } else if (it->second != "*") {
-    it->second += ", ";
-    it->second += value;
-  }
-}
-
-void response::list_headers(
-    boost::function<void (std::string const &)> const &cb) const
-{
-  for (impl::header_map::iterator it = p->header.begin();
-      it != p->header.end();
-      ++it)
-    cb(it->first);
+  get_headers().set_header("Content-Type", type);
 }
 
 void response::add_cookie(cookie const &c) {
   p->cookies.erase(c.name);
   p->cookies.insert(c);
 
+  headers &h = get_headers();
   // Set-Cookie headers are not set like normal headers, fake the existence
   // of a Set-Cookie header:
-  set_header("Set-Cookie", "");
-  //set_header("Set-Cookie2", ""); -- unused
+  h.set_header("Set-Cookie", "");
+  //h.set_header("Set-Cookie2", ""); -- unused
 }
 
 void response::set_data(
@@ -348,7 +333,9 @@ bool response::check_ranges(ranges_t const &ranges) {
   set_code(206);
   if (ranges.size() > 1) {
     p->boundary = utils::http::random_boundary();
-    set_header("Content-Type", "multipart/byte-ranges;boundary=" + p->boundary);
+    get_headers().set_header(
+      "Content-Type",
+      "multipart/byte-ranges;boundary=" + p->boundary);
   } else {
     std::pair<boost::int64_t, boost::int64_t> x = ranges[0];
     if (x.first < 0)
@@ -357,7 +344,7 @@ bool response::check_ranges(ranges_t const &ranges) {
       x.second = length;
     std::ostringstream range;
     range << "bytes " << x.first << '-' << x.second << '/' << length;
-    set_header("Content-Range", range.str());
+    get_headers().set_header("Content-Range", range.str());
   }
   return true;
 }
@@ -429,13 +416,10 @@ void response::print_cookie_header(std::ostream &out) const {
   }
 }
 
-void response::print_headers(std::ostream &out) const {
-  p->header.erase("set-cookie");
-  for (impl::header_map::const_iterator it = p->header.begin();
-      it != p->header.end();
-      ++it)
-    if (!it->second.empty())
-      out << it->first << ": " << it->second << "\r\n";
+void response::print_headers(std::ostream &out) {
+  headers &h = get_headers();
+  h.erase_header("Set-Cookie");
+  h.write_headers(*out.rdbuf());
   print_cookie_header(out);
   out << "\r\n";
 }

@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/http_connection.hpp"
+#include "rest/headers.hpp"
 #include "rest/host.hpp"
 #include "rest/context.hpp"
 #include "rest/input_stream.hpp"
@@ -186,7 +187,7 @@ void http_connection::serve() {
           range << length;
         else
           range << '*';
-        resp.set_header("Content-Range", range.str()); 
+        resp.get_headers().set_header("Content-Range", range.str()); 
         impl::ranges_t().swap(p->ranges);
       }
 
@@ -218,6 +219,8 @@ response http_connection::handle_request() {
 
   std::string method, uri, version;
   std::string host_header;
+  std::string etag;
+  time_t last_modified = time_t(-1);
   time_t expires = time_t(-1);
   det::responder_base *responder = 0;
   keywords kw;
@@ -245,13 +248,17 @@ response http_connection::handle_request() {
       throw 505;
     }
 
-    p->request_.read_headers(*p->conn);
+    headers &request_headers = p->request_.get_headers();;
+
+    request_headers.read_headers(*p->conn);
 
     int ret = set_header_options();
     if (ret != 0)
       return response(ret);
 
-    boost::optional<std::string> host_header_ = p->request_.get_header("Host");
+    boost::optional<std::string> host_header_ =
+      request_headers.get_header("Host");
+
     if (!host_header_)
       throw utils::http::bad_format();
     host_header = host_header_.get();
@@ -272,13 +279,11 @@ response http_connection::handle_request() {
 
     kw.set_request_data(p->request_);
 
-    time_t last_modified = time_t(-1);
     if (responder)
       last_modified = responder->x_last_modified(now, path_id, kw,
                                                    p->request_);
     if (last_modified != time_t(-1) && last_modified > now)
       last_modified = now;
-    std::string etag;
     if (responder)
       etag = responder->x_etag(path_id, kw, p->request_);
     if (responder)
@@ -309,29 +314,32 @@ response http_connection::handle_request() {
       response(mod_code).move(out);
     }
 
-    if (last_modified != time_t(-1))
-      out.set_header(
-          "Last-Modified",
-          utils::http::datetime_string(last_modified));
-    if (!etag.empty())
-      out.set_header("ETag", etag);
   } catch (utils::http::bad_format &) {
     response(400).move(out);
   } catch (int code) {
     response(code).move(out);
   }
 
-  out.set_header("Date", utils::http::datetime_string(now));
+  headers &out_headers = out.get_headers();
+
+  out_headers.set_header("Date", utils::http::datetime_string(now));
   tell_allow(out, responder);
   handle_caching(responder, path_id, out, now, expires, kw, p->request_);
+
+  if (last_modified != time_t(-1))
+    out_headers.set_header(
+        "Last-Modified",
+        utils::http::datetime_string(last_modified));
+  if (!etag.empty())
+    out_headers.set_header("ETag", etag);
 
   if (method == "GET" || method == "HEAD") {
     int code = out.get_code();
     if (code == -1 || (code >= 200 && code <= 299)) {
       if (out.length(response::identity) >= 0)
-        out.set_header("Accept-Ranges", "bytes");
+        out_headers.set_header("Accept-Ranges", "bytes");
       else
-        out.set_header("Accept-Ranges", "none");
+        out_headers.set_header("Accept-Ranges", "none");
     }
   }
 
@@ -342,22 +350,23 @@ int http_connection::handle_modification_tags(
   time_t last_modified, std::string const &etag, std::string const &method)
 {
   int code = 0;
+  headers &h = p->request_.get_headers();
   boost::optional<std::string> el;
-  el = p->request_.get_header("If-Modified-Since");
+  el = h.get_header("If-Modified-Since");
   if (el) {
     time_t if_modified_since = utils::http::datetime_value(el.get());
     if (if_modified_since < last_modified)
       return 0;
     code = 304;
   }
-  el = p->request_.get_header("If-Unmodified-Since");
+  el = h.get_header("If-Unmodified-Since");
   if (el) {
     time_t if_unmodified_since = utils::http::datetime_value(el.get());
     if (if_unmodified_since >= last_modified)
       return 0;
     code = 412;
   }
-  el = p->request_.get_header("If-Match");
+  el = h.get_header("If-Match");
   if (el) {
     if (el.get() == "*") {
       if (!etag.empty())
@@ -370,7 +379,7 @@ int http_connection::handle_modification_tags(
     }
     code = 412;
   }
-  el = p->request_.get_header("If-None-Match");
+  el = h.get_header("If-None-Match");
   if (el) {
     if (el.get() == "*") {
       if (etag.empty())
@@ -385,15 +394,15 @@ int http_connection::handle_modification_tags(
     if (code != 412)
       code = (method == "GET" || method == "HEAD") ? 304 : 412;
   }
-  el = p->request_.get_header("If-Range");
+  el = h.get_header("If-Range");
   if (el) {
     time_t v = utils::http::datetime_value(el.get());
     if (v == time_t(-1)) {
       if (el.get() != etag) 
-        p->request_.erase_header("Range");
+        h.erase_header("Range");
     } else {
       if (v <= last_modified)
-        p->request_.erase_header("Range");
+        h.erase_header("Range");
     }
   }
   return code;
@@ -408,6 +417,8 @@ void http_connection::handle_caching(
   keywords &kw,
   request const &req)
 {
+  headers &out_headers = resp.get_headers();
+
   bool cripple_expires = false;
   cache::flags general = cache::private_ | cache::no_cache | cache::no_store;
   if (responder && !never_cache(resp.get_code()))
@@ -415,24 +426,24 @@ void http_connection::handle_caching(
 
   if (general & cache::private_) {
     cripple_expires = true;
-    resp.add_header_part("Cache-Control", "private");
+    out_headers.add_header_part("Cache-Control", "private");
   } else {
-    resp.add_header_part("Cache-Control", "public");
+    out_headers.add_header_part("Cache-Control", "public");
   }
 
   if (general & cache::no_cache) {
-    resp.add_header_part("Cache-Control", "no-cache");
-    resp.add_header_part("Pragma", "no-cache");
+    out_headers.add_header_part("Cache-Control", "no-cache");
+    out_headers.add_header_part("Pragma", "no-cache");
   }
 
   if (general & cache::no_store)
-    resp.add_header_part("Cache-Control", "no-store");
+    out_headers.add_header_part("Cache-Control", "no-store");
 
   if (general & cache::no_transform)
-    resp.add_header_part("Cache-Control", "no-transform");
+    out_headers.add_header_part("Cache-Control", "no-transform");
 
   if (responder) {
-    resp.list_headers(boost::bind(
+    out_headers.for_each_header(boost::bind(
         &http_connection::handle_header_caching,
         this,
         responder,
@@ -448,16 +459,16 @@ void http_connection::handle_caching(
     std::ostringstream s_max_age;
     time_t max_age = (expires > now) ? (expires - now) : 0;
     s_max_age << "max-age=" << max_age;
-    resp.add_header_part("Cache-Control", s_max_age.str());
+    out_headers.add_header_part("Cache-Control", s_max_age.str());
 
     if (!cripple_expires)
-      resp.set_header("Expires", utils::http::datetime_string(expires));
+      out_headers.set_header("Expires", utils::http::datetime_string(expires));
   } else if (!cripple_expires) {
-    resp.set_header("Expires", "");
+    out_headers.set_header("Expires", "");
   }
 
   if (cripple_expires)
-    resp.set_header("Expires", "0");
+    out_headers.set_header("Expires", "0");
 }
 
 bool http_connection::never_cache(int code) {
@@ -491,13 +502,13 @@ void http_connection::handle_header_caching(
     cripple_expires = true;
     std::string x;
     x += "no-cache="; x += '"'; x += header; x += '"';
-    resp.add_header_part("Cache-Control",  x);
+    resp.get_headers().add_header_part("Cache-Control",  x);
   }
   if (flags & cache::private_) {
     cripple_expires = true;
     std::string x;
     x += "private="; x += '"'; x += header; x += '"';
-    resp.add_header_part("Cache-Control",  x);
+    resp.get_headers().add_header_part("Cache-Control",  x);
   }
 }
 
@@ -591,33 +602,34 @@ response http_connection::handle_delete(
 
 void http_connection::tell_allow(response &resp, det::responder_base *responder)
 {
-  resp.add_header_part("Allow", "OPTIONS");
+  headers &h = resp.get_headers();
+  h.add_header_part("Allow", "OPTIONS");
   if (!responder) {
-    resp.add_header_part("Allow", "DELETE");
-    resp.add_header_part("Allow", "GET");
-    resp.add_header_part("Allow", "HEAD");
-    resp.add_header_part("Allow", "POST");
-    resp.add_header_part("Allow", "PUT");
+    h.add_header_part("Allow", "DELETE");
+    h.add_header_part("Allow", "GET");
+    h.add_header_part("Allow", "HEAD");
+    h.add_header_part("Allow", "POST");
+    h.add_header_part("Allow", "PUT");
   } else {
     if (responder->x_getter()) {
-      resp.add_header_part("Allow", "GET");
-      resp.add_header_part("Allow", "HEAD");
+      h.add_header_part("Allow", "GET");
+      h.add_header_part("Allow", "HEAD");
     }
     if (responder->x_poster()) {
-      resp.add_header_part("Allow", "POST");     
+      h.add_header_part("Allow", "POST");     
     }
     if (responder->x_deleter()) {
-      resp.add_header_part("Allow", "DELETE");
+      h.add_header_part("Allow", "DELETE");
     }
     if (responder->x_putter()) {
-      resp.add_header_part("Allow", "PUT");
+      h.add_header_part("Allow", "PUT");
     }
   }
 }
 
 int http_connection::set_header_options() {
-  boost::optional<std::string> connect_header =
-    p->request_.get_header("Connection");
+  headers &h = p->request_.get_headers();
+  boost::optional<std::string> connect_header = h.get_header("Connection");
   if (connect_header) {
     std::vector<std::string> tokens;
     utils::http::parse_list(connect_header.get(), tokens);
@@ -628,15 +640,14 @@ int http_connection::set_header_options() {
       if (*it == "close")
         p->open_ = false;
       if (p->flags.test(impl::HTTP_1_0_COMPAT))
-        p->request_.erase_header(*it);
+        h.erase_header(*it);
     }
   }
 
   typedef std::multimap<int, std::string> qlist_t;
 
   qlist_t qlist;
-  boost::optional<std::string> accept_encoding =
-    p->request_.get_header("Accept-Encoding");
+  boost::optional<std::string> accept_encoding= h.get_header("Accept-Encoding");
   if (accept_encoding)
     utils::http::parse_qlist(accept_encoding.get(), qlist);
 
@@ -669,7 +680,9 @@ int http_connection::set_header_options() {
 }
 
 void http_connection::analyze_ranges() {
-  boost::optional<std::string> range_ = p->request_.get_header("Range");
+  boost::optional<std::string> range_ = 
+    p->request_.get_headers().get_header("Range");
+
   if (!range_)
     return;
   std::string const &range = range_.get();
@@ -728,8 +741,10 @@ int http_connection::handle_entity(keywords &kw) {
   std::auto_ptr<io::filtering_streambuf<io::input> > fin
     (new io::filtering_streambuf<io::input>);
 
+  headers &h = p->request_.get_headers();
+
   boost::optional<std::string> content_encoding =
-    p->request_.get_header("Content-Encoding");
+    h.get_header("Content-Encoding");
 
   if (content_encoding) {
     std::vector<std::string> ce;
@@ -756,7 +771,7 @@ int http_connection::handle_entity(keywords &kw) {
   }
 
   boost::optional<std::string> transfer_encoding =
-    p->request_.get_header("Transfer-Encoding");
+    h.get_header("Transfer-Encoding");
 
   bool chunked = false;
 
@@ -783,7 +798,7 @@ int http_connection::handle_entity(keywords &kw) {
   }
 
   boost::optional<std::string> content_length =
-    p->request_.get_header("Content-Length");
+    h.get_header("Content-Length");
 
   if (!content_length && !chunked) {
     return 411; // Content-length required
@@ -795,9 +810,9 @@ int http_connection::handle_entity(keywords &kw) {
   }
 
   if (!p->flags.test(impl::HTTP_1_0_COMPAT)) {
-    boost::optional<std::string> expect = p->request_.get_header("expect");
-    if (expect) {
-      if (!algo::iequals(expect.get(), "100-continue"))
+    std::string expect = h.get_header("Expect", "");
+    if (!expect.empty()) {
+      if (!algo::iequals(expect, "100-continue"))
         return 417;
       send(response(100), false);
     }
@@ -805,19 +820,18 @@ int http_connection::handle_entity(keywords &kw) {
 
   fin->push(boost::ref(*p->conn), 0, 0);
 
-  boost::optional<std::string> content_type =
-    p->request_.get_header("Content-Type");
+  std::string content_type =
+    h.get_header("Content-Type", "application/octet-stream");
 
   input_stream pstream(new utils::complete_filtering_stream(fin.release()));
-  kw.set_entity(
-      pstream,
-      !content_type ? "application/octet-stream" : content_type.get()
-  );
+  kw.set_entity(pstream, content_type);
 
   return 0;
 }
 
 void http_connection::send(response r, bool entity) {
+  headers &h = r.get_headers();
+
   io::stream<utils::no_flush_writer> out(p->conn.get());
 
   if (p->flags.test(impl::HTTP_1_0_COMPAT))
@@ -837,9 +851,9 @@ void http_connection::send(response r, bool entity) {
     p->open_ = false;
 
   if (!p->flags.test(impl::HTTP_1_0_COMPAT) && !p->open_ && code != 100)
-    r.add_header_part("Connection", "close");
+    h.add_header_part("Connection", "close", false);
 
-  r.set_header("Server", p->servername);
+  h.set_header("Server", p->servername);
 
   if (entity) {
     bool may_chunk = !p->flags.test(impl::HTTP_1_0_COMPAT);
@@ -849,24 +863,21 @@ void http_connection::send(response r, bool entity) {
 
     switch (enc) {
     case response::gzip:
-      r.set_header("Content-Encoding", "gzip");
+      h.set_header("Content-Encoding", "gzip");
       break;
     case response::bzip2:
-      r.set_header("Content-Encoding", "bzip2");
+      h.set_header("Content-Encoding", "bzip2");
       break;
     case response::deflate:
-      r.set_header("Content-Encoding", "deflate");
+      h.set_header("Content-Encoding", "deflate");
       break;
     default: break;
     }
 
-    if (p->ranges.empty() && !r.chunked(enc)) {
-      std::ostringstream length;
-      length << r.length(enc);
-      r.set_header("Content-Length", length.str());
-    } else if (may_chunk) {
-      r.set_header("Transfer-Encoding", "chunked");
-    }
+    if (p->ranges.empty() && !r.chunked(enc)) 
+      h.set_header("Content-Length", r.length(enc));
+    else if (may_chunk)
+      h.set_header("Transfer-Encoding", "chunked");
 
     r.print_headers(out);
     r.print_entity(*out.rdbuf(), enc, may_chunk, p->ranges);

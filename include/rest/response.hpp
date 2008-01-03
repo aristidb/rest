@@ -14,6 +14,7 @@ namespace rest {
 
 class cookie;
 class input_stream;
+class headers;
 
 /*
  * TODO:
@@ -41,9 +42,12 @@ public:
 
   void set_code(int code);
   void set_type(std::string const &type);
-  void set_header(std::string const &name, std::string const &value);
-  void add_header_part(std::string const &name, std::string const &value);
-  void list_headers(boost::function<void(std::string const &)> const &cb) const;
+
+  headers &get_headers();
+  
+  headers const &get_headers() const {
+    return const_cast<response *>(this)->get_headers();
+  }
 
   void add_cookie(cookie const &c);
 
@@ -82,7 +86,8 @@ public:
 
   bool check_ranges(ranges_t const &ranges);
 
-  void print_headers(std::ostream &out) const;
+  void print_headers(std::ostream &out);
+
   void print_entity(
     std::streambuf &out,
     content_encoding_t enc,

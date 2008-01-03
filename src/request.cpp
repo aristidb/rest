@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/request.hpp"
+#include "rest/headers.hpp"
 #include "rest/host.hpp"
 #include "rest/utils/http.hpp"
 #include "rest/utils/string.hpp"
@@ -20,13 +21,9 @@ public:
 
   host const *host_;
 
-  typedef std::map<std::string, std::string,
-                   rest::utils::string_icompare>
-          header_map;
-
-  header_map headers;
-
   network::address addr;
+
+  headers headers_;
 };
 
 request::request(network::address const &addr) : p(new impl(addr)) { }
@@ -56,26 +53,6 @@ void request::clear() {
   p.reset(new impl(p->addr));
 }
 
-void request::read_headers(std::streambuf &buf) {
-  utils::http::read_headers(buf, p->headers);
-}
-
-boost::optional<std::string> request::get_header(std::string const &name) const
-{
-  impl::header_map::iterator it = p->headers.find(name);
-  if (it == p->headers.end())
-    return boost::none;
-  else
-    return it->second;
-}
-
-void request::erase_header(std::string const &name) {
-  p->headers.erase(name);
-}
-
-void request::for_each_header(header_callback const &cb) const {
-  for (impl::header_map::iterator it = p->headers.begin();
-      it != p->headers.end();
-      ++it)
-    cb(it->first, it->second);
+rest::headers &request::get_headers() {
+  return p->headers_;
 }
