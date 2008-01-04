@@ -25,7 +25,7 @@ char to_hex(int c) {
 }
 }
 
-std::string 
+std::string
 rest::utils::uri::unescape(
     std::string::const_iterator begin, std::string::const_iterator end,
     bool form)

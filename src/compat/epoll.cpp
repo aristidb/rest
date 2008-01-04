@@ -41,7 +41,7 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
   }
 
   // WARNING MEMLEAK! (this is never freed!) TODO
-  struct epoll_event * event_cpy = 
+  struct epoll_event * event_cpy =
 #ifdef __cplusplus
     (struct epoll_event *)
 #endif
@@ -59,12 +59,12 @@ int epoll_wait(int epfd, struct epoll_event *events,
   struct timespec timeout;
   struct timespec const *timeout_ = 0x0;
   if(milliseconds != -1) {
-    timeout.tv_sec = milliseconds / 1000; 
+    timeout.tv_sec = milliseconds / 1000;
     timeout.tv_nsec = (milliseconds % 1000) * 1000000;
     timeout_ = &timeout;
   }
 
-  struct kevent *kevents = 
+  struct kevent *kevents =
 #ifdef __cplusplus
     (struct kevent*)
 #endif

@@ -79,7 +79,7 @@ public:
   void set_stream(std::string const &key, input_stream &value) {
     return set_stream(key, 0, value);
   }
-  
+
   void set_name(std::string const &key, std::string const &value) {
     return set_name(key, 0, value);
   }

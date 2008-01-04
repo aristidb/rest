@@ -16,7 +16,7 @@ class keywords;
 
 class http_connection {
 public:
-  http_connection(host_container const &hosts, 
+  http_connection(host_container const &hosts,
                   rest::network::address const &addr,
                   std::string const &servername);
 

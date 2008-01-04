@@ -20,7 +20,7 @@ public:
   {
     kmp_init();
   }
-    
+
   boundary_filter(boundary_filter const &o)
   : boundary(o.boundary),
     buf(new char[boundary.size()]),
@@ -109,7 +109,7 @@ std::size_t boundary_filter::update(Source & __restrict source) {
 
       pos -= input_size;
     } while (pos > 0);
-      
+
     if (pos != 0) {
       end_of_input = true;
       memmove(buf + pos, buf, boundary.size() - pos);

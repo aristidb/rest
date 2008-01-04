@@ -34,14 +34,14 @@ namespace det = rest::detail;
 namespace algo = boost::algorithm;
 namespace io = boost::iostreams;
 
-typedef 
+typedef
   boost::iostreams::stream_buffer<utils::socket_device>
   connection_streambuf;
 
-typedef 
+typedef
   io::combination<
-    std::istream, 
-    std::ostream 
+    std::istream,
+    std::ostream
   >
   stdio_combination;
 
@@ -119,7 +119,7 @@ namespace {
 
   static method_handler_map const method_handlers(
     method_handlers_raw,
-    method_handlers_raw + 
+    method_handlers_raw +
       sizeof(method_handlers_raw) / sizeof(*method_handlers_raw)
   );
 
@@ -136,7 +136,7 @@ namespace {
 }
 
 http_connection::http_connection(
-    host_container const &hosts, 
+    host_container const &hosts,
     rest::network::address const &addr,
     std::string const &servername)
 : p(new impl(hosts, addr, servername))
@@ -187,7 +187,7 @@ void http_connection::serve() {
           range << length;
         else
           range << '*';
-        resp.get_headers().set_header("Content-Range", range.str()); 
+        resp.get_headers().set_header("Content-Range", range.str());
         impl::ranges_t().swap(p->ranges);
       }
 
@@ -264,7 +264,7 @@ response http_connection::handle_request() {
     host_header = host_header_.get();
 
     host const *h = p->hosts.get_host(host_header);
-    if (!h) 
+    if (!h)
       throw 404;
 
     p->request_.set_host(*h);
@@ -293,7 +293,7 @@ response http_connection::handle_request() {
           last_modified == time_t(-1) ? now : last_modified,
           etag,
           method);
-    
+
     if (!mod_code) {
       method_handler_map::const_iterator m = method_handlers.find(method);
       if (m == method_handlers.end())
@@ -398,7 +398,7 @@ int http_connection::handle_modification_tags(
   if (el) {
     time_t v = utils::http::datetime_value(el.get());
     if (v == time_t(-1)) {
-      if (el.get() != etag) 
+      if (el.get() != etag)
         h.erase_header("Range");
     } else {
       if (v <= last_modified)
@@ -616,7 +616,7 @@ void http_connection::tell_allow(response &resp, det::responder_base *responder)
       h.add_header_part("Allow", "HEAD");
     }
     if (responder->x_poster()) {
-      h.add_header_part("Allow", "POST");     
+      h.add_header_part("Allow", "POST");
     }
     if (responder->x_deleter()) {
       h.add_header_part("Allow", "DELETE");
@@ -680,7 +680,7 @@ int http_connection::set_header_options() {
 }
 
 void http_connection::analyze_ranges() {
-  boost::optional<std::string> range_ = 
+  boost::optional<std::string> range_ =
     p->request_.get_headers().get_header("Range");
 
   if (!range_)
@@ -726,7 +726,7 @@ void http_connection::analyze_ranges() {
       goto bad;
     if (v.first != -1 && v.second != -1 && v.first > v.second)
       goto bad;
-      
+
     p->ranges.push_back(v);
   }
 
@@ -805,7 +805,7 @@ int http_connection::handle_entity(keywords &kw) {
   } else if (!chunked) {
     boost::uint64_t const length =
       boost::lexical_cast<boost::uint64_t>(content_length.get());
-    
+
     fin->push(utils::length_filter(length));
   }
 
@@ -874,7 +874,7 @@ void http_connection::send(response r, bool entity) {
     default: break;
     }
 
-    if (p->ranges.empty() && !r.chunked(enc)) 
+    if (p->ranges.empty() && !r.chunked(enc))
       h.set_header("Content-Length", r.length(enc));
     else if (may_chunk)
       h.set_header("Transfer-Encoding", "chunked");

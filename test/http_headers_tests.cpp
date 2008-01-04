@@ -37,7 +37,7 @@ TEST(qvalue) {
 
 TEST_GROUP(parse_cookie_header) {
   XTEST((values, (std::string)
-         ("$version = 1, foo = bar; $path = hu; fou = barre") 
+         ("$version = 1, foo = bar; $path = hu; fou = barre")
          ("$version = 1; foo = bar; $path = hu; fou = barre")
          ("$version = 1; foo = bar; $path = hu, fou = barre")
          ("$version = 1, foo = bar; $path = hu, fou = barre")))

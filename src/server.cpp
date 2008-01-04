@@ -153,7 +153,7 @@ void server::impl::read_connections() {
       type = network::ip6;
     else
       throw std::runtime_error("unkown socket type specified");
-          
+
     std::string bind = utils::get(**j, std::string(), "bind");
     algo::trim(bind);
 
@@ -161,7 +161,7 @@ void server::impl::read_connections() {
       utils::get(**j, this->timeout_read, "timeout", "read");
     long timeout_write =
       utils::get(**j, this->timeout_write, "timeout", "write");
-          
+
     socket_params.push_back(socket_param(
       service, type, bind, timeout_read, timeout_write));
   }

@@ -44,7 +44,7 @@ public:
   void set_type(std::string const &type);
 
   headers &get_headers();
-  
+
   headers const &get_headers() const {
     return const_cast<response *>(this)->get_headers();
   }

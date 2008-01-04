@@ -194,7 +194,7 @@ void rest::utils::http::parse_cookie_header(std::string const &in,
           if(nv.first == "$path")
             cookies.back().path = nv.second;
           else if(nv.first == "$domain")
-            cookies.back().domain = nv.second;          
+            cookies.back().domain = nv.second;
         }
         // ignore $version
       }
@@ -211,7 +211,7 @@ rest::utils::http::random_boundary(std::size_t length) {
   boost::uniform_smallint<int> dist(0, 61);
   boost::variate_generator<boost::rand48 &, boost::uniform_smallint<int> >
       gen(rnd, dist);
-  static char const letters[63] = 
+  static char const letters[63] =
     "0123456789"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz";
@@ -409,7 +409,7 @@ namespace {
     if(t.second - t.first > 2)
       return false;
     data.tm_mday = num(t);
-    
+
     gettoken(text, t);
     data.tm_mon = mon(t);
     if(data.tm_mon == -1)
@@ -534,7 +534,7 @@ namespace {
 //       Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
 //
 //       HTTP-date    = rfc1123-date | rfc850-date | asctime-date
-time_t rest::utils::http::datetime_value(std::string const &text) {  
+time_t rest::utils::http::datetime_value(std::string const &text) {
   tm out;
   token t = std::make_pair(text.begin(), text.begin());
   gettoken(text, t);

@@ -86,7 +86,7 @@ request_line get_request_line(
   request_line x;
 
   REST_RESERVE_LIKE(x.get<REQUEST_METHOD>(), "OPTIONS");
-  get_until(' ', in, x.get<REQUEST_METHOD>(), false, 
+  get_until(' ', in, x.get<REQUEST_METHOD>(), false,
             max_sizes.get<REQUEST_METHOD>());
   if (x.get<REQUEST_METHOD>().empty())
     throw bad_format();

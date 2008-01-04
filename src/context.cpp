@@ -127,7 +127,7 @@ void context::declare_keyword(std::string const &keyword, keyword_type type) {
 }
 
 keyword_type context::get_keyword_type(std::string const &keyword) const {
-  impl::keyword_info_set::iterator it = 
+  impl::keyword_info_set::iterator it =
     p->predeclared_keywords.find(keyword);
   if (it == p->predeclared_keywords.end())
     return NONE;

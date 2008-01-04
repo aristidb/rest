@@ -16,7 +16,7 @@ public:
   headers();
   headers(headers const &);
   ~headers();
-  
+
   headers &operator=(headers const &o) {
     headers(o).swap(*this);
     return *this;

@@ -45,7 +45,7 @@ public:
 public: // internal
   int fd() const;
   void fd(int f);
-    
+
 private:
   class impl;
   boost::shared_ptr<impl> p;

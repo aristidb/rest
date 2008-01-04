@@ -21,7 +21,7 @@ struct group_fixture_t {
   rest::host_container hosts;
   rest::http_connection connection;
 
-  group_fixture_t() 
+  group_fixture_t()
   : addr(ip4(0)),
     connection(hosts, addr, "SERVERNAME")
   {

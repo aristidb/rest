@@ -23,7 +23,7 @@
 #include <boost/preprocessor/cat.hpp>
 
 namespace rest {
-namespace utils {  
+namespace utils {
   class property {
     class impl;
     boost::shared_ptr<impl> impl_;
@@ -286,7 +286,7 @@ namespace utils {
   class config {
   public:
     static config &get();
-    void load(int argc, char **argv, char const *config_path = 0x0, 
+    void load(int argc, char **argv, char const *config_path = 0x0,
               bool allow_params = true);
     utils::property_tree &tree();
 

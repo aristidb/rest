@@ -76,7 +76,7 @@ TEST_GROUP(filters) {
 
     Equals(s2.str(), std::string(sum, 'x'));
   }
-  
+
   TEST(chunked #3) {
     std::stringstream s1;
     std::size_t n=10;

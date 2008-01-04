@@ -120,7 +120,7 @@ struct response::impl {
       return length < 0;
     }
 
-    data_holder() 
+    data_holder()
     : type(NIL),
       stream(0),
       seekable(false),

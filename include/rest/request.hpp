@@ -30,7 +30,7 @@ public:
 
 public:
   headers &get_headers();
-  
+
   headers const &get_headers() const {
     return const_cast<request *>(this)->get_headers();
   }

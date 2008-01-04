@@ -120,7 +120,7 @@ template<
   unsigned ResponseType = ALL,
   typename Path = DEDUCED_PATH
 >
-class responder 
+class responder
 : public
   detail::responder_base,
   detail::i_get<Path, ResponseType & GET>,

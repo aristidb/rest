@@ -28,7 +28,7 @@ public:
   long timeout_write;
 
   host_container hosts;
-  
+
   int fd;
 };
 
@@ -48,7 +48,7 @@ int socket_param::fd() const {
 
 void socket_param::fd(int f) {
   p->fd = f;
-} 
+}
 
 std::string const &socket_param::service() const {
   return p->service;
