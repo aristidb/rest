@@ -18,6 +18,10 @@ public:
 headers::headers() : p(new impl) {
 }
 
+headers::headers(std::streambuf &in) : p(new impl) {
+  read_headers(in);
+}
+
 headers::headers(headers const &o) : p(new impl(*o.p)) {
 }
 

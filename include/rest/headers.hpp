@@ -14,6 +14,7 @@ namespace rest {
 class headers {
 public:
   headers();
+  headers(std::streambuf &in);
   headers(headers const &);
   ~headers();
 
@@ -53,7 +54,7 @@ public:
 
   void for_each_header(header_callback const &) const;
 
-  void read_headers(std::streambuf &out);
+  void read_headers(std::streambuf &in);
   void write_headers(std::streambuf &out) const;
 
 private:
