@@ -12,34 +12,26 @@
 #include <unistd.h>
 
 struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
-  std::string etag(
-    std::string const &, rest::keywords &, rest::request const &) const
+  std::string etag() const
  {
     return "\"zxyl\"";
   }
 
-  time_t last_modified(
-    time_t now, std::string const &, rest::keywords &, rest::request const &
-      ) const
+  time_t last_modified() const
   {
-    return now;
+    return get_time();
   }
 
-  time_t expires(
-    time_t now, std::string const&, rest::keywords&, rest::request const&) const
+  time_t expires() const
   {
-    return now + 10;
+    return get_time() + 10;
   }
 
-  rest::cache::flags cache(
-      std::string const &, rest::keywords&, rest::request const&) const
-  {
+  rest::cache::flags cache() const {
     return rest::cache::private_ | rest::cache::no_transform;
   }
 
-  rest::response get(
-      std::string const &, rest::keywords &kw, rest::request const &)
-  {
+  rest::response get() {
     rest::response resp("text/html");
     resp.add_cookie(rest::cookie("hello", "world"));
     resp.add_cookie(rest::cookie("foo", "bar"));
@@ -58,7 +50,7 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
                   "maxlength=\"100000\" accept=\"text/*\">\n"
                   "<input type=\"submit\" value=\"Submit\">\n"
                   "</form>\n<p>User Agent: &quot;");
-    r += kw["user-agent"];
+    r += get_keywords()["user-agent"];
     r += "&quot;</p>\n</body>\n</html>\n";
     resp.set_data(r);
     #else
@@ -71,24 +63,20 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
     return resp;
   }
 
-  rest::response put(
-      std::string const &, rest::keywords &, rest::request const &)
-  {
+  rest::response put() {
     throw std::runtime_error("Bad one");
   }
 
-  rest::response delete_(
-      std::string const &, rest::keywords &, rest::request const &)
-  {
+  rest::response delete_() {
     return rest::response(200);
   }
 
-  rest::response post(
-      std::string const &, rest::keywords &kw, rest::request const &)
-  {
+  rest::response post() {
     rest::response resp("text/plain");
 
     std::ostringstream out;
+
+    rest::keywords &kw = get_keywords();
 
     for (int i = 0; kw.exists("bar", i); ++i) {
       std::string bar = kw.access("bar", i);

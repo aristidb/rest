@@ -43,20 +43,14 @@ private:
 
   void handle_caching(
     detail::responder_base *,
-    detail::any_path const &,
     response &,
     time_t,
-    time_t,
-    keywords &,
-    request const &);
+    time_t);
 
   void handle_header_caching(
     detail::responder_base *,
-    detail::any_path const &,
     response &,
     bool &,
-    keywords &,
-    request const &,
     std::string const &);
 
   void analyze_ranges();
@@ -66,41 +60,12 @@ private:
   static bool never_cache(int method);
 
 public: //internal
-  response handle_get(
-    detail::responder_base *,
-    detail::any_path const &,
-    keywords &,
-    request const &);
-
-  response handle_head(
-    detail::responder_base *,
-    detail::any_path const &,
-    keywords &,
-    request const &);
-
-  response handle_post(
-    detail::responder_base *,
-    detail::any_path const &,
-    keywords &,
-    request const &);
-
-  response handle_put(
-    detail::responder_base*,
-    detail::any_path const &,
-    keywords &,
-    request const &);
-
-  response handle_delete(
-    detail::responder_base *,
-    detail::any_path const &,
-    keywords &,
-    request const &);
-
-  response handle_options(
-    detail::responder_base *,
-    detail::any_path const &,
-    keywords &,
-    request const &);
+  response handle_get(detail::responder_base *);
+  response handle_head(detail::responder_base *);
+  response handle_post(detail::responder_base *, keywords &kw);
+  response handle_put(detail::responder_base *, keywords &kw);
+  response handle_delete(detail::responder_base *);
+  response handle_options(detail::responder_base *);
 
 private:
   class impl;

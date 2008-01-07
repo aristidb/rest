@@ -91,19 +91,22 @@ namespace {
     response (
       http_connection *,
       det::responder_base *,
-      det::any_path const &,
-      keywords &,
-      request const &
+      keywords &
     )
   > method_handler;
 
   method_handler H(
-      response (http_connection::*fun)(
-        det::responder_base*, det::any_path const&, keywords&, request const&
-      )
+      response (http_connection::*fun)(det::responder_base*)
     )
   {
-    return boost::bind(fun, _1, _2, _3, _4, _5);
+    return boost::bind(fun, _1, _2);
+  }
+
+  method_handler H(
+      response (http_connection::*fun)(det::responder_base*,keywords&)
+    )
+  {
+    return boost::bind(fun, _1, _2, _3);
   }
 
   typedef std::map<std::string, method_handler> method_handler_map;
@@ -279,15 +282,20 @@ response http_connection::handle_request() {
 
     kw.set_request_data(p->request_);
 
-    if (responder)
-      last_modified = responder->x_last_modified(now, path_id, kw,
-                                                   p->request_);
-    if (last_modified != time_t(-1) && last_modified > now)
-      last_modified = now;
-    if (responder)
-      etag = responder->x_etag(path_id, kw, p->request_);
-    if (responder)
-      expires = responder->x_expires(now, path_id, kw, p->request_);
+    if (responder) {
+      responder->x_set_path(path_id);
+      responder->set_request(p->request_);
+      responder->set_keywords(kw);
+      responder->set_time(now);
+    }
+
+    if (responder) {
+      last_modified = responder->last_modified();
+      if (last_modified != time_t(-1) && last_modified > now)
+        last_modified = now;
+      etag = responder->etag();
+      expires = responder->expires();
+    }
 
     int mod_code = handle_modification_tags(
           last_modified == time_t(-1) ? now : last_modified,
@@ -299,7 +307,7 @@ response http_connection::handle_request() {
       if (m == method_handlers.end())
         throw 501;
       try {
-        m->second(this, responder, path_id, kw, p->request_).move(out);
+        m->second(this, responder, kw).move(out);
       } catch (std::exception &e) {
         response(500).move(out);
         out.set_type("text/plain");
@@ -324,7 +332,7 @@ response http_connection::handle_request() {
 
   out_headers.set_header("Date", utils::http::datetime_string(now));
   tell_allow(out, responder);
-  handle_caching(responder, path_id, out, now, expires, kw, p->request_);
+  handle_caching(responder, out, now, expires);
 
   if (last_modified != time_t(-1))
     out_headers.set_header(
@@ -410,19 +418,16 @@ int http_connection::handle_modification_tags(
 
 void http_connection::handle_caching(
   det::responder_base *responder,
-  det::any_path const &path_id,
   response &resp,
   time_t now,
-  time_t expires,
-  keywords &kw,
-  request const &req)
+  time_t expires)
 {
   headers &out_headers = resp.get_headers();
 
   bool cripple_expires = false;
   cache::flags general = cache::private_ | cache::no_cache | cache::no_store;
   if (responder && !never_cache(resp.get_code()))
-    general = responder->x_cache(path_id, kw, req);
+    general = responder->cache();
 
   if (general & cache::private_) {
     cripple_expires = true;
@@ -447,11 +452,8 @@ void http_connection::handle_caching(
         &http_connection::handle_header_caching,
         this,
         responder,
-        boost::cref(path_id),
         boost::ref(resp),
         boost::ref(cripple_expires),
-        boost::ref(kw),
-        boost::cref(req),
         _1));
   }
 
@@ -490,14 +492,11 @@ bool http_connection::never_cache(int code) {
 
 void http_connection::handle_header_caching(
   det::responder_base *responder,
-  det::any_path const &path_id,
   response &resp,
   bool &cripple_expires,
-  keywords &kw,
-  request const &req,
   std::string const &header)
 {
-  cache::flags flags = responder->x_cache(header, path_id, kw, req);
+  cache::flags flags = responder->cache(header);
   if (flags & cache::no_cache) {
     cripple_expires = true;
     std::string x;
@@ -512,70 +511,52 @@ void http_connection::handle_header_caching(
   }
 }
 
-response http_connection::handle_options(
-  det::responder_base *,
-  det::any_path const &,
-  keywords &,
-  request const &)
-{
+response http_connection::handle_options(det::responder_base *) {
   response resp(200);
   return resp;
 }
 
-response http_connection::handle_get(
-  det::responder_base *responder,
-  det::any_path const &path_id,
-  keywords &kw,
-  request const &req)
-{
+response http_connection::handle_get(det::responder_base *responder) {
   det::get_base *getter = responder->x_getter();
-  if (!getter || !responder->x_exists(path_id, kw, req))
+  if (!getter || !responder->exists())
     return response(404);
-  response r(getter->x_get(path_id, kw, req));
+
+  response r(getter->get());
+
   int code = r.get_code();
   if ((code == -1 || (code >= 200 && code <= 299)) && !r.is_nil())
     analyze_ranges();
+
   return r;
 }
 
-response http_connection::handle_head(
-  det::responder_base *responder,
-  det::any_path const &path_id,
-  keywords &kw,
-  request const &req)
-{
+response http_connection::handle_head(det::responder_base *responder) {
   //TODO: better implementation
   p->flags.set(impl::NO_ENTITY);
   det::get_base *getter = responder->x_getter();
-  if (!getter || !responder->x_exists(path_id, kw, req))
+  if (!getter || !responder->exists())
     return response(404);
 
-  return getter->x_get(path_id, kw, req);
+  return getter->get();
 }
 
 
 response http_connection::handle_post(
-  det::responder_base *responder,
-  det::any_path const &path_id,
-  keywords &kw,
-  request const &req)
+    det::responder_base *responder, keywords &kw)
 {
   det::post_base *poster = responder->x_poster();
-  if (!poster || !responder->x_exists(path_id, kw, req))
+  if (!poster || !responder->exists())
     return response(404);
 
   int ret = handle_entity(kw);
   if (ret != 0)
     return response(ret);
 
-  return poster->x_post(path_id, kw, req);
+  return poster->post();
 }
 
 response http_connection::handle_put(
-  det::responder_base *responder,
-  det::any_path const &path_id,
-  keywords &kw,
-  request const &req)
+    det::responder_base *responder, keywords &kw)
 {
   det::put_base *putter = responder->x_putter();
   if (!putter)
@@ -585,19 +566,14 @@ response http_connection::handle_put(
   if(ret != 0)
     return response(ret);
 
-  return putter->x_put(path_id, kw, req);
+  return putter->put();
 }
 
-response http_connection::handle_delete(
-  det::responder_base *responder,
-  det::any_path const &path_id,
-  keywords &kw,
-  request const &req)
-{
+response http_connection::handle_delete(det::responder_base *responder) {
   det::delete__base *deleter = responder->x_deleter();
-  if (!deleter || !responder->x_exists(path_id, kw, req))
+  if (!deleter || !responder->exists())
     return response(404);
-  return deleter->x_delete_(path_id, kw, req);
+  return deleter->delete_();
 }
 
 void http_connection::tell_allow(response &resp, det::responder_base *responder)

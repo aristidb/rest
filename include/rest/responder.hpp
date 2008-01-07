@@ -173,8 +173,8 @@ public:
   }
 
 private:
-  void x_set_path(any_path const &x_path) {
-    path = detail::unpack(x_path);
+  void x_set_path(detail::any_path const &x_path) {
+    path = detail::unpack<path_type>(x_path);
   }
 
   void set_keywords(keywords &kw) {

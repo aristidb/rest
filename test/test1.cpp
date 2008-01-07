@@ -7,32 +7,29 @@
 #include <boost/iostreams/stream.hpp>
 
 struct welcomer : rest::responder<rest::GET, rest::DEDUCED_PATH> {
-  rest::response get(
-      std::string const &, rest::keywords &data, rest::request const &)
-  {
+  rest::response get() {
     rest::response response("text/plain");
-    response.set_data(std::string("Welcome, ") + data["user"]);
+    response.set_data(std::string("Welcome, ") + get_keywords()["user"]);
     return response;
   }
 };
 
 struct displayer : rest::responder<rest::GET | rest::PUT> {
-  rest::response
-  get(std::string const &path, rest::keywords &data, rest::request const &) {
-    if (path == "list") {
+  rest::response get() {
+    if (get_path() == "list") {
       // return a list of objects
       rest::response ok;
       return ok;
     } else {
-      std::string id = data["id"];
+      std::string id = get_keywords()["id"];
       // display the object
       rest::response ok;
       return ok;
     }
   }
-  rest::response
-  put(std::string const &path, rest::keywords &, rest::request const &) {
-    if (path == "list") {
+
+  rest::response put() {
+    if (get_path() == "list") {
       // error
       rest::response err(404);
       return err;
@@ -47,10 +44,9 @@ struct displayer : rest::responder<rest::GET | rest::PUT> {
 enum mode { COOKIE, KEYWORD, KEYWORD_NOT };
 
 struct searcher : rest::responder<rest::GET, mode> {
-  rest::response
-  get(mode path, rest::keywords &, rest::request const &) {
+  rest::response get() {
     rest::response response("text/plain");
-    if (path == COOKIE)
+    if (get_path() == COOKIE)
       response.set_data("Sorry, got no cookie thing!");
     else
       response.set_data("Am I your searching dork? Hell...");
@@ -59,10 +55,9 @@ struct searcher : rest::responder<rest::GET, mode> {
 };
 
 struct rel : rest::responder<rest::GET> {
-  rest::response
-  get(std::string const &path, rest::keywords &, rest::request const &) {
+  rest::response get() {
     rest::response response("text/plain");
-    response.set_data(path);
+    response.set_data(get_path());
     return response;
   }
 };
