@@ -12,18 +12,15 @@
 #include <unistd.h>
 
 struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
-  std::string etag() const
- {
+  std::string etag() const {
     return "\"zxyl\"";
   }
 
-  time_t last_modified() const
-  {
+  time_t last_modified() const {
     return get_time();
   }
 
-  time_t expires() const
-  {
+  time_t expires() const {
     return get_time() + 10;
   }
 
