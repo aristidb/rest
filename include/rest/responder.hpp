@@ -50,19 +50,19 @@ namespace detail {
   };
 
   struct get_base {
-    virtual response x_get(any_path const &, keywords &, request const &)=0;
+    virtual response get()=0;
     virtual ~get_base() {}
   };
   struct put_base {
-    virtual response x_put(any_path const &, keywords &, request const &)=0;
+    virtual response put()=0;
     virtual ~put_base() {}
   };
   struct post_base {
-    virtual response x_post(any_path const &, keywords &, request const &)=0;
+    virtual response post()=0;
     virtual ~post_base() {}
   };
   struct delete__base {
-    virtual response x_delete_(any_path const &, keywords &, request const &)=0;
+    virtual response delete_()=0;
     virtual ~delete__base() {}
   };
 
@@ -72,39 +72,26 @@ namespace detail {
     virtual post_base *x_poster() = 0;
     virtual delete__base *x_deleter() = 0;
 
-    virtual bool x_exists(any_path const&, keywords&, request const&) const = 0;
+    virtual void x_set_path(any_path const &) = 0;
+    virtual void set_keywords(keywords &) = 0;
+    virtual void set_request(request const &) = 0;
+    virtual void set_time(time_t now) = 0;
 
-    virtual std::string x_etag(
-      any_path const &, keywords &, request const &) const = 0;
-    virtual time_t x_last_modified(
-      time_t, any_path const &, keywords &, request const &) const = 0;
-    virtual time_t x_expires(
-      time_t, any_path const &, keywords &, request const &) const = 0;
+    virtual bool exists() const = 0;
+    virtual std::string etag() const = 0;
+    virtual time_t last_modified() const = 0;
+    virtual time_t expires() const = 0;
 
-    virtual cache::flags x_cache(
-      any_path const &, keywords &, request const &) const = 0;
-    virtual cache::flags x_cache(
-      std::string const &, any_path const &, keywords &, request const &)
-      const = 0;
+    virtual cache::flags cache() const = 0;
+    virtual cache::flags cache(std::string const &header) const = 0;
 
-    virtual ~responder_base() { }
+    virtual ~responder_base() {}
   };
 
   #define REST_METHOD_DEFINITION(method) \
     template<typename, bool> struct i_ ## method {}; \
     template<typename Path> \
     struct i_ ## method<Path, true> : method ## _base { \
-      typedef typename path_helper<Path>::path_parameter path_parameter; \
-      typedef typename path_helper<Path>::path_type path_type; \
-      virtual response method(path_parameter, keywords &, request const &)=0; \
-    private: \
-      response x_ ## method( \
-          any_path const &path, keywords &kw, request const &req) \
-      { \
-        response result(response::empty_tag()); \
-        method(unpack<path_type>(path), kw, req).move(result); \
-        return result; \
-      } \
     }; \
     /**/
 
@@ -141,77 +128,65 @@ public:
   }
 
 protected:
-  virtual bool exists(path_parameter, keywords &, request const &) const {
+  virtual bool exists() const {
     return true;
   }
 
-  virtual time_t last_modified(
-    time_t, path_parameter, keywords &, request const &) const
-  {
+  virtual time_t last_modified() const {
     return time_t(-1);
   }
 
-  virtual std::string etag(path_parameter, keywords &, request const &) const {
+  virtual std::string etag() const {
     return std::string();
   }
 
-  virtual time_t expires(
-    time_t, path_parameter, keywords &, request const &) const
+  virtual time_t expires() const
   {
     return time_t(-1);
   }
 
-  virtual cache::flags cache(path_parameter, keywords &, request const&) const
+  virtual cache::flags cache() const
   {
     return cache::NO_FLAGS;
   }
 
-  virtual cache::flags cache(
-    std::string const &header, path_parameter, keywords&, request const&) const
+  virtual cache::flags cache(std::string const &header) const
   {
     return cache::default_header_flags(header);
   }
 
+public:
+  path_parameter get_path() const {
+    return path;
+  }
+
+  keywords &get_keywords() const {
+    return *p_keywords;
+  }
+
+  request const &get_request() const {
+    return *p_request;
+  }
+
+  time_t get_time() const {
+    return now;
+  }
+
 private:
-  bool x_exists(
-      detail::any_path const &path, keywords &kw, request const &req) const
-  {
-    return exists(detail::unpack<path_type>(path), kw, req);
+  void x_set_path(any_path const &x_path) {
+    path = detail::unpack(x_path);
   }
 
-  time_t x_last_modified(
-    time_t now, detail::any_path const &path, keywords &kw, request const &r
-    ) const
-  {
-    return last_modified(now, detail::unpack<path_type>(path), kw, r);
+  void set_keywords(keywords &kw) {
+    p_keywords = &kw;
   }
 
-  std::string x_etag(
-    detail::any_path const &path, keywords &kw, request const &r) const
-  {
-    return etag(detail::unpack<path_type>(path), kw, r);
+  void set_request(request const &req) {
+    p_request = &req;
   }
 
-  time_t x_expires(
-    time_t now, detail::any_path const &path, keywords &kw, request const &r
-    ) const
-  {
-    return expires(now, detail::unpack<path_type>(path), kw, r);
-  }
-
-  cache::flags x_cache(
-    detail::any_path const &path, keywords &kw, request const &r) const
-  {
-    return cache(detail::unpack<path_type>(path), kw, r);
-  }
-
-  cache::flags x_cache(
-      std::string const &header,
-      detail::any_path const &path,
-      keywords &kw,
-      request const &r) const
-  {
-    return cache(header, detail::unpack<path_type>(path), kw, r);
+  void set_time(time_t now_) {
+    now = now_;
   }
 
 private:
@@ -230,6 +205,12 @@ private:
   detail::delete__base *x_deleter() {
     return (ResponseType & DELETE) ? (detail::delete__base *) this : 0;
   }
+
+private:
+  path_type path;
+  keywords *p_keywords;
+  request const *p_request;
+  time_t now;
 };
 
 }
