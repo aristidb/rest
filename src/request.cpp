@@ -17,17 +17,22 @@ class request::impl {
 public:
   impl(network::address const &addr) : host_(&dummy_host), addr(addr) { }
 
-  std::string uri;
-
+  std::string method, uri;
   host const *host_;
-
   network::address addr;
-
   headers headers_;
 };
 
 request::request(network::address const &addr) : p(new impl(addr)) { }
 request::~request() {}
+
+void request::set_method(std::string const &method) {
+  p->method = method;
+}
+
+std::string const &request::get_method() const {
+  return p->method;
+}
 
 void request::set_uri(std::string const &uri) {
   p->uri = uri;

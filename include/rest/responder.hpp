@@ -77,6 +77,8 @@ namespace detail {
     virtual void set_request(request const &) = 0;
     virtual void set_time(time_t now) = 0;
 
+    virtual void prepare() = 0;
+
     virtual bool exists() const = 0;
     virtual std::string etag() const = 0;
     virtual time_t last_modified() const = 0;
@@ -156,6 +158,9 @@ protected:
   }
 
 public:
+  virtual void prepare() {
+  }
+
   path_parameter get_path() const {
     return path;
   }

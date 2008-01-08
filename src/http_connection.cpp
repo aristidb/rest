@@ -241,6 +241,8 @@ response http_connection::handle_request() {
     utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
                uri.c_str(), version.c_str());
 
+    p->request_.set_method(method);
+
     utils::uri::make_basename(uri);
     p->request_.set_uri(uri);
 
@@ -287,6 +289,7 @@ response http_connection::handle_request() {
       responder->set_request(p->request_);
       responder->set_keywords(kw);
       responder->set_time(now);
+      responder->prepare();
     }
 
     if (responder) {

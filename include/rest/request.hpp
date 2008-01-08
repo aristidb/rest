@@ -20,6 +20,9 @@ public:
   void clear();
 
 public:
+  void set_method(std::string const &method);
+  std::string const &get_method() const;
+
   void set_uri(std::string const &uri);
   std::string const &get_uri() const;
 
