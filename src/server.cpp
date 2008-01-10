@@ -19,9 +19,9 @@
 #include <sys/epoll.h>
 #endif
 
-#ifndef NDEBUG //whatever
+/*#ifndef NDEBUG //whatever
 #define NO_FORK_LOOP
-#endif
+#endif*/
 
 using namespace rest;
 namespace det = rest::detail;

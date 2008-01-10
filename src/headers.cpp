@@ -2,6 +2,7 @@
 #include <rest/headers.hpp>
 #include <rest/utils/http.hpp>
 #include <rest/utils/string.hpp>
+#include <boost/none.hpp>
 #include <map>
 
 using rest::headers;

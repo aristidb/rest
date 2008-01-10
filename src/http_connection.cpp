@@ -290,9 +290,7 @@ response http_connection::handle_request() {
       responder->set_keywords(kw);
       responder->set_time(now);
       responder->prepare();
-    }
 
-    if (responder) {
       last_modified = responder->last_modified();
       if (last_modified != time_t(-1) && last_modified > now)
         last_modified = now;
@@ -315,7 +313,12 @@ response http_connection::handle_request() {
         response(500).move(out);
         out.set_type("text/plain");
         out.set_data(
-          std::string("Internal error: exception thrown: ") + e.what());
+#ifdef NDEBUG // hide internal information
+          "Internal Server Error."
+#else
+          std::string("Internal error: exception thrown: ") + e.what()
+#endif
+                     );
       } catch (...) {
         response(500).move(out);
         out.set_type("text/plain");
