@@ -40,6 +40,11 @@ public:
   void move(response &o);
   void swap(response &o);
 
+  void set(int code, std::string const &type, std::string const &data) {
+    set_code(code);
+    set_type(type);
+    set_data(data);
+  }
   void set_code(int code);
   void set_type(std::string const &type);
 
