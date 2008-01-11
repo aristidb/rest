@@ -78,3 +78,29 @@ void rest::process::drop_privileges(utils::property_tree const &tree) {
   else
     utils::log(LOG_WARNING, "no uid set: user privilieges not droped");
 }
+
+void rest::process::maybe_daemonize(utils::property_tree const &tree) {
+  bool daemon = utils::get(tree, false, "general", "daemonize");
+  utils::log(LOG_INFO, "starting daemon: %s", daemon ? "yes" : "no");
+  if (!daemon)
+    return;
+
+  if(::daemon(1, 1) == -1)
+    throw utils::errno_error("daemonizing the server failed (daemon)");
+  utils::log(LOG_INFO, "daemon started");
+}
+
+void rest::process::chroot(utils::property_tree const &tree) {
+  std::string dir = utils::get(tree, std::string(), "general", "chroot");
+  if (dir.empty()) {
+    utils::log(LOG_WARNING, "no chroot set");
+    return;
+  }
+
+  if(::chroot(".") == -1) {
+    if(errno != EPERM)
+      throw utils::errno_error("chroot failed");
+    else
+      utils::log(LOG_WARNING, "could not chroot: insufficient permissions");
+  }
+}

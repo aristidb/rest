@@ -19,10 +19,6 @@
 #include <sys/epoll.h>
 #endif
 
-/*#ifndef NDEBUG //whatever
-#define NO_FORK_LOOP
-#endif*/
-
 using namespace rest;
 namespace det = rest::detail;
 namespace algo = boost::algorithm;
@@ -195,18 +191,9 @@ void server::serve() {
 
   utils::property_tree &tree = config::get().tree();
 
-#ifndef DEBUG
-  if(::chroot(".") == -1) {
-    if(errno != EPERM)
-      throw utils::errno_error("chroot failed");
-    else
-      utils::log(LOG_WARNING, "could not chroot: insufficient permissions");
-  }
-  drop_privileges(tree);
-
-  if(::daemon(1, 1) == -1)
-    throw utils::errno_error("daemonizing the server failed (daemon)");
-#endif
+  process::chroot(tree);
+  process::drop_privileges(tree);
+  process::maybe_daemonize(tree);
 
   typedef void(*sighnd_t)(int);
 
@@ -253,7 +240,6 @@ void server::impl::incoming(socket_param const &sock,
     return;
   }
 
-#ifndef NO_FORK_LOOP
   sigset_t mask, oldmask;
   sigfillset(&mask);
   sigprocmask(SIG_BLOCK, &mask, &oldmask);
@@ -261,14 +247,13 @@ void server::impl::incoming(socket_param const &sock,
   pid_t pid = ::fork();
   if (pid == 0) {
     do_close_on_fork();
-#endif
+
     utils::log(LOG_INFO,
                "accept connection from %s", network::ntoa(addr).c_str());
 
     int status = connection(sock, connfd, addr, servername);
     (void) status;
 
-#ifndef NO_FORK_LOOP
     exit(status);
   }
   else {
@@ -277,7 +262,6 @@ void server::impl::incoming(socket_param const &sock,
     close(connfd);
     sigprocmask(SIG_SETMASK, &oldmask, 0);
   }
-#endif
 }
 
 int server::impl::connection(socket_param const &sock, int connfd,

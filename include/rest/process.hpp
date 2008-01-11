@@ -13,6 +13,8 @@ void restart();
 bool set_gid(gid_t gid);
 bool set_uid(uid_t uid);
 void drop_privileges(utils::property_tree const &tree);
+void maybe_daemonize(utils::property_tree const &tree);
+void chroot(utils::property_tree const &tree);
 
 }}
 

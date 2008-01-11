@@ -9,7 +9,9 @@ Can be changed with -c-Flag or by setting -DDEFAULT_CONFIG_PATH during compile t
 /connections/*/bind             address to bind to (see bind(2)) [default: INADDR_ANY]
 
 /general -
-/general/name                   setvername [default: "musikdings.rest/0.1"]
+/general/name                   servername [default: "musikdings.rest/0.1"]
+/general/daemonize              start a daemon (0/1) [default: 0]
+/general/chroot			chroot to this directory
 /general/uid                    set server uid
 /general/gid                    set sever gid
 /general/max_uri_length         0 or maximal length of an uri [default: 1023]
