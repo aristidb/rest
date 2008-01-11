@@ -93,6 +93,7 @@ public:
 
   response handle_request();
   void read_request(std::string&method, std::string&uri, std::string&version);
+  host const *get_host();
 
   int handle_entity(keywords &kw);
 
@@ -101,7 +102,13 @@ public:
 
   int handle_modification_tags(time_t, std::string const&, std::string const&);
 
-  void handle_caching(det::responder_base *, response &, time_t, time_t);
+  void handle_caching(
+    det::responder_base *rpd,
+    response &rsp,
+    time_t now,
+    time_t expires,
+    time_t last_modified,
+    std::string const &etag);
 
   void handle_header_caching(
     det::responder_base *, response &, bool &, std::string const &);
@@ -110,6 +117,7 @@ public:
   void check_ranges(response &resp);
 
   void tell_allow(response &resp, detail::responder_base *responder);
+  void tell_accept_ranges(response &resp, std::string const &method);
 
   static bool never_cache(int method);
 
@@ -245,7 +253,6 @@ response http_connection::impl::handle_request() {
   response out(response::empty_tag());
 
   std::string method, uri, version;
-  std::string host_header;
   std::string etag;
   time_t last_modified = time_t(-1);
   time_t expires = time_t(-1);
@@ -256,24 +263,13 @@ response http_connection::impl::handle_request() {
   try {
     read_request(method, uri, version);
 
-    headers &request_headers = request_.get_headers();
-
     int ret = set_header_options();
     if (ret != 0)
-      return response(ret);
+      throw ret;
 
-    boost::optional<std::string> host_header_ =
-      request_headers.get_header("Host");
-
-    if (!host_header_)
-      throw utils::http::bad_format();
-    host_header = host_header_.get();
-
-    host const *h = hosts.get_host(host_header);
+    host const *h = get_host();
     if (!h)
       throw 404;
-
-    request_.set_host(*h);
 
     context &global = h->get_context();
 
@@ -334,28 +330,10 @@ response http_connection::impl::handle_request() {
     response(code).move(out);
   }
 
-  headers &out_headers = out.get_headers();
-
-  out_headers.set_header("Date", utils::http::datetime_string(now));
+  out.get_headers().set_header("Date", utils::http::datetime_string(now));
   tell_allow(out, responder);
-  handle_caching(responder, out, now, expires);
-
-  if (last_modified != time_t(-1))
-    out_headers.set_header(
-        "Last-Modified",
-        utils::http::datetime_string(last_modified));
-  if (!etag.empty())
-    out_headers.set_header("ETag", etag);
-
-  if (method == "GET" || method == "HEAD") {
-    int code = out.get_code();
-    if (code == -1 || (code >= 200 && code <= 299)) {
-      if (out.length(response::identity) >= 0)
-        out_headers.set_header("Accept-Ranges", "bytes");
-      else
-        out_headers.set_header("Accept-Ranges", "none");
-    }
-  }
+  handle_caching(responder, out, now, expires, last_modified, etag);
+  tell_accept_ranges(out, method);
 
   return out;
 }
@@ -388,9 +366,24 @@ void http_connection::impl::read_request(
     throw 505;
   }
 
-  headers &request_headers = request_.get_headers();;
+  headers &request_headers = request_.get_headers();
 
   request_headers.read_headers(*conn);
+}
+
+host const *http_connection::impl::get_host() {
+  boost::optional<std::string> host_header =
+    request_.get_headers().get_header("Host");
+
+  if (!host_header)
+    throw utils::http::bad_format();
+
+  host const *h = hosts.get_host(host_header.get());
+
+  if (h)
+    request_.set_host(*h);
+
+  return h;
 }
 
 int http_connection::impl::handle_modification_tags(
@@ -459,7 +452,9 @@ void http_connection::impl::handle_caching(
   det::responder_base *responder,
   response &resp,
   time_t now,
-  time_t expires)
+  time_t expires,
+  time_t last_modified,
+  std::string const &etag)
 {
   headers &out_headers = resp.get_headers();
 
@@ -467,6 +462,9 @@ void http_connection::impl::handle_caching(
   cache::flags general = cache::private_ | cache::no_cache | cache::no_store;
   if (responder && !never_cache(resp.get_code()))
     general = responder->cache();
+
+  if (general & cache::no_store)
+    out_headers.add_header_part("Cache-Control", "no-store");
 
   if (general & cache::no_cache) {
     out_headers.add_header_part("Cache-Control", "no-cache");
@@ -481,9 +479,6 @@ void http_connection::impl::handle_caching(
     out_headers.add_header_part("Cache-Control", "public");
   }
   
-  if (general & cache::no_store)
-    out_headers.add_header_part("Cache-Control", "no-store");
-
   if (general & cache::no_transform)
     out_headers.add_header_part("Cache-Control", "no-transform");
 
@@ -511,6 +506,13 @@ void http_connection::impl::handle_caching(
 
   if (cripple_expires)
     out_headers.set_header("Expires", "0");
+
+  if (last_modified != time_t(-1))
+    out_headers.set_header(
+        "Last-Modified",
+        utils::http::datetime_string(last_modified));
+  if (!etag.empty())
+    out_headers.set_header("ETag", etag);
 }
 
 bool http_connection::impl::never_cache(int code) {
@@ -694,6 +696,20 @@ int http_connection::impl::set_header_options() {
   }
 
   return 0;
+}
+
+void http_connection::impl::tell_accept_ranges(
+    response &resp, std::string const &method)
+{
+  if (method == "GET" || method == "HEAD") {
+    int code = resp.get_code();
+    if (code == -1 || (code >= 200 && code <= 299)) {
+      if (resp.length(response::identity) >= 0)
+        resp.get_headers().set_header("Accept-Ranges", "bytes");
+      else
+        resp.get_headers().set_header("Accept-Ranges", "none");
+    }
+  }
 }
 
 void http_connection::impl::analyze_ranges() {
