@@ -1,16 +1,13 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include <rest/context.hpp>
 #include <rest/utils/uri.hpp>
+#include <rest/config.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
 #include <boost/tokenizer.hpp>
 #include <stdexcept>
 #include <algorithm>
-
-#ifndef NDEBUG
-#include <rest/config.hpp>
-#endif
 
 using namespace rest;
 namespace det = rest::detail;
@@ -76,36 +73,6 @@ public:
         return *it;
       return unconditional_child.get();
     }
-#if 0
-    void print(int level) {
-      for (int i = 0; i < level; ++i)
-        std::cout << "  ";
-      switch (type) {
-      case root: std::cout << "</> "; break;
-      case closure: std::cout << "<C> "; break;
-      case literal: std::cout << "<L> "; break;
-      };
-      std::cout << '"' << data << '"' << (ellipsis ? "...\n" : "\n");
-      for (int i = 0; i < level; ++i)
-        std::cout << "  ";
-      std::cout << ' ' << responder_ << '/' << context_ << '\n';
-      if (unconditional_child) {
-        for (int i = 0; i < level; ++i)
-          std::cout << "  ";
-        std::cout << " unconditional child:\n";
-        unconditional_child->print(level + 1);
-      }
-      if (!conditional_children.empty()) {
-        for (int i = 0; i < level; ++i)
-          std::cout << "  ";
-        std::cout << " conditional children:\n";
-        for (conditional_children_t::iterator it = conditional_children.begin();
-            it != conditional_children.end();
-            ++it)
-          (*it)->print(level + 1);
-      }
-    }
-#endif
   };
 
   keyword_info_set predeclared_keywords;

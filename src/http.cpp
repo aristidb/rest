@@ -334,15 +334,6 @@ namespace {
     return !(tok == rhs);
   }
 
-#if 0
-  std::ostream &operator<<(std::ostream &out, token const &t) {
-    iterator i = t.first;
-    while(i != t.second)
-      out << *i++;
-    return out;
-  }
-#endif
-
   bool gettoken(std::string const &txt, token &tok) {
     iterator begin = tok.second;
     if(begin == txt.end()) {
