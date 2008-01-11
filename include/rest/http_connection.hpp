@@ -26,48 +26,6 @@ public:
   void serve(std::istream &in, std::ostream &out);
 
 private:
-  void serve();
-
-  int set_header_options();
-
-  void reset();
-
-  response handle_request();
-  int handle_entity(keywords &kw);
-
-  void send(response r, bool entity);
-  void send(response r);
-
-  int handle_modification_tags(
-    time_t, std::string const &, std::string const &);
-
-  void handle_caching(
-    detail::responder_base *,
-    response &,
-    time_t,
-    time_t);
-
-  void handle_header_caching(
-    detail::responder_base *,
-    response &,
-    bool &,
-    std::string const &);
-
-  void analyze_ranges();
-
-  void tell_allow(response &resp, detail::responder_base *responder);
-
-  static bool never_cache(int method);
-
-public: //internal
-  response handle_get(detail::responder_base *);
-  response handle_head(detail::responder_base *);
-  response handle_post(detail::responder_base *, keywords &kw);
-  response handle_put(detail::responder_base *, keywords &kw);
-  response handle_delete(detail::responder_base *);
-  response handle_options(detail::responder_base *);
-
-private:
   class impl;
   boost::scoped_ptr<impl> p;
 };
