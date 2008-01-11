@@ -92,6 +92,8 @@ public:
   int set_header_options();
 
   response handle_request();
+  void read_request(std::string&method, std::string&uri, std::string&version);
+
   int handle_entity(keywords &kw);
 
   void send(response r, bool entity);
@@ -252,32 +254,9 @@ response http_connection::impl::handle_request() {
   det::any_path path_id;
 
   try {
-    boost::tie(method, uri, version) = utils::http::get_request_line(
-        *conn,
-        boost::make_tuple(
-          method_name_length,
-          utils::get(tree, 1023, "general", "max_uri_length"),
-          sizeof("HTTP/1.1") - 1 + 5 // 5 additional chars for higher versions
-        ));
+    read_request(method, uri, version);
 
-    utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
-               uri.c_str(), version.c_str());
-
-    request_.set_method(method);
-
-    utils::uri::make_basename(uri);
-    request_.set_uri(uri);
-
-    if (version == "HTTP/1.0") {
-      flags.set(HTTP_1_0_COMPAT);
-      open_ = false;
-    } else if (version != "HTTP/1.1") {
-      throw 505;
-    }
-
-    headers &request_headers = request_.get_headers();;
-
-    request_headers.read_headers(*conn);
+    headers &request_headers = request_.get_headers();
 
     int ret = set_header_options();
     if (ret != 0)
@@ -381,6 +360,39 @@ response http_connection::impl::handle_request() {
   return out;
 }
 
+void http_connection::impl::read_request(
+    std::string &method,
+    std::string &uri,
+    std::string &version)
+{
+  boost::tie(method, uri, version) = utils::http::get_request_line(
+      *conn,
+      boost::make_tuple(
+        method_name_length,
+        utils::get(tree, 1023, "general", "max_uri_length"),
+        sizeof("HTTP/1.1") - 1 + 5 // 5 additional chars for higher versions
+      ));
+
+  utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
+             uri.c_str(), version.c_str());
+
+  request_.set_method(method);
+
+  utils::uri::make_basename(uri);
+  request_.set_uri(uri);
+
+  if (version == "HTTP/1.0") {
+    flags.set(HTTP_1_0_COMPAT);
+    open_ = false;
+  } else if (version != "HTTP/1.1") {
+    throw 505;
+  }
+
+  headers &request_headers = request_.get_headers();;
+
+  request_headers.read_headers(*conn);
+}
+
 int http_connection::impl::handle_modification_tags(
   time_t last_modified, std::string const &etag, std::string const &method)
 {
@@ -456,18 +468,19 @@ void http_connection::impl::handle_caching(
   if (responder && !never_cache(resp.get_code()))
     general = responder->cache();
 
+  if (general & cache::no_cache) {
+    out_headers.add_header_part("Cache-Control", "no-cache");
+    out_headers.add_header_part("Pragma", "no-cache");
+    return;
+  }
+
   if (general & cache::private_) {
     cripple_expires = true;
     out_headers.add_header_part("Cache-Control", "private");
   } else {
     out_headers.add_header_part("Cache-Control", "public");
   }
-
-  if (general & cache::no_cache) {
-    out_headers.add_header_part("Cache-Control", "no-cache");
-    out_headers.add_header_part("Pragma", "no-cache");
-  }
-
+  
   if (general & cache::no_store)
     out_headers.add_header_part("Cache-Control", "no-store");
 
