@@ -6,6 +6,73 @@
 
 using namespace rest::utils::http;
 
+TEST_GROUP(read_headers) {
+  TEST(empty) {
+    std::istringstream in;
+    std::map<std::string, std::string> x;
+    try {
+      read_headers(in, x);
+    } catch (remote_close&) {
+      Check(x.empty());
+      return;
+    }
+    Check(!"incomplete request");
+  }
+
+  TEST(empty 2) {
+    std::istringstream in("\r\n\r\n");
+    std::map<std::string, std::string> x;
+    read_headers(in, x);
+    Check(x.empty());
+  }
+
+  TEST(incomplete 1) {
+    std::istringstream in("foo");
+    std::map<std::string, std::string> x;
+    try {
+      read_headers(in, x);
+    } catch (remote_close&) {
+      Check(x.empty());
+      return;
+    }
+    Check(!"incomplete request");
+  }
+
+  TEST(incomplete 2) {
+    std::istringstream in("foo: bar");
+    std::map<std::string, std::string> x;
+    try {
+      read_headers(in, x);
+    } catch (remote_close&) {
+      Equals(x.size(), 1);
+      Equals(x["foo"], "bar");
+      return;
+    }
+    Check(!"incomplete request");
+  }
+
+  TEST(incomplete 3) {
+    std::istringstream in("foo: bar\r\nxy");
+    std::map<std::string, std::string> x;
+    try {
+      read_headers(in, x);
+    } catch (remote_close&) {
+      Equals(x.size(), 1);
+      Equals(x["foo"], "bar");
+      return;
+    }
+    Check(!"incomplete request");
+  }
+
+  TEST(simple 1) {
+    std::istringstream in("foo: bar\r\n\r\n");
+    std::map<std::string, std::string> x;
+    read_headers(in, x);
+    Equals(x.size(), 1);
+    Equals(x["foo"], "bar");
+  }
+}
+
 TEST(parse_parametrised) {
   std::string in = "application/x-test ; q = 0.7; boundary= \"\\\\\"";
   std::string type;

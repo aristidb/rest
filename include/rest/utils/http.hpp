@@ -170,12 +170,12 @@ void read_headers(
     std::size_t max_value_length = 0)
 {
   for (;;) {
-    get_header_field(source, fields, max_name_length, max_value_length);
     if (expect(source, '\r')) {
       if (!expect(source, '\n'))
         throw bad_format();
       return;
     }
+    get_header_field(source, fields, max_name_length, max_value_length);
   }
 }
 
