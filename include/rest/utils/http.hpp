@@ -71,7 +71,7 @@ void get_until(char end, Source &in, std::string &ret,
 }
 
 #define REST_RESERVE_LIKE(x, s) \
-  (x).reserve(sizeof(x) - 1)
+  (x).reserve(sizeof(s) - 1)
 
 template<class Source>
 request_line get_request_line(
