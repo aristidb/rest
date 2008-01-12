@@ -44,7 +44,7 @@ TEST_GROUP(read_headers) {
     try {
       read_headers(in, x);
     } catch (remote_close&) {
-      Equals(x.size(), 1);
+      Equals(x.size(), 1U);
       Equals(x["foo"], "bar");
       return;
     }
@@ -57,7 +57,7 @@ TEST_GROUP(read_headers) {
     try {
       read_headers(in, x);
     } catch (remote_close&) {
-      Equals(x.size(), 1);
+      Equals(x.size(), 1U);
       Equals(x["foo"], "bar");
       return;
     }
@@ -68,8 +68,38 @@ TEST_GROUP(read_headers) {
     std::istringstream in("foo: bar\r\n\r\n");
     std::map<std::string, std::string> x;
     read_headers(in, x);
-    Equals(x.size(), 1);
+    Equals(x.size(), 1U);
     Equals(x["foo"], "bar");
+  }
+
+  TEST(simple 2) {
+    std::istringstream in("a: 1\r\nB: 2\r\n\r\n");
+    std::map<std::string, std::string> x;
+    read_headers(in, x);
+    Equals(x.size(), 2U);
+    Equals(x["a"], "1");
+    Equals(x["b"], "2");
+  }
+
+  TEST(multiline) {
+    std::istringstream in("x: a\r\n b\r\n c\r\n     d\r\n\r\n");
+    std::map<std::string, std::string> x;
+    read_headers(in, x);
+    Equals(x.size(), 1U);
+    Equals(x["x"], "a b c d");
+  }
+
+  TEST(multiline incomplete) {
+    std::istringstream in("x: a\r\n    ");
+    std::map<std::string, std::string> x;
+    try {
+      read_headers(in, x);
+    } catch (remote_close&) {
+      Equals(x.size(), 1U);
+      Equals(x["x"], "a ");
+      return;
+    }
+    Check(!"incomplete request");
   }
 }
 
