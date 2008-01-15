@@ -330,6 +330,9 @@ response http_connection::impl::handle_request() {
     response(code).move(out);
   }
 
+  if (responder)
+    responder->reset();
+
   out.get_headers().set_header("Date", utils::http::datetime_string(now));
   tell_allow(out, responder);
   handle_caching(responder, out, now, expires, last_modified, etag);

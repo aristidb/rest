@@ -78,6 +78,7 @@ namespace detail {
     virtual void set_time(time_t now) = 0;
 
     virtual void prepare() = 0;
+    virtual void reset() = 0;
 
     virtual bool exists() const = 0;
     virtual std::string etag() const = 0;
@@ -159,6 +160,9 @@ protected:
 
 public:
   virtual void prepare() {
+  }
+
+  virtual void reset() {
   }
 
   path_parameter get_path() const {
