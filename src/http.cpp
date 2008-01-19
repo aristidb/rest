@@ -127,7 +127,7 @@ int rest::utils::http::parse_qvalue(std::string const &in) {
     else if(*it == '.' && x == 1000)
       x = 100;
   }
-  return v;
+  return v > 1000 ? 1000 : v;
 }
 
 void rest::utils::http::parse_qlist(

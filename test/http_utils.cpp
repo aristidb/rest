@@ -4,6 +4,7 @@
 #include <sstream>
 #include <cctype>
 #include <testsoon.hpp>
+#include <boost/tuple/tuple_io.hpp>
 
 using namespace rest::utils::http;
 
@@ -113,33 +114,53 @@ TEST_GROUP(read_headers) {
   }
 }
 
-TEST(parse_parametrised) {
-  std::string in = "application/x-test ; q = 0.7; boundary= \"\\\\\"";
-  std::string type;
-  std::set<std::string> interests;
-  interests.insert("q");
-  interests.insert("boundary");
-  std::map<std::string, std::string> parameters;
-  parse_parametrised(in, type, interests, parameters);
-  Equals(type, "application/x-test");
-  Equals(parameters.size(), 2U);
-  Equals(parameters["q"], "0.7");
-  Equals(parameters["boundary"], "\\");
-}
+TEST_GROUP(parse_http) {
+  TEST(parse_parametrised) {
+    std::string in = "application/x-test ; q = 0.7; boundary= \"\\\\\"";
+    std::string type;
+    std::set<std::string> interests;
+    interests.insert("q");
+    interests.insert("boundary");
+    std::map<std::string, std::string> parameters;
+    parse_parametrised(in, type, interests, parameters);
+    Equals(type, "application/x-test");
+    Equals(parameters.size(), 2U);
+    Equals(parameters["q"], "0.7");
+    Equals(parameters["boundary"], "\\");
+  }
 
-TEST(parse_list) {
-  std::vector<std::string> elems;
-  parse_list("a ,, b1, \tc23,d456 ,e,,", elems);
-  Equals(elems.size(), 5U);
-  Equals(elems[0], "a");
-  Equals(elems[1], "b1");
-  Equals(elems[2], "c23");
-  Equals(elems[3], "d456");
-  Equals(elems[4], "e");
-}
+  TEST(parse_list) {
+    std::vector<std::string> elems;
+    parse_list("a ,, b1, \tc23,d456 ,e,,", elems);
+    Equals(elems.size(), 5U);
+    Equals(elems[0], "a");
+    Equals(elems[1], "b1");
+    Equals(elems[2], "c23");
+    Equals(elems[3], "d456");
+    Equals(elems[4], "e");
+  }
 
-TEST(qvalue) {
-  Equals(parse_qvalue("0.71"), 710);
+  XTEST(
+      (name, "qvalue")
+      (2tuples, 
+        (std::string, int)
+        ("", 1000)
+        ("0.71", 710)
+        (".71", 710)
+        ("1.1", 1000)
+        ("0", 0)
+        ("1", 1000)
+        (".999", 999)
+        (".555555", 555)
+        ("0.001", 1)
+        (".001", 1)
+        ("1.000", 1000)
+        ("a.1 x2", 120)
+        ("-1", 1000)
+      ))
+  {
+    Equals(parse_qvalue(value.get<0>()), value.get<1>());
+  }
 }
 
 TEST_GROUP(parse_cookie_header) {
