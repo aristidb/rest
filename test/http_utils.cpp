@@ -115,18 +115,61 @@ TEST_GROUP(read_headers) {
 }
 
 TEST_GROUP(parse_http) {
-  TEST(parse_parametrised) {
-    std::string in = "application/x-test ; q = 0.7; boundary= \"\\\\\"";
-    std::string type;
-    std::set<std::string> interests;
-    interests.insert("q");
-    interests.insert("boundary");
-    std::map<std::string, std::string> parameters;
-    parse_parametrised(in, type, interests, parameters);
-    Equals(type, "application/x-test");
-    Equals(parameters.size(), 2U);
-    Equals(parameters["q"], "0.7");
-    Equals(parameters["boundary"], "\\");
+  TEST_GROUP(parse_parametrised) {
+    TEST(parse_parametrised) {
+      std::string in =
+        "application/x-test ; q = 0.7; boundary= \"\\\\\";z=\"\"";
+
+      std::string type;
+      std::set<std::string> interests;
+      interests.insert("q");
+      interests.insert("boundary");
+
+      std::map<std::string, std::string> parameters;
+      parse_parametrised(in, type, interests, parameters);
+
+      Equals(type, "application/x-test");
+
+      Equals(parameters.size(), 2U);
+      Equals(parameters["q"], "0.7");
+      Equals(parameters["boundary"], "\\");
+    }
+
+    TEST(parse_parametrised #2) {
+      std::string in = "_; a=\"1;2";
+
+      std::string type;
+      std::set<std::string> interests;
+      interests.insert("a");
+
+      std::map<std::string, std::string> parameters;
+      parse_parametrised(in, type, interests, parameters);
+
+      Equals(type, "_");
+
+      Equals(parameters.size(), 1U);
+      Equals(parameters["a"], "1;2");
+    }
+
+    TEST(parse_parametrised #3) {
+      std::string in = "_; _=1,a=\"1;2";
+
+      std::string type;
+      std::set<std::string> interests;
+      interests.insert("_");
+      interests.insert("a");
+      interests.insert("2");
+
+      std::map<std::string, std::string> parameters;
+      parse_parametrised(in, type, interests, parameters);
+
+      Equals(type, "_");
+
+      Equals(parameters.size(), 2U);
+      Equals(parameters["_"], "1,a=\"1");
+      Check(parameters.find("2") != parameters.end());
+      Check(parameters["2"].empty());
+    }
   }
 
   TEST(parse_list) {
