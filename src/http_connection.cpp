@@ -56,7 +56,7 @@ public:
   std::string const &servername;
   rest::utils::property_tree &tree;
 
-  bool open_;
+  bool open_flag;
 
   enum {
     NO_ENTITY,
@@ -81,7 +81,7 @@ public:
     : hosts(hosts),
       servername(servername),
       tree(config::get().tree()),
-      open_(true),
+      open_flag(true),
       request_(addr)
   { }
 
@@ -219,7 +219,7 @@ void http_connection::impl::reset() {
 
 void http_connection::impl::serve() {
   try {
-    while (open_) {
+    while (open_flag) {
       reset();
 
       response resp(handle_request());
@@ -364,7 +364,7 @@ void http_connection::impl::read_request(
 
   if (version == "HTTP/1.0") {
     flags.set(HTTP_1_0_COMPAT);
-    open_ = false;
+    open_flag = false;
   } else if (version != "HTTP/1.1") {
     throw 505;
   }
@@ -660,7 +660,7 @@ int http_connection::impl::set_header_options() {
         ++it) {
       algo::to_lower(*it);
       if (*it == "close")
-        open_ = false;
+        open_flag = false;
       if (flags.test(HTTP_1_0_COMPAT))
         h.erase_header(*it);
     }
@@ -904,9 +904,9 @@ void http_connection::impl::send(response r, bool entity) {
   out << code << " " << response::reason(code) << "\r\n";
 
   if (code >= 400)
-    open_ = false;
+    open_flag = false;
 
-  if (!flags.test(HTTP_1_0_COMPAT) && !open_ && code != 100)
+  if (!flags.test(HTTP_1_0_COMPAT) && !open_flag && code != 100)
     h.add_header_part("Connection", "close", false);
 
   h.set_header("Server", servername);
