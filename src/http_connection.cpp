@@ -10,7 +10,6 @@
 #include "rest/utils/uri.hpp"
 #include "rest/utils/chunked_filter.hpp"
 #include "rest/utils/length_filter.hpp"
-#include "rest/utils/complete_filtering_stream.hpp"
 #include "rest/utils/no_flush_writer.hpp"
 #include "rest/utils/socket_device.hpp"
 #include <rest/config.hpp>
@@ -19,7 +18,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/iostreams/combine.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
@@ -790,8 +789,11 @@ void http_connection::impl::check_ranges(response &resp) {
 }
 
 int http_connection::impl::handle_entity(keywords &kw) {
-  std::auto_ptr<io::filtering_streambuf<io::input> > fin
-    (new io::filtering_streambuf<io::input>);
+  // close the connection after each request with an entity so that
+  // we don't have to consume everything just to get the next request
+  open_flag = false;
+
+  std::auto_ptr<io::filtering_istream> fin(new io::filtering_istream);
 
   headers &h = request_.get_headers();
 
@@ -875,7 +877,7 @@ int http_connection::impl::handle_entity(keywords &kw) {
   std::string content_type =
     h.get_header("Content-Type", "application/octet-stream");
 
-  input_stream pstream(new utils::complete_filtering_stream(fin.release()));
+  input_stream pstream(fin.release());
   kw.set_entity(pstream, content_type);
 
   return 0;
