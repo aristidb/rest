@@ -88,6 +88,9 @@ namespace detail {
     virtual cache::flags cache() const = 0;
     virtual cache::flags cache(std::string const &header) const = 0;
 
+    virtual bool allow_entity(std::string const &content_type) const = 0;
+    virtual std::size_t max_entity_size() const = 0;
+
     virtual ~responder_base() {}
   };
 
@@ -143,27 +146,30 @@ protected:
     return std::string();
   }
 
-  virtual time_t expires() const
-  {
+  virtual time_t expires() const {
     return time_t(-1);
   }
 
-  virtual cache::flags cache() const
-  {
+  virtual cache::flags cache() const {
     return cache::NO_FLAGS;
   }
 
-  virtual cache::flags cache(std::string const &header) const
-  {
+  virtual cache::flags cache(std::string const &header) const {
     return cache::default_header_flags(header);
   }
 
-public:
-  virtual void prepare() {
+  virtual bool allow_entity(std::string const &/*content_type*/) const {
+    return false;
   }
 
-  virtual void reset() {
+  virtual boost::uint64_t max_entity_size() const {
+    return 0;
   }
+
+public:
+  virtual void prepare() {}
+
+  virtual void reset() {}
 
   path_parameter get_path() const {
     return path;

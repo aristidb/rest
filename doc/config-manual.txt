@@ -19,5 +19,6 @@ Can be changed with -c-Flag or by setting -DDEFAULT_CONFIG_PATH during compile t
 /general/limits/max_header_name_length  - maximal length of a header name [default: 63]
 /general/limits/max_header_value_length  - maximal length of a header value [default: 1023]
 /general/limits/max_header_count  - maximal number of headers [default: 64]
+/general/limits/max_entity_size  - 0 or maximal size of a request entity if not overridden by the responder [default: 0]
 /general/compression -
 /general/compression/minimum_size  - minimum size of files to compress 

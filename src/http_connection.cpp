@@ -94,7 +94,7 @@ public:
   void read_request(std::string&method, std::string&uri, std::string&version);
   host const *get_host();
 
-  int handle_entity(keywords &kw);
+  int handle_entity(keywords &kw, det::responder_base *resp);
 
   void send(response r, bool entity);
   void send(response r);
@@ -592,7 +592,7 @@ response http_connection::impl::handle_post(
   if (!poster || !responder->exists())
     return response(404);
 
-  int ret = handle_entity(kw);
+  int ret = handle_entity(kw, responder);
   if (ret != 0)
     return response(ret);
 
@@ -606,7 +606,7 @@ response http_connection::impl::handle_put(
   if (!putter)
     return response(404);
 
-  int ret = handle_entity(kw);
+  int ret = handle_entity(kw, responder);
   if(ret != 0)
     return response(ret);
 
@@ -788,14 +788,27 @@ void http_connection::impl::check_ranges(response &resp) {
   }
 }
 
-int http_connection::impl::handle_entity(keywords &kw) {
+int http_connection::impl::handle_entity(
+    keywords &kw, det::responder_base *resp)
+{
   // close the connection after each request with an entity so that
   // we don't have to consume everything just to get the next request
   open_flag = false;
 
-  std::auto_ptr<io::filtering_istream> fin(new io::filtering_istream);
-
   headers &h = request_.get_headers();
+
+  std::string content_type =
+    h.get_header("Content-Type", "application/octet-stream");
+
+  if (!resp->allow_entity(content_type))
+    return 415;
+
+  boost::uint64_t max_size = resp->max_entity_size();
+  if (!max_size)
+    max_size = utils::get(tree, boost::uint64_t(0),
+                          "general", "limits", "max_entity_size");
+
+  std::auto_ptr<io::filtering_istream> fin(new io::filtering_istream);
 
   boost::optional<std::string> content_encoding =
     h.get_header("Content-Encoding");
@@ -854,13 +867,19 @@ int http_connection::impl::handle_entity(keywords &kw) {
   boost::optional<std::string> content_length =
     h.get_header("Content-Length");
 
-  if (!content_length && !chunked) {
+  if (!content_length && !chunked)
     return 411; // Content-length required
-  } else if (!chunked) {
+  
+  if (!chunked) {
     boost::uint64_t const length =
       boost::lexical_cast<boost::uint64_t>(content_length.get());
 
+    if (max_size && length > max_size)
+      return 413;
+
     fin->push(utils::length_filter(length));
+  } else {
+    fin->push(utils::length_filter(max_size));
   }
 
   if (!flags.test(HTTP_1_0_COMPAT)) {
@@ -873,9 +892,6 @@ int http_connection::impl::handle_entity(keywords &kw) {
   }
 
   fin->push(boost::ref(*conn), 0, 0);
-
-  std::string content_type =
-    h.get_header("Content-Type", "application/octet-stream");
 
   input_stream pstream(fin.release());
   kw.set_entity(pstream, content_type);

@@ -4,6 +4,7 @@
 #include "rest/context.hpp"
 #include "rest/cookie.hpp"
 #include "rest/config.hpp"
+#include "rest/request.hpp"
 #include "rest/utils/log.hpp"
 #include <stdexcept>
 #include <fstream>
@@ -26,6 +27,10 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
 
   rest::cache::flags cache() const {
     return rest::cache::private_ | rest::cache::no_transform;
+  }
+
+  bool allow_entity(std::string const &content_type) const {
+    return content_type.substr(0, 19) == "multipart/form-data";
   }
 
   rest::response get() {
