@@ -36,8 +36,10 @@ void headers::read_headers(std::streambuf &buf) {
     utils::get(tree, 63, "general", "limits", "max_header_name_length");
   std::size_t max_value =
     utils::get(tree, 1023, "general", "limits", "max_header_value_length");
+  std::size_t count =
+    utils::get(tree, 64, "general", "limits", "max_header_count");
 
-  utils::http::read_headers(buf, p->data, max_name, max_value);
+  utils::http::read_headers(buf, p->data, max_name, max_value, count);
 }
 
 boost::optional<std::string> headers::get_header(std::string const &name) const{

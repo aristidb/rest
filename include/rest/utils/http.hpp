@@ -167,14 +167,18 @@ void read_headers(
     Source &source,
     HeaderFields &fields,
     std::size_t max_name_length = 0,
-    std::size_t max_value_length = 0)
+    std::size_t max_value_length = 0,
+    std::size_t max_header_count = 0)
 {
+  std::size_t n = 0;
   for (;;) {
     if (expect(source, '\r')) {
       if (!expect(source, '\n'))
         throw bad_format();
       return;
     }
+    if (max_header_count != 0 && ++n > max_header_count)
+      throw bad_format();
     get_header_field(source, fields, max_name_length, max_value_length);
   }
 }

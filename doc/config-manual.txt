@@ -18,5 +18,6 @@ Can be changed with -c-Flag or by setting -DDEFAULT_CONFIG_PATH during compile t
 /general/limits/max_uri_length  - 0 or maximal length of an uri [default: 1023]
 /general/limits/max_header_name_length  - maximal length of a header name [default: 63]
 /general/limits/max_header_value_length  - maximal length of a header value [default: 1023]
+/general/limits/max_header_count  - maximal number of headers [default: 64]
 /general/compression -
 /general/compression/minimum_size  - minimum size of files to compress 
