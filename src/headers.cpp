@@ -2,6 +2,7 @@
 #include <rest/headers.hpp>
 #include <rest/utils/http.hpp>
 #include <rest/utils/string.hpp>
+#include <rest/config.hpp>
 #include <boost/none.hpp>
 #include <map>
 
@@ -30,7 +31,13 @@ headers::~headers() {
 }
 
 void headers::read_headers(std::streambuf &buf) {
-  utils::http::read_headers(buf, p->data);
+  utils::property_tree &tree = config::get().tree();
+  std::size_t max_name =
+    utils::get(tree, 63, "general", "limits", "max_header_name_length");
+  std::size_t max_value =
+    utils::get(tree, 1023, "general", "limits", "max_header_value_length");
+
+  utils::http::read_headers(buf, p->data, max_name, max_value);
 }
 
 boost::optional<std::string> headers::get_header(std::string const &name) const{

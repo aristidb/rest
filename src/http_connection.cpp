@@ -350,7 +350,7 @@ void http_connection::impl::read_request(
       *conn,
       boost::make_tuple(
         method_name_length,
-        utils::get(tree, 1023, "general", "max_uri_length"),
+        utils::get(tree, 1023, "general", "limits", "max_uri_length"),
         sizeof("HTTP/1.1") - 1 + 5 // 5 additional chars for higher versions
       ));
 
