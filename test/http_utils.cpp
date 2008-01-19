@@ -2,9 +2,19 @@
 #include "rest/utils/http.hpp"
 #include "rest/cookie.hpp"
 #include <sstream>
+#include <cctype>
 #include <testsoon.hpp>
 
 using namespace rest::utils::http;
+
+TEST_GROUP(random_boundary) {
+  XTEST((name, "random_boundary")(values, (std::size_t)(1)(10)(20))) {
+    std::string x = random_boundary(value);
+    Equals(x.size(), value);
+    for (std::string::const_iterator it = x.begin(); it != x.end(); ++it)
+      Check(std::isalnum(*it));
+  }
+}
 
 TEST_GROUP(read_headers) {
   TEST(empty) {
