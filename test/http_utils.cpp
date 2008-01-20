@@ -51,6 +51,16 @@ TEST_GROUP(spht) {
   }
 }
 
+TEST_GROUP(expect) {
+  TEST(expect + get) {
+    std::istringstream in("xy");
+    Check(expect(in, 'x'));
+    std::string y;
+    Check(in >> y);
+    Equals(y, "y");
+  }
+}
+
 TEST_GROUP(datetime) {
   XTEST((2tuples, (std::string, time_t)
          ("Sun, 06 Nov 1994 08:49:37 GMT", 784111777)
