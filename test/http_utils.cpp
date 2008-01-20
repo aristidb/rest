@@ -8,6 +8,24 @@
 
 using namespace rest::utils::http;
 
+TEST_GROUP(datetime) {
+  XTEST((2tuples, (std::string, time_t)
+         ("Sun, 06 Nov 1994 08:49:37 GMT", 784111777)
+         ("Sunday, 06-Nov-94 08:49:37 GMT", 784111777)
+         ("Sun Nov  6 08:49:37 1994", 784111777)))
+  {
+    Equals(value.get<1>(), datetime_value(value.get<0>()));
+  }
+
+  XTEST((2tuples, (std::string, std::string)
+        ("Sun, 06 Nov 1994 08:49:37 GMT", "Sun, 06 Nov 1994 08:49:37 GMT")
+        ("Sunday, 06-Nov-94 08:49:37 GMT", "Sun, 06 Nov 1994 08:49:37 GMT")
+        ("Sun Nov  6 08:49:37 1994", "Sun, 06 Nov 1994 08:49:37 GMT")))
+  {
+    Equals(value.get<1>(), datetime_string(datetime_value(value.get<0>())));
+  }
+}
+
 TEST_GROUP(random_boundary) {
   XTEST((name, "random_boundary")(values, (std::size_t)(1)(10)(20))) {
     std::string x = random_boundary(value);
