@@ -8,6 +8,49 @@
 
 using namespace rest::utils::http;
 
+TEST_GROUP(spht) {
+  XTEST((name, "isspht valid")(values, (char)(' ')('\t'))) {
+    Check(isspht(value));
+  }
+
+  struct nospht_generator {
+    typedef char value_type;
+    typedef char const &const_reference;
+
+    struct iterator {
+      unsigned char ch;
+
+      iterator(unsigned char ch) : ch(ch) {
+        check();
+      }
+
+      bool operator!=(iterator const &rhs) {
+        return ch != rhs.ch;
+      }
+
+      value_type operator*() { return ch; }
+
+      iterator &operator++() {
+        ++ch;
+        check();
+        return *this;
+      }
+
+      void check() {
+        if (ch == ' ' || ch == '\t')
+          ++ch;
+      }
+    };
+
+    iterator begin() { return iterator(1); }
+    iterator end() { return iterator(0); }
+  };
+
+  XTEST((name, "isspht invalid")(generator, (nospht_generator))) {
+    Check(!isspht(value));
+  }
+}
+
 TEST_GROUP(datetime) {
   XTEST((2tuples, (std::string, time_t)
          ("Sun, 06 Nov 1994 08:49:37 GMT", 784111777)
