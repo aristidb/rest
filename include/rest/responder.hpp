@@ -89,7 +89,7 @@ namespace detail {
     virtual cache::flags cache(std::string const &header) const = 0;
 
     virtual bool allow_entity(std::string const &content_type) const = 0;
-    virtual std::size_t max_entity_size() const = 0;
+    virtual boost::uint64_t max_entity_size() const = 0;
 
     virtual ~responder_base() {}
   };
