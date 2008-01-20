@@ -59,6 +59,24 @@ TEST_GROUP(expect) {
     Check(in >> y);
     Equals(y, "y");
   }
+
+  TEST(expect but empty) {
+    std::istringstream in;
+    try {
+      Check(!expect(in, 'x'));
+    } catch (remote_close &) {
+      return;
+    }
+    Check(!"expect should abort on empty input");
+  }
+
+  TEST(expect wrong) {
+    std::istringstream in("ab");
+    Check(!expect(in, 'b'));
+    std::string y;
+    Check(in >> y);
+    Equals(y, "ab");
+  }
 }
 
 TEST_GROUP(datetime) {
