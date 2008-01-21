@@ -800,9 +800,6 @@ int http_connection::impl::handle_entity(
   std::string content_type =
     h.get_header("Content-Type", "application/octet-stream");
 
-  if (!resp->allow_entity(content_type))
-    return 415;
-
   boost::uint64_t max_size = resp->max_entity_size();
   if (!max_size)
     max_size = utils::get(tree, boost::uint64_t(0),
@@ -874,6 +871,9 @@ int http_connection::impl::handle_entity(
     boost::uint64_t const length =
       boost::lexical_cast<boost::uint64_t>(content_length.get());
 
+    if (length == 0 && content_type.empty())
+      return 0;
+
     if (max_size && length > max_size)
       return 413;
 
@@ -881,6 +881,9 @@ int http_connection::impl::handle_entity(
   } else {
     fin->push(utils::length_filter(max_size));
   }
+
+  if (!resp->allow_entity(content_type))
+    return 415;
 
   if (!flags.test(HTTP_1_0_COMPAT)) {
     std::string expect = h.get_header("Expect", "");
