@@ -4,6 +4,7 @@
 
 #include <boost/iostreams/chain.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <string>
 #include <vector>
 #include <memory>
@@ -31,11 +32,14 @@ class encodings_registry : boost::noncopyable {
 public:
   static encodings_registry &get();
 
-  void add_encoding(std::auto_ptr<encoding> &);
+  void add_encoding(std::auto_ptr<encoding>);
   encoding *find_encoding(std::string const &) const;
 
 private:
   encodings_registry();
+
+  class impl;
+  boost::scoped_ptr<impl> p;
 };
 
 #define REST_ENCODING_ADD(e) \
