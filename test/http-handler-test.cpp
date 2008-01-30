@@ -6,6 +6,7 @@
 #include "rest/config.hpp"
 #include "rest/request.hpp"
 #include "rest/utils/log.hpp"
+#include "rest/utils/http.hpp"
 #include <stdexcept>
 #include <fstream>
 #include <algorithm>
@@ -30,7 +31,17 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
   }
 
   bool allow_entity(std::string const &content_type) const {
-    return content_type.substr(0, 19) == "multipart/form-data";
+    std::string type;
+    std::set<std::string> interesting_parameters;
+    std::map<std::string, std::string> parameters;
+    rest::utils::http::parse_parametrised(
+      content_type,
+      type,
+      interesting_parameters,
+      parameters);
+
+    return type == "multipart/form-data" ||
+           type == "application/x-www-form-urlencoded";
   }
 
   rest::response get() {
