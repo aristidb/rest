@@ -13,4 +13,13 @@ TEST(invalid) {
     (encoding*) 0);
 }
 
+TEST(identity) {
+  encoding *enc = encodings_registry::get().find_encoding("identity");
+  encoding *enc2 = encodings_registry::get().find_encoding("");
+  Check(enc);
+  Check(enc2);
+  Equals(enc, enc2);
+  Equals(enc->name(), "identity");
+}
+
 }
