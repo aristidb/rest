@@ -29,7 +29,7 @@ LIBREST_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(LIBREST_SOURCES))
 
 UNIT_SOURCES := test/unit.cpp test/filter_tests.cpp test/test1.cpp \
 	test/http_connection.cpp test/http_utils.cpp test/config_tests.cpp \
-	test/keywords.cpp test/uri.cpp
+	test/keywords.cpp test/uri.cpp test/encodings.cpp
 
 UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
 UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))

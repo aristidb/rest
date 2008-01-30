@@ -32,7 +32,7 @@ public:
   static encodings_registry &get();
 
   void add_encoding(std::auto_ptr<encoding> &);
-  encoding &get_encoding(std::string const &) const;
+  encoding *find_encoding(std::string const &) const;
 
 private:
   encodings_registry();

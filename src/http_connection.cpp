@@ -5,6 +5,7 @@
 #include "rest/context.hpp"
 #include "rest/input_stream.hpp"
 #include "rest/request.hpp"
+#include "rest/encoding.hpp"
 #include "rest/utils/http.hpp"
 #include "rest/utils/log.hpp"
 #include "rest/utils/uri.hpp"
@@ -805,10 +806,12 @@ int http_connection::impl::handle_entity(
     max_size = utils::get(tree, boost::uint64_t(0),
                           "general", "limits", "max_entity_size");
 
-  std::auto_ptr<io::filtering_istream> fin(new io::filtering_istream);
+  encoding::input_chain input;
 
   boost::optional<std::string> content_encoding =
     h.get_header("Content-Encoding");
+
+  encodings_registry &ec = encodings_registry::get();
 
   if (content_encoding) {
     std::vector<std::string> ce;
@@ -817,20 +820,10 @@ int http_connection::impl::handle_entity(
         it != ce.end();
         ++it)
     {
-      if (algo::iequals(content_encoding.get(), "gzip") ||
-           (flags.test(HTTP_1_0_COMPAT) &&
-             algo::iequals(content_encoding.get(), "x-gzip")))
-      {
-        fin->push(io::gzip_decompressor());
-      } else if (algo::iequals(content_encoding.get(), "bzip2")) {
-        fin->push(io::bzip2_decompressor());
-      } else if (algo::iequals(content_encoding.get(), "deflate")) {
-        io::zlib_params z;
-        z.noheader = true;
-        fin->push(io::zlib_decompressor(z));
-      } else if (!algo::iequals(content_encoding.get(), "identity")) {
+      encoding *enc = ec.find_encoding(*it);
+      if (!enc)
         return 415;
-      }
+      enc->add_reader(input);
     }
   }
 
@@ -846,17 +839,16 @@ int http_connection::impl::handle_entity(
         it != te.end();
         ++it)
     {
-      if(algo::iequals(*it, "chunked")) {
+      if (algo::iequals(*it, "chunked")) {
         if (it != --te.end())
           return 400;
         chunked = true;
-        fin->push(utils::chunked_filter());
-      } else if (algo::iequals(*it, "gzip")) {
-        fin->push(io::gzip_decompressor());
-      } else if (algo::iequals(*it, "deflate")) {
-        fin->push(io::zlib_decompressor());
-      } else if (!algo::iequals(*it, "identity")) {
-        return 501;
+        input.push(utils::chunked_filter());
+      } else {
+        encoding *enc = ec.find_encoding(*it);
+        if (!enc)
+          return 501;
+        enc->add_reader(input);
       }
     }
   }
@@ -877,9 +869,9 @@ int http_connection::impl::handle_entity(
     if (max_size && length > max_size)
       return 413;
 
-    fin->push(utils::length_filter(length));
+    input.push(utils::length_filter(length));
   } else {
-    fin->push(utils::length_filter(max_size));
+    input.push(utils::length_filter(max_size));
   }
 
   if (!resp->allow_entity(content_type))
@@ -894,9 +886,10 @@ int http_connection::impl::handle_entity(
     }
   }
 
-  fin->push(boost::ref(*conn), 0, 0);
+  input.push(boost::ref(*conn), 0, 0);
 
-  input_stream pstream(fin.release());
+  input_stream pstream(
+    new io::stream<encoding::input_chain>(boost::ref(input)));
   kw.set_entity(pstream, content_type);
 
   return 0;

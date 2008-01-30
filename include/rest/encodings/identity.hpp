@@ -9,6 +9,8 @@ namespace rest { namespace encodings {
 class identity : public encoding {
 public:
   std::string name() const;
+  std::vector<std::string> aliases() const;
+
   void add_reader(input_chain &);
   void add_writer(output_chain &);
 };
