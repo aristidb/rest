@@ -18,7 +18,7 @@ endif
 CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 #CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
 
-LIBREST_SOURCES := $(wildcard src/*.cpp)
+LIBREST_SOURCES := $(wildcard src/*.cpp) $(wildcard src/encodings/*.cpp)
 
 ifeq ($(OS), Darwin)
 LIBREST_SOURCES := $(LIBREST_SOURCES) src/compat/epoll.cpp
@@ -34,7 +34,8 @@ UNIT_SOURCES := test/unit.cpp test/filter_tests.cpp test/test1.cpp \
 UNIT_OBJECTS := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(UNIT_SOURCES))
 UNIT_DEPS    := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(UNIT_SOURCES))
 
-SOURCES  := $(wildcard *.cpp) $(wildcard src/*.cpp) $(wildcard test/*.cpp) $(wildcard src/compat/*.cpp)
+SOURCES  := $(wildcard *.cpp) $(wildcard src/*.cpp) $(wildcard test/*.cpp) \
+	$(wildcard src/compat/*.cpp) $(wildcard src/encodings/*.cpp)
 OBJECTS  := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(SOURCES))
 DEPS     := $(patsubst %.cpp, $(BUILDDIR)/%.dep, $(SOURCES))
 
