@@ -870,8 +870,9 @@ int http_connection::impl::handle_entity(
       return 413;
 
     input.push(utils::length_filter(length));
-  } else {
-    input.push(utils::length_filter(max_size));
+
+  } else if (max_size) {
+      input.push(utils::length_filter(max_size));
   }
 
   if (!resp->allow_entity(content_type))

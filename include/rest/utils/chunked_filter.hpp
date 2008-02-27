@@ -100,7 +100,7 @@ public:
         if(c == Source::traits_type::eof())
           return -1;
       }
-      for(;;) {
+      for(int digit_count = 0; digit_count < 16; ++digit_count) {
         boost::tuple<bool, int> value = hex2int(c);
         if(value.get<0>()) {
           pending *= 0x10;
