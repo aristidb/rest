@@ -19,10 +19,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/iostreams/combine.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filter/bzip2.hpp>
 #include <map>
 #include <sstream>
 #include <bitset>
