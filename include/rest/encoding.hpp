@@ -44,7 +44,7 @@ private:
 
 #define REST_ENCODING_ADD(e) \
   ::rest::encodings_registry::get().add_encoding( \
-    ::std::auto_ptr<encoding>(new e))
+    ::std::auto_ptr< ::rest::encoding>(new e))
 
 }
 
