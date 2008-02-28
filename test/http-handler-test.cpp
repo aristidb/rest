@@ -8,6 +8,7 @@
 #include "rest/utils/log.hpp"
 #include "rest/utils/http.hpp"
 #include "rest/encodings/gzip.hpp"
+#include "rest/encodings/bzip2.hpp"
 #include <stdexcept>
 #include <fstream>
 #include <algorithm>
@@ -122,6 +123,7 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
 int main(int argc, char **argv) {
   try {
     REST_ENCODING_ADD(rest::encodings::gzip);
+    REST_ENCODING_ADD(rest::encodings::bzip2);
 
     tester t;
 
