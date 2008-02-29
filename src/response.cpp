@@ -79,7 +79,7 @@ struct response::impl {
     input_stream stream;
     bool seekable;
     std::string string;
-    content_encoding_t compute_from;
+    encoding *compute_from;
     boost::int64_t length;
 
     void set(std::string const &str) {
@@ -124,11 +124,11 @@ struct response::impl {
     : type(NIL),
       stream(0),
       seekable(false),
-      compute_from(identity),
+      compute_from(0),
       length(-1) { }
   };
 
-  boost::array<data_holder, response::X_NO_OF_ENCODINGS> data;
+  std::map<encoding *, data_holder, compare_encoding> data;
 
   headers headers_;
 
@@ -156,14 +156,14 @@ response::response(std::string const &type, std::string const &data)
   : p(new impl(type))
 {
   defaults();
-  p->data[identity].set(data);
+  p->data[encodings_registry::get().find_encoding("")].set(data);
 }
 
 response::response(int code, std::string const &type, std::string const &data)
   : p(new impl(code, type))
 {
   defaults();
-  p->data[identity].set(data);
+  p->data[encodings_registry::get().find_encoding("")].set(data);
 }
 
 response::response(response &o) {
