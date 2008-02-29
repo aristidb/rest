@@ -15,6 +15,7 @@ namespace rest {
 class cookie;
 class input_stream;
 class headers;
+class encoding;
 
 /*
  * TODO:
@@ -56,36 +57,29 @@ public:
 
   void add_cookie(cookie const &c);
 
-  enum content_encoding_t {
-    identity,
-    deflate,
-    gzip,
-    bzip2,
-    X_NO_OF_ENCODINGS
-  };
+  void set_data(std::string const &data, encoding *enc);
+  void set_data(std::string const &data, std::string const &enc = "");
+  void set_data(input_stream &data, bool seekable, encoding *enc);
+  void set_data(input_stream &data, bool seekable, std::string const &enc = "");
 
-  void set_data(std::string const &data,
-    content_encoding_t content_encoding = identity);
-  void set_data(input_stream &data, bool seekable,
-    content_encoding_t content_encoding = identity);
-
-  void set_length(boost::int64_t size,
-    content_encoding_t content_encoding = identity);
+  void set_length(boost::int64_t size, encoding *enc);
+  void set_length(boost::int64_t size, std::string const &enc = "");
 
   int get_code() const;
   static char const *reason(int code);
   std::string const &get_type() const;
 
-  bool has_content_encoding(content_encoding_t content_encoding) const;
+  bool has_content_encoding(encoding *enc) const;
+  bool has_content_encoding(std::string const &enc) const;
 
-  content_encoding_t choose_content_encoding(
-    std::set<content_encoding_t> const &encodings,
+  encoding *choose_content_encoding(
+    std::set<encoding *> const &encodings,
     bool ranges) const;
 
-  bool is_nil(content_encoding_t content_encoding = identity) const;
-  bool empty(content_encoding_t content_encoding = identity) const;
-  bool chunked(content_encoding_t content_encoding) const;
-  boost::int64_t length(content_encoding_t content_encoding) const;
+  bool is_nil(encoding *content_encoding = 0) const;
+  bool empty(encoding *content_encoding = 0) const;
+  bool chunked(encoding *content_encoding) const;
+  boost::int64_t length(encoding *content_encoding = 0) const;
 
   typedef std::vector<std::pair<boost::int64_t, boost::int64_t> > ranges_t;
 
@@ -95,7 +89,7 @@ public:
 
   void print_entity(
     std::streambuf &out,
-    content_encoding_t enc,
+    encoding *enc,
     bool may_chunk,
     ranges_t const &ranges = ranges_t()) const;
 
@@ -104,10 +98,10 @@ private:
 
   void print_cookie_header(std::ostream &out) const;
   void encode(
-    std::streambuf &out, content_encoding_t enc, bool may_chunk,
+    std::streambuf &out, encoding *enc, bool may_chunk,
     ranges_t const &ranges = ranges_t()) const;
   void decode(
-    std::streambuf &out, content_encoding_t enc, bool may_chunk) const;
+    std::streambuf &out, encoding *enc, bool may_chunk) const;
 
   class impl;
   boost::scoped_ptr<impl> p;

@@ -13,6 +13,10 @@ std::vector<std::string> deflate::aliases() const {
   return std::vector<std::string>();
 }
 
+int deflate::priority() const {
+  return -100;
+}
+
 void deflate::add_reader(input_chain &x) {
   io::zlib_params z;
   z.noheader = true;

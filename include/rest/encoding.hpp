@@ -19,6 +19,10 @@ public:
     return std::vector<std::string>();
   }
 
+  virtual bool is_identity() const { return false; }
+
+  virtual int priority() const { return 0; }
+
   typedef boost::iostreams::chain<boost::iostreams::input> input_chain;
   typedef boost::iostreams::chain<boost::iostreams::output> output_chain;
 

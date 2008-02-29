@@ -63,7 +63,7 @@ public:
   typedef std::bitset<X_NO_FLAG> state_flags;
   state_flags flags;
 
-  std::set<response::content_encoding_t> encodings;
+  std::set<encoding *> encodings;
 
   request request_;
 
@@ -663,6 +663,9 @@ int http_connection::impl::set_header_options() {
     }
   }
 
+
+  encodings_registry &ec = encodings_registry::get();
+
   typedef std::multimap<int, std::string> qlist_t;
 
   qlist_t qlist;
@@ -672,26 +675,16 @@ int http_connection::impl::set_header_options() {
 
   qlist_t::const_reverse_iterator const rend = qlist.rend();
   bool found = false;
-  for(qlist_t::const_reverse_iterator i = qlist.rbegin(); i != rend; ++i) {
+  for (qlist_t::const_reverse_iterator i = qlist.rbegin(); i != rend; ++i) {
     if(i->first == 0) {
       if(!found && (i->second == "identity" || i->second == "*"))
         return 406;
-    }
-    else {
-      if(i->second == "gzip" || i->second == "x-gzip") {
-        encodings.insert(response::gzip);
+    } else {
+      encoding *enc = ec.find_encoding(i->second);
+      if (enc) {
+        encodings.insert(enc);
         found = true;
       }
-      else if(i->second == "bzip2" || i->second == "x-bzip2") {
-        encodings.insert(response::bzip2);
-        found = true;
-      }
-      else if(i->second == "deflate") {
-        encodings.insert(response::deflate);
-        found = true;
-      }
-      else if(i->second == "identity")
-        found = true;
     }
   }
 
@@ -704,7 +697,7 @@ void http_connection::impl::tell_accept_ranges(
   if (method == "GET" || method == "HEAD") {
     int code = resp.get_code();
     if (code == -1 || (code >= 200 && code <= 299)) {
-      if (resp.length(response::identity) >= 0)
+      if (resp.length() >= 0)
         resp.get_headers().set_header("Accept-Ranges", "bytes");
       else
         resp.get_headers().set_header("Accept-Ranges", "none");
@@ -773,7 +766,7 @@ void http_connection::impl::analyze_ranges() {
 void http_connection::impl::check_ranges(response &resp) {
   if (!resp.check_ranges(ranges)) {
     // Invalid range - send appropriate response
-    boost::int64_t length = resp.length(rest::response::identity);
+    boost::int64_t length = resp.length();
     response(416).move(resp);
     std::ostringstream range;
     range << "bytes */";
@@ -926,21 +919,10 @@ void http_connection::impl::send(response r, bool entity) {
   if (entity) {
     bool may_chunk = !flags.test(HTTP_1_0_COMPAT);
 
-    response::content_encoding_t enc =
-      r.choose_content_encoding(encodings, !ranges.empty());
+    encoding *enc = r.choose_content_encoding(encodings, !ranges.empty());
 
-    switch (enc) {
-    case response::gzip:
-      h.set_header("Content-Encoding", "gzip");
-      break;
-    case response::bzip2:
-      h.set_header("Content-Encoding", "bzip2");
-      break;
-    case response::deflate:
-      h.set_header("Content-Encoding", "deflate");
-      break;
-    default: break;
-    }
+    if (!enc->is_identity())
+      h.set_header("Content-Encoding", enc->name());
 
     if (ranges.empty() && !r.chunked(enc))
       h.set_header("Content-Length", r.length(enc));

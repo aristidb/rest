@@ -11,6 +11,8 @@ public:
   std::string name() const;
   std::vector<std::string> aliases() const;
 
+  int priority() const;
+
   void add_reader(input_chain &);
   void add_writer(output_chain &);
 };
