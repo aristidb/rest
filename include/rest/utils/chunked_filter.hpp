@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <iosfwd>
+#include <ios>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/write.hpp>
 #include <boost/iostreams/read.hpp>
@@ -23,6 +24,10 @@ inline boost::tuple<bool,int> hex2int(int ascii) {
   else
     return boost::make_tuple(false, 0);
 }
+
+struct chunked_error : std::ios_base::failure {
+  chunked_error() : std::ios_base::failure("chunked error") {}
+};
 
 class chunked_filter {
 public:
@@ -133,7 +138,7 @@ public:
     else
       c = io::read(source, outbuf, pending);
     if (c == -1)
-      return -1;
+      throw chunked_error();
     pending -= c;
     return c;
   }
