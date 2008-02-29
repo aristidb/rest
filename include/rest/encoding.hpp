@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <stdexcept>
 
 namespace rest {
 
@@ -42,6 +43,12 @@ struct compare_encoding {
       return false;
     return a < b;
   }
+};
+
+struct invalid_encoding : std::logic_error {
+  invalid_encoding(std::string const &enc) 
+    : std::logic_error("invalid encoding: " + enc)
+  {}
 };
 
 class encodings_registry : boost::noncopyable {

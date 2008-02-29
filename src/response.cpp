@@ -233,17 +233,39 @@ void response::add_cookie(cookie const &c) {
 void response::set_data(
     input_stream &data, bool seekable, encoding *content_encoding)
 {
+  if (content_encoding == 0)
+    content_encoding = identity;
   p->data[content_encoding].set(data, seekable);
   if (p->data[identity].type == impl::data_holder::NIL)
     p->data[identity].compute_from = content_encoding;
 }
 
 void response::set_data(
+    input_stream &data, bool seekable, std::string const &enc)
+{
+  encoding *x = encodings_registry::get().find_encoding(enc);
+  if (!x)
+    throw invalid_encoding(enc);
+  set_data(data, seekable, x);
+}
+
+void response::set_data(
     std::string const &data, encoding *content_encoding)
 {
+  if (content_encoding == 0)
+    content_encoding = identity;
   p->data[content_encoding].set(data);
   if (p->data[identity].type == impl::data_holder::NIL)
     p->data[identity].compute_from = content_encoding;
+}
+
+void response::set_data(
+    std::string const &data, std::string const &enc)
+{
+  encoding *x = encodings_registry::get().find_encoding(enc);
+  if (!x)
+    throw invalid_encoding(enc);
+  set_data(data, x);
 }
 
 int response::get_code() const {
@@ -270,7 +292,16 @@ std::string const &response::get_type() const {
 }
 
 bool response::has_content_encoding(encoding *content_encoding) const {
+  if (content_encoding == 0)
+    content_encoding = identity;
   return p->data[content_encoding].type != impl::data_holder::NIL;
+}
+
+bool response::has_content_encoding(std::string const &enc) const {
+  encoding *x = encodings_registry::get().find_encoding(enc);
+  if (!x)
+    throw invalid_encoding(enc);
+  return has_content_encoding(x);
 }
 
 rest::encoding *
@@ -308,26 +339,43 @@ response::choose_content_encoding(
 }
 
 bool response::is_nil(encoding *enc) const {
+  if (enc == 0)
+    enc = identity;
   return p->data[enc].type == impl::data_holder::NIL &&
          p->data[enc].compute_from == enc;
 }
 
 bool response::empty(encoding *enc) const {
+  if (enc == 0)
+    enc = identity;
   if (p->data[enc].type == impl::data_holder::NIL)
     return p->data[enc].compute_from == enc;
   return p->data[enc].empty();
 }
 
 bool response::chunked(encoding *enc) const {
+  if (enc == 0)
+    enc = identity;
   return !empty(enc) && p->data[enc].chunked();
 }
 
 boost::int64_t response::length(encoding *enc) const {
+  if (enc == 0)
+    enc = identity;
   return empty(enc) ? 0 : p->data[enc].length;
 }
 
 void response::set_length(boost::int64_t len, encoding *enc) {
+  if (enc == 0)
+    enc = identity;
   p->data[enc].length = len;
+}
+
+void response::set_length(boost::int64_t len, std::string const &enc) {
+  encoding *x = encodings_registry::get().find_encoding(enc);
+  if (!x)
+    throw invalid_encoding(enc);
+  set_length(len, x);
 }
 
 bool response::check_ranges(ranges_t const &ranges) {
@@ -442,6 +490,9 @@ void response::print_entity(
     bool may_chunk,
     ranges_t const &ranges) const
 {
+  if (enc == 0)
+    enc = identity;
+
   namespace io = boost::iostreams;
 
   impl::data_holder &d = p->data[enc];
@@ -451,6 +502,7 @@ void response::print_entity(
     if (may_chunk)
       out2.push(utils::chunked_filter());
     out2.push(boost::ref(out));
+
 
     if (enc != identity) {
       encode(*out2.rdbuf(), enc, false, ranges);
@@ -554,6 +606,9 @@ void response::encode(
 void response::decode(
     std::streambuf &out, encoding *enc, bool may_chunk) const
 {
+  if (!enc)
+    enc = identity;
+
   namespace io = boost::iostreams;
 
   encoding::input_chain chain;

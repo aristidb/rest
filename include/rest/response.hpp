@@ -57,13 +57,13 @@ public:
 
   void add_cookie(cookie const &c);
 
-  void set_data(std::string const &data, encoding *enc);
-  void set_data(std::string const &data, std::string const &enc = "");
-  void set_data(input_stream &data, bool seekable, encoding *enc);
-  void set_data(input_stream &data, bool seekable, std::string const &enc = "");
+  void set_data(std::string const &data, encoding *enc = 0);
+  void set_data(std::string const &data, std::string const &enc);
+  void set_data(input_stream &data, bool seekable, encoding *enc = 0);
+  void set_data(input_stream &data, bool seekable, std::string const &enc);
 
   void set_length(boost::int64_t size, encoding *enc);
-  void set_length(boost::int64_t size, std::string const &enc = "");
+  void set_length(boost::int64_t size, std::string const &enc);
 
   int get_code() const;
   static char const *reason(int code);
