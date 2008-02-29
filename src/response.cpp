@@ -627,15 +627,13 @@ void response::decode(
     break;
   }
 
-  io::stream_buffer<encoding::input_chain> in(chain);
-
   if (may_chunk) {
-    io::filtering_ostreambuf out2;
+    encoding::output_chain out2;
     out2.push(utils::chunked_filter());
     out2.push(boost::ref(out));
-    io::copy(in, out2);
+    io::copy(chain, out2);
   } else {
-    io::copy(in, out);
+    io::copy(chain, out);
   }
 }
 // Local Variables: **
