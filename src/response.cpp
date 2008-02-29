@@ -10,10 +10,9 @@
 #include "rest/utils/uri.hpp"
 #include "rest/utils/string.hpp"
 #include <boost/array.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/invert.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/device/array.hpp>
@@ -51,6 +50,8 @@ namespace {
     "Internal Server Error", "Not Implemented", "Bad Gateway",
     "Service Unavailable", "Gateway Timeout", "HTTP Version Not Supported"
   };
+
+  rest::encoding *identity = rest::encodings_registry::get().find_encoding("");
 }
 
 struct response::impl {
@@ -124,8 +125,19 @@ struct response::impl {
     : type(NIL),
       stream(0),
       seekable(false),
-      compute_from(0),
+      compute_from(identity),
       length(-1) { }
+
+    // ATTENTION: cctor FAKED
+    data_holder(data_holder const &o)
+    : type(NIL),
+      stream(0),
+      seekable(false),
+      compute_from(identity),
+      length(-1)
+    {
+      assert(o.type == NIL);
+    }
   };
 
   std::map<encoding *, data_holder, compare_encoding> data;
@@ -156,14 +168,14 @@ response::response(std::string const &type, std::string const &data)
   : p(new impl(type))
 {
   defaults();
-  p->data[encodings_registry::get().find_encoding("")].set(data);
+  p->data[identity].set(data);
 }
 
 response::response(int code, std::string const &type, std::string const &data)
   : p(new impl(code, type))
 {
   defaults();
-  p->data[encodings_registry::get().find_encoding("")].set(data);
+  p->data[identity].set(data);
 }
 
 response::response(response &o) {
@@ -219,7 +231,7 @@ void response::add_cookie(cookie const &c) {
 }
 
 void response::set_data(
-    input_stream &data, bool seekable, content_encoding_t content_encoding)
+    input_stream &data, bool seekable, encoding *content_encoding)
 {
   p->data[content_encoding].set(data, seekable);
   if (p->data[identity].type == impl::data_holder::NIL)
@@ -227,7 +239,7 @@ void response::set_data(
 }
 
 void response::set_data(
-    std::string const &data, content_encoding_t content_encoding)
+    std::string const &data, encoding *content_encoding)
 {
   p->data[content_encoding].set(data);
   if (p->data[identity].type == impl::data_holder::NIL)
@@ -257,19 +269,19 @@ std::string const &response::get_type() const {
   return p->type;
 }
 
-bool response::has_content_encoding(content_encoding_t content_encoding) const {
+bool response::has_content_encoding(encoding *content_encoding) const {
   return p->data[content_encoding].type != impl::data_holder::NIL;
 }
 
-response::content_encoding_t
+rest::encoding *
 response::choose_content_encoding(
-    std::set<content_encoding_t> const &encodings,
+    std::set<encoding *, compare_encoding> const &encodings,
     bool ranges
   ) const
 {
   if (encodings.empty() || empty(identity))
     return identity;
-  typedef std::set<content_encoding_t>::const_iterator iterator;
+  typedef std::set<encoding *, compare_encoding>::const_iterator iterator;
   if (!ranges) {
     for (iterator it = encodings.begin(); it != encodings.end(); ++it)
       if (has_content_encoding(*it))
@@ -295,26 +307,26 @@ response::choose_content_encoding(
   return encodings.empty() ? identity : *encodings.begin();
 }
 
-bool response::is_nil(content_encoding_t enc) const {
+bool response::is_nil(encoding *enc) const {
   return p->data[enc].type == impl::data_holder::NIL &&
          p->data[enc].compute_from == enc;
 }
 
-bool response::empty(content_encoding_t enc) const {
+bool response::empty(encoding *enc) const {
   if (p->data[enc].type == impl::data_holder::NIL)
     return p->data[enc].compute_from == enc;
   return p->data[enc].empty();
 }
 
-bool response::chunked(content_encoding_t enc) const {
+bool response::chunked(encoding *enc) const {
   return !empty(enc) && p->data[enc].chunked();
 }
 
-boost::int64_t response::length(content_encoding_t enc) const {
+boost::int64_t response::length(encoding *enc) const {
   return empty(enc) ? 0 : p->data[enc].length;
 }
 
-void response::set_length(boost::int64_t len, content_encoding_t enc) {
+void response::set_length(boost::int64_t len, encoding *enc) {
   p->data[enc].length = len;
 }
 
@@ -426,7 +438,7 @@ void response::print_headers(std::ostream &out) {
 
 void response::print_entity(
     std::streambuf &out,
-    content_encoding_t enc,
+    encoding *enc,
     bool may_chunk,
     ranges_t const &ranges) const
 {
@@ -522,69 +534,45 @@ void response::print_entity(
 }
 
 void response::encode(
-    std::streambuf &out, content_encoding_t enc, bool may_chunk,
+    std::streambuf &out,
+    encoding *enc,
+    bool may_chunk,
     ranges_t const &ranges) const
 {
   namespace io = boost::iostreams;
-  io::filtering_ostreambuf out2;
-  switch (enc) {
-  case deflate: {
-    io::zlib_params z;
-    z.noheader = true;
-    out2.push(io::zlib_compressor(z));
-    break;
-    }
-  case gzip:
-    out2.push(io::gzip_compressor());
-    break;
-  case bzip2:
-    out2.push(io::bzip2_compressor());
-    break;
-  default:
-    assert(false);
-    break;
-  }
+
+  encoding::output_chain chain;
+  enc->add_writer(chain);
   if (may_chunk)
-    out2.push(utils::chunked_filter());
-  out2.push(boost::ref(out));
+    chain.push(utils::chunked_filter());
+  chain.push(boost::ref(out));
+
+  io::stream_buffer<encoding::output_chain> out2(chain);
   print_entity(out2, identity, false, ranges);
 }
 
 void response::decode(
-    std::streambuf &out, content_encoding_t enc, bool may_chunk) const
+    std::streambuf &out, encoding *enc, bool may_chunk) const
 {
   namespace io = boost::iostreams;
-  io::filtering_istreambuf in;
-  switch (enc) {
-  case deflate: {
-    io::zlib_params z;
-    z.noheader = true;
-    in.push(io::zlib_decompressor(z));
-    break;
-    }
-  case gzip:
-    in.push(io::gzip_decompressor());
-    break;
-  case bzip2:
-    in.push(io::bzip2_decompressor());
-    break;
-  default:
-    assert(false);
-    break;
-  }
+
+  encoding::input_chain chain;
+  enc->add_reader(chain);
 
   impl::data_holder &d = p->data[enc];
   switch (d.type) {
   case impl::data_holder::NIL:
-    in.push(io::null_source());
+    chain.push(io::null_source());
     break;
   case impl::data_holder::STRING:
-    in.push(io::array_source(d.string.data(), d.length));
+    chain.push(io::array_source(d.string.data(), d.length));
     break;
   case impl::data_holder::STREAM:
-    in.push(boost::ref(*d.stream));
+    chain.push(boost::ref(*d.stream));
     break;
   }
+
+  io::stream_buffer<encoding::input_chain> in(chain);
 
   if (may_chunk) {
     io::filtering_ostreambuf out2;

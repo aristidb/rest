@@ -14,7 +14,7 @@ std::vector<std::string> identity::aliases() const {
   return v;
 }
 
-bool identity::is_identity() {
+bool identity::is_identity() const {
   return true;
 }
 
