@@ -34,7 +34,13 @@ public:
 
 struct compare_encoding {
   bool operator()(encoding *a, encoding *b) const {
-    return a->priority() < b->priority();
+    int ap = a->priority();
+    int bp = b->priority();
+    if (ap < bp)
+      return true;
+    else if (bp < ap)
+      return false;
+    return a < b;
   }
 };
 
