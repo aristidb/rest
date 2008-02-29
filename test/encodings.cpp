@@ -20,6 +20,7 @@ TEST(identity) {
   Check(enc2);
   Equals(enc, enc2);
   Equals(enc->name(), "identity");
+  Check(enc->is_identity());
 }
 
 }
