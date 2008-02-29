@@ -32,6 +32,12 @@ public:
   virtual ~encoding() = 0;
 };
 
+struct compare_encoding {
+  bool operator()(encoding *a, encoding *b) const {
+    return a->priority() < b->priority();
+  }
+};
+
 class encodings_registry : boost::noncopyable {
 public:
   static encodings_registry &get();

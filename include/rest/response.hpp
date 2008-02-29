@@ -2,6 +2,7 @@
 #ifndef REST_RESPONSE_HPP
 #define REST_RESPONSE_HPP
 
+#include "encoding.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -15,7 +16,6 @@ namespace rest {
 class cookie;
 class input_stream;
 class headers;
-class encoding;
 
 /*
  * TODO:
@@ -73,7 +73,7 @@ public:
   bool has_content_encoding(std::string const &enc) const;
 
   encoding *choose_content_encoding(
-    std::set<encoding *> const &encodings,
+    std::set<encoding *, compare_encoding> const &encodings,
     bool ranges) const;
 
   bool is_nil(encoding *content_encoding = 0) const;

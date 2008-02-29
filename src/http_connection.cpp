@@ -63,7 +63,7 @@ public:
   typedef std::bitset<X_NO_FLAG> state_flags;
   state_flags flags;
 
-  std::set<encoding *> encodings;
+  std::set<encoding *, compare_encoding> encodings;
 
   request request_;
 
