@@ -37,10 +37,12 @@ namespace tls {
     ~gnutls() {
       gnutls_global_deinit();
     }
-    friend void init() {
-      static gnutls g;
-    }
+    friend void init();
   };
+
+  void init() {
+    static gnutls g;
+  }
 
   class dh_params : boost::noncopyable {
     gnutls_dh_params_t dh_params_;
