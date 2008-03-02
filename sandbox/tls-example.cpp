@@ -219,8 +219,8 @@ namespace {
 
       std::cerr << "Awaiting Connections\n";
       for(;;) {
-        socklen_t len;
         sockaddr_un remote;
+        socklen_t len = sizeof(remote);
         int cd = ::accept(fd, (sockaddr*)&remote, &len);
         if(cd == -1) {
           close(fd);
