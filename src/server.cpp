@@ -51,11 +51,6 @@ public:
     read_connections();
   }
 
-  static void sigchld_handler(int) {
-    while (::waitpid(-1, 0, WNOHANG) > 0)
-      ;
-  }
-
   static sig_atomic_t restart_flag;
   static void restart_handler(int) {
     restart_flag = 1;
@@ -112,6 +107,12 @@ namespace {
       }
       return nfds;
     }
+  }
+
+  static void sigchld_handler(int) {
+    int errno_backup = errno;
+    while(::waitpid(-1, 0, WNOHANG) > 0);
+    errno = errno_backup;
   }
 }
 
@@ -200,7 +201,7 @@ void server::serve() {
   ::signal(SIGTERM, &impl::term_handler);
   ::siginterrupt(SIGTERM, 0);
 
-  ::signal(SIGCHLD, &impl::sigchld_handler);
+  ::signal(SIGCHLD, &sigchld_handler);
   ::siginterrupt(SIGCHLD, 0);
 
   ::signal(SIGUSR1, &impl::restart_handler);
