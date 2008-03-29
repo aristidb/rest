@@ -4,9 +4,37 @@
 #include <sstream>
 #include <cctype>
 #include <testsoon.hpp>
+#include <iomanip>
 #include <boost/tuple/tuple_io.hpp>
 
 using namespace rest::utils::http;
+
+TEST_GROUP(random_boundary) {
+  XTEST((name, "random_boundary")(values, (std::size_t)(1)(10)(20))) {
+    std::string x = random_boundary(value);
+    Equals(x.size(), value);
+    for (std::string::const_iterator it = x.begin(); it != x.end(); ++it)
+      Check(std::isalnum(*it));
+  }
+}
+
+TEST_GROUP(datetime) {
+  XTEST((2tuples, (std::string, time_t)
+         ("Sun, 06 Nov 1994 08:49:37 GMT", 784111777)
+         ("Sunday, 06-Nov-94 08:49:37 GMT", 784111777)
+         ("Sun Nov  6 08:49:37 1994", 784111777)))
+  {
+    Equals(value.get<1>(), datetime_value(value.get<0>()));
+  }
+
+  XTEST((2tuples, (std::string, std::string)
+        ("Sun, 06 Nov 1994 08:49:37 GMT", "Sun, 06 Nov 1994 08:49:37 GMT")
+        ("Sunday, 06-Nov-94 08:49:37 GMT", "Sun, 06 Nov 1994 08:49:37 GMT")
+        ("Sun Nov  6 08:49:37 1994", "Sun, 06 Nov 1994 08:49:37 GMT")))
+  {
+    Equals(value.get<1>(), datetime_string(datetime_value(value.get<0>())));
+  }
+}
 
 TEST_GROUP(spht) {
   XTEST((name, "isspht valid")(values, (char)(' ')('\t'))) {
@@ -79,30 +107,64 @@ TEST_GROUP(expect) {
   }
 }
 
-TEST_GROUP(datetime) {
-  XTEST((2tuples, (std::string, time_t)
-         ("Sun, 06 Nov 1994 08:49:37 GMT", 784111777)
-         ("Sunday, 06-Nov-94 08:49:37 GMT", 784111777)
-         ("Sun Nov  6 08:49:37 1994", 784111777)))
-  {
-    Equals(value.get<1>(), datetime_value(value.get<0>()));
+TEST_GROUP(remove_spaces) {
+  TEST(empty) {
+    std::istringstream in;
+    in.peek();
+    Check(in.eof());
+    remove_spaces(in);
+    Check(in.eof());
   }
 
-  XTEST((2tuples, (std::string, std::string)
-        ("Sun, 06 Nov 1994 08:49:37 GMT", "Sun, 06 Nov 1994 08:49:37 GMT")
-        ("Sunday, 06-Nov-94 08:49:37 GMT", "Sun, 06 Nov 1994 08:49:37 GMT")
-        ("Sun Nov  6 08:49:37 1994", "Sun, 06 Nov 1994 08:49:37 GMT")))
-  {
-    Equals(value.get<1>(), datetime_string(datetime_value(value.get<0>())));
+  TEST(spaces only) {
+    std::istringstream in("     ");
+    in.peek();
+    Check(!in.eof());
+    remove_spaces(in);
+    Check(in.eof());
   }
-}
 
-TEST_GROUP(random_boundary) {
-  XTEST((name, "random_boundary")(values, (std::size_t)(1)(10)(20))) {
-    std::string x = random_boundary(value);
-    Equals(x.size(), value);
-    for (std::string::const_iterator it = x.begin(); it != x.end(); ++it)
-      Check(std::isalnum(*it));
+  TEST(no spaces) {
+    std::istringstream in("xyz");
+    in.peek();
+    Check(!in.eof());
+    remove_spaces(in);
+    std::string x;
+    in >> std::noskipws >> x;
+    Equals(x, "xyz");
+    Check(in.eof());
+  }
+
+  TEST(spaces then text) {
+    std::istringstream in("   xyz");
+    in.peek();
+    Check(!in.eof());
+    remove_spaces(in);
+    std::string x;
+    in >> std::noskipws >> x;
+    Equals(x, "xyz");
+    Check(in.eof());
+  }
+
+  TEST(one space then text) {
+    std::istringstream in(" x");
+    in.peek();
+    Check(!in.eof());
+    remove_spaces(in);
+    std::string x;
+    in >> std::noskipws >> x;
+    Equals(x, "x");
+  }
+
+  TEST(multi) {
+    std::istringstream in("ab    cde    fg h");
+    in.peek();
+    int n = 0;
+    for (; !in.eof(); ++n) {
+      Equals(in.get(), 'a' + n);
+      remove_spaces(in);
+    }
+    Equals(n, 8);
   }
 }
 
