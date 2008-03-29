@@ -168,6 +168,72 @@ TEST_GROUP(remove_spaces) {
   }
 }
 
+TEST_GROUP(get_until) {
+  TEST(empty) {
+    std::istringstream data(" ??");
+    std::string x;
+    get_until(' ', data, x);
+    Check(x.empty());
+  }
+
+  TEST(nospace) {
+    std::istringstream data("xy");
+    std::string x;
+    try {
+      get_until(' ', data, x);
+    } catch (remote_close&) {
+      return;
+    } catch (...) {
+    }
+    Check(!"should have thrown remote_close exception");
+  }
+
+  TEST(space) {
+    std::istringstream data("ab c");
+    std::string x;
+    get_until(' ', data, x);
+    Equals(x, "ab");
+  }
+
+  TEST(newline) {
+    std::istringstream data("ab\nc");
+    std::string x;
+    try {
+      get_until(' ', data, x);
+    } catch (bad_format&) {
+      return;
+    } catch (...) {
+    }
+    Check(!"should have thrown bad_format exception");
+  }
+
+  TEST(allowed newline) {
+    std::istringstream data("ab\ncd$44");
+    std::string x;
+    get_until('$', data, x, true);
+    Equals(x, "ab\ncd");
+  }
+
+  TEST(limited length VALID) {
+    std::istringstream data("ab ");
+    std::string x;
+    get_until(' ', data, x, true, 5);
+    Equals(x, "ab");
+  }
+
+  TEST(limited length INVALID) {
+    std::istringstream data("abcdefg ");
+    std::string x;
+    try {
+      get_until(' ', data, x, true, 5);
+    } catch (bad_format&) {
+      return;
+    } catch (...) {
+    }
+    Check(!"should have thrown bad_format exception");
+  }
+}
+
 TEST_GROUP(read_headers) {
   TEST(empty) {
     std::istringstream in;
@@ -397,73 +463,5 @@ TEST_GROUP(parse_cookie_header) {
     Equals(cookies.size(), 1U);
     Equals(cookies[0].name.empty(), true);
     Equals(cookies[0].value.empty(), true);
-  }
-}
-
-TEST_GROUP(input) {
-  TEST_GROUP(get_until) {
-    TEST(empty) {
-      std::istringstream data(" ??");
-      std::string x;
-      get_until(' ', data, x);
-      Check(x.empty());
-    }
-
-    TEST(nospace) {
-      std::istringstream data("xy");
-      std::string x;
-      try {
-        get_until(' ', data, x);
-      } catch (remote_close&) {
-        return;
-      } catch (...) {
-      }
-      Check(!"should have thrown remote_close exception");
-    }
-
-    TEST(space) {
-      std::istringstream data("ab c");
-      std::string x;
-      get_until(' ', data, x);
-      Equals(x, "ab");
-    }
-
-    TEST(newline) {
-      std::istringstream data("ab\nc");
-      std::string x;
-      try {
-        get_until(' ', data, x);
-      } catch (bad_format&) {
-        return;
-      } catch (...) {
-      }
-      Check(!"should have thrown bad_format exception");
-    }
-
-    TEST(allowed newline) {
-      std::istringstream data("ab\ncd$44");
-      std::string x;
-      get_until('$', data, x, true);
-      Equals(x, "ab\ncd");
-    }
-
-    TEST(limited length VALID) {
-      std::istringstream data("ab ");
-      std::string x;
-      get_until(' ', data, x, true, 5);
-      Equals(x, "ab");
-    }
-
-    TEST(limited length INVALID) {
-      std::istringstream data("abcdefg ");
-      std::string x;
-      try {
-        get_until(' ', data, x, true, 5);
-      } catch (bad_format&) {
-        return;
-      } catch (...) {
-      }
-      Check(!"should have thrown bad_format exception");
-    }
   }
 }
