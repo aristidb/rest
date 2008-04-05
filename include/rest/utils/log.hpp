@@ -5,13 +5,13 @@
 #include <syslog.h>
 #include <string>
 #include <sstream>
-#include <map>
+#include <vector>
 
 namespace rest { namespace utils {
 
 void log(int priority, char const *message, ...);
 
-class log_record;
+typedef std::vector<std::pair<std::string, std::string> > log_record;
 
 class logger {
 public:
@@ -20,22 +20,12 @@ public:
   virtual void log(log_record const &) = 0;
 };
 
-class log_record {
-public:
-  template<class T>
-  void add(std::string const &field, T const &value) {
-    std::ostringstream o;
-    o << value;
-    add(field, o.str());
-  }
-
-  void add(std::string const &field, std::string const &value) {
-    fields[field] = value;
-  }
-
-private:
-  std::map<std::string, std::string> fields;
-};
+template<class T>
+void add_field(log_record &rec, std::string const &field, T const &value) {
+  std::ostringstream o;
+  o << value;
+  rec.push_back(std::make_pair(field, o.str()));
+}
 
 }}
 
