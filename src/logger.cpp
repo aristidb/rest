@@ -3,32 +3,6 @@
 #include "rest/config.hpp"
 #include <stdarg.h>
 
-using rest::utils::logger;
-using rest::utils::record_logger;
-
-logger::~logger() {}
-
-record_logger *logger::create_record() {
-  record_logger *rec = do_create_record();
-  return rec;
-}
-
-
-record_logger::~record_logger() {}
-
-void record_logger::add(std::string const &field, std::string const &value) {
-  do_add(field, value);
-}
-
-void record_logger::flush() {
-  do_flush();
-}
-
-void record_logger::close() {
-  delete this;
-}
-
-
 void rest::utils::log(int priority, char const *message, ...) {
   static bool open = false;
   if (!open) {

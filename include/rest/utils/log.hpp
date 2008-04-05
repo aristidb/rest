@@ -5,27 +5,23 @@
 #include <syslog.h>
 #include <string>
 #include <sstream>
+#include <map>
 
 namespace rest { namespace utils {
 
 void log(int priority, char const *message, ...);
 
-class record_logger;
+class log_record;
 
 class logger {
 public:
-  virtual ~logger();
+  virtual ~logger() {}
 
-  record_logger *create_record();
-
-protected:
-  virtual record_logger *do_create_record() = 0;
+  virtual void log(log_record const &) = 0;
 };
 
-class record_logger {
+class log_record {
 public:
-  virtual ~record_logger();
-
   template<class T>
   void add(std::string const &field, T const &value) {
     std::ostringstream o;
@@ -33,15 +29,12 @@ public:
     add(field, o.str());
   }
 
-  void add(std::string const &field, std::string const &value);
+  void add(std::string const &field, std::string const &value) {
+    fields[field] = value;
+  }
 
-  void flush();
-
-  void close();
-
-protected:
-  virtual void do_add(std::string const &field, std::string const &value) = 0;
-  virtual void do_flush() = 0;
+private:
+  std::map<std::string, std::string> fields;
 };
 
 }}
