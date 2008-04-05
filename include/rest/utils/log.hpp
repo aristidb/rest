@@ -11,17 +11,9 @@ namespace rest { namespace utils {
 
 void log(int priority, char const *message, ...);
 
-struct log_record;
-
-class logger {
-public:
-  virtual ~logger() {}
-
-  virtual void log(log_record const &) = 0;
-};
-
 enum log_priority {
-  LOG_NORMAL
+  log_debug = -1000,
+  log_normal
 };
 
 struct log_record {
@@ -31,7 +23,7 @@ struct log_record {
   fields_type fields;
   log_priority priority;
 
-  log_record(log_priority priority = LOG_NORMAL)
+  log_record(log_priority priority = log_normal)
   : priority(priority)
   {}
 
@@ -41,6 +33,30 @@ struct log_record {
     o << value;
     fields.push_back(field_type(field, o.str()));
   }
+};
+
+class logger {
+public:
+  logger(log_priority min_priority)
+  : min_priority(min_priority) {}
+
+  virtual ~logger() {}
+
+  void set_minimum_priority(log_priority min_priority) {
+    this->min_priority = min_priority;
+  }
+
+  void log(log_record const &rec) {
+    if (rec.priority >= min_priority) {
+      do_log(rec);
+    }
+  }
+
+protected:
+  virtual void do_log(log_record const &) = 0;
+
+private:
+  log_priority min_priority;
 };
 
 }}
