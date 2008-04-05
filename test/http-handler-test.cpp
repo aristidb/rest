@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     rest::utils::set(tree, "musikdings.rest/0.1", "general", "name");
     conf.load(argc, argv);
 
-    rest::server s(tree);
+    rest::server s(tree, (rest::utils::logger*)0);
     std::for_each(s.sockets().begin(), s.sockets().end(), rest::host::add(h));
 
     s.serve();

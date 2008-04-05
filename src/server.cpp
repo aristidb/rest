@@ -35,18 +35,20 @@ public:
   long timeout_write;
 
   utils::property_tree const &config;
+  utils::logger *log;
 
   void do_close_on_fork() {
     std::for_each(close_on_fork.begin(), close_on_fork.end(), &::close);
   }
 
-  impl(utils::property_tree const &config)
+  impl(utils::property_tree const &config, utils::logger *log)
     : listenq(utils::get(config, DEFAULT_LISTENQ, "connections", "listenq")),
       timeout_read(utils::get(config, DEFAULT_TIMEOUT,
           "connections", "timeout", "read")),
       timeout_write(utils::get(config, DEFAULT_TIMEOUT,
           "connections", "timeout", "write")),
-      config(config)
+      config(config),
+      log(log)
   {
     read_connections();
   }
@@ -85,7 +87,9 @@ void server::set_listen_q(int no) {
   p->listenq = no;
 }
 
-server::server(utils::property_tree const &conf) : p(new impl(conf)) { }
+server::server(utils::property_tree const &conf, utils::logger *log)
+: p(new impl(conf, log)) { }
+
 server::~server() { }
 
 namespace {

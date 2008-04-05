@@ -3,6 +3,7 @@
 #define REST_SERVER_HPP
 
 #include "socket_param.hpp"
+#include "utils/log.hpp"
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -13,7 +14,7 @@ namespace utils { class property_tree; }
 
 class server : boost::noncopyable {
 public:
-  server(utils::property_tree const &config);
+  server(utils::property_tree const &config, utils::logger *log);
   ~server();
 
   void serve();
