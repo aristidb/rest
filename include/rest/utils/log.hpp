@@ -11,52 +11,65 @@ namespace rest { namespace utils {
 
 void log(int priority, char const *message, ...);
 
-enum log_priority {
-  log_debug = -1000,
-  log_normal
-};
-
-struct log_record {
-  typedef std::pair<std::string, std::string> field_type;
-  typedef std::vector<field_type> fields_type;
-
-  fields_type fields;
-  log_priority priority;
-
-  log_record(log_priority priority = log_normal)
-  : priority(priority)
-  {}
-
-  template<class T>
-  void add_field(std::string const &field, T const &value) {
-    std::ostringstream o;
-    o << value;
-    fields.push_back(field_type(field, o.str()));
-  }
-};
-
 class logger {
 public:
-  logger(log_priority min_priority)
+  typedef unsigned short running_number_type;
+
+  enum priority {
+    debug = -1000,
+    normal
+  };
+
+  logger(priority min_priority)
   : min_priority(min_priority) {}
 
   virtual ~logger() {}
 
-  void set_minimum_priority(log_priority min_priority) {
+  void set_running_number(running_number_type running_number) {
+    this->running_number = running_number;
+  }
+
+  void set_minimum_priority(priority min_priority) {
     this->min_priority = min_priority;
   }
 
-  void log(log_record const &rec) {
-    if (rec.priority >= min_priority) {
-      do_log(rec);
+  void log(
+    priority prio, std::string const &field, std::string const &value)
+  {
+    if (prio >= min_priority) {
+      do_log(prio, field, value);
     }
   }
 
+  template<class T>
+  void log(
+    priority prio, std::string const &field, T const &value)
+  {
+    if (prio >= min_priority) {
+      std::ostringstream o;
+      o << value;
+      do_log(prio, field, o.str());
+    }
+  }
+
+  void flush() {
+    do_flush();
+  }
+
 protected:
-  virtual void do_log(log_record const &) = 0;
+  running_number_type get_running_number() const {
+    return running_number;
+  }
+
+protected:
+  virtual void do_log(
+    priority, std::string const &, std::string const &) = 0;
+
+  virtual void do_flush() = 0;
 
 private:
-  log_priority min_priority;
+  priority min_priority;
+  running_number_type running_number;
 };
 
 }}
