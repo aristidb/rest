@@ -125,6 +125,8 @@ int main(int argc, char **argv) {
   rest::plaintext_logger log(rest::logger::debug);
 
   try {
+    throw std::runtime_error("hey!");
+
     REST_ENCODING_ADD(rest::encodings::gzip);
     REST_ENCODING_ADD(rest::encodings::bzip2);
     REST_ENCODING_ADD(rest::encodings::deflate);
@@ -155,10 +157,10 @@ int main(int argc, char **argv) {
     s.serve();
     return 0;
   } catch (std::exception &e) {
-    rest::utils::log(LOG_CRIT, "unexpected critical exception: %s", e.what());
+    log.log(rest::logger::critical, "unexpected critical exception", e.what());
     return 1;
   } catch (...) {
-    rest::utils::log(LOG_CRIT, "unexpected critical exception");
+    log.log(rest::logger::critical, "unexpected critical exception");
     return 1;
   }
 }

@@ -20,16 +20,17 @@ public:
 
   enum priority {
     debug = -1000,
-    normal
+    normal,
+    critical = 1000
   };
 
   logger(priority min_priority)
-  : min_priority(min_priority) {}
+  : min_priority(min_priority), running_number(0U) {}
 
   virtual ~logger() {}
 
   void set_running_number(running_number_type running_number) {
-    do_flush();
+    flush();
     this->running_number = running_number;
   }
 
@@ -54,6 +55,13 @@ public:
       o << value;
       do_log(prio, field, o.str());
     }
+  }
+
+  void log(
+    priority prio, std::string const &field)
+  {
+    if (prio >= min_priority)
+      do_log(prio, field, std::string());
   }
 
   void flush() {

@@ -2,6 +2,7 @@
 #include "rest/logger.hpp"
 #include "rest/config.hpp"
 #include <stdarg.h>
+#include <iostream>
 
 using rest::logger;
 using rest::plaintext_logger;
@@ -27,17 +28,25 @@ void rest::utils::log(int priority, char const *message, ...) {
 
 class plaintext_logger::impl {
 public:
+  std::ostringstream message;
 };
 
 plaintext_logger::plaintext_logger(priority min_priority)
 : logger(min_priority), p(new impl)
 {}
 
-plaintext_logger::~plaintext_logger()
-{}
-
-void plaintext_logger::do_flush() {
+plaintext_logger::~plaintext_logger() {
+  flush();
 }
 
-void plaintext_logger::do_log(priority p, std::string const &f, std::string const &v) {
+void plaintext_logger::do_flush() {
+  std::cerr << p->message.str();
+  p->message.str(std::string());
+}
+
+void plaintext_logger::do_log(priority prio, std::string const &f, std::string const &v) {
+  p->message << get_running_number() << ' ' << prio << " [" << f << "]";
+  if (!v.empty())
+    p->message << " = [" << v << "]";
+  p->message << '\n';
 }
