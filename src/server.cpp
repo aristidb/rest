@@ -58,9 +58,9 @@ public:
     restart_flag = 1;
   }
 
+  static sig_atomic_t terminate_flag;
   static void term_handler(int sig) {
-    utils::log(LOG_NOTICE, "server is going down (SIG %d)", sig);
-    exit(4);
+    terminate_flag = 1;
   }
 
   void read_connections();
@@ -71,6 +71,7 @@ public:
 };
 
 sig_atomic_t server::impl::restart_flag = 0;
+sig_atomic_t server::impl::terminate_flag = 0;
 int const server::impl::DEFAULT_LISTENQ = 5;
 long const server::impl::DEFAULT_TIMEOUT = 10;
 
@@ -225,6 +226,8 @@ void server::serve() {
   for(;;) {
     epoll_event events[EVENTS_N];
     int nfds = epoll::wait(epollfd, events, EVENTS_N);
+    if (impl::terminate_flag)
+      return;
     if (impl::restart_flag)
       process::restart();
     for(int i = 0; i < nfds; ++i) {
