@@ -7,17 +7,24 @@
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/categories.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <boost/noncopyable.hpp>
+
+#ifndef NO_CIRCULAR_BUFFER
+#include <boost/circular_buffer.hpp>
+#else
+#include <vector>
+#endif
 
 #include <string>
 #include <cstdio>
 #include <csignal>
 #include <iostream>
 #include <unistd.h>
+#include <algorithm>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-
 
 namespace tls {
   struct gnutls_error : std::runtime_error {
@@ -110,6 +117,81 @@ namespace tls {
     gnutls_priority_t get() const { return priority_cache; }
   };
 
+  namespace {
+    class session_db : boost::noncopyable {
+
+      static std::size_t const cache_size = 50;
+
+    private:
+      session_db() : cb(cache_size) { }
+      ~session_db() { }
+
+      enum {
+        MAX_SESSION_ID_SIZE = 32,
+        MAX_SESSION_DATA_SIZE = 512
+      };
+      struct entry {
+        entry(gnutls_datum_t const &key, gnutls_datum_t const &data)
+          : key(key), data(data)
+        { }
+
+        gnutls_datum_t key;
+        gnutls_datum_t data;
+      };
+#ifndef NO_CIRCULAR_BUFFER
+      typedef boost::circular_buffer<entry> buffer_t;
+#else
+      typedef std::vector<entry> buffer_t;
+#endif
+      buffer_t cb;
+
+      static session_db &get() {
+        static session_db db;
+        return db;
+      }
+
+      struct datum_finder {
+        gnutls_datum_t const &key;
+        datum_finder(gnutls_datum_t const &key) : key(key) { }
+
+        bool operator()(entry const &e) {
+          return
+            e.key.size == key.size &&
+            std::memcmp(e.key.data, key.data, key.size) == 0;
+        }
+      };
+
+      buffer_t::iterator find(gnutls_datum_t const &key) {
+        return std::find_if(cb.begin(), cb.end(), datum_finder(key));
+      }
+    public:
+      static gnutls_datum_t fetch(void*, gnutls_datum_t key) {
+        session_db &db = session_db::get();
+        buffer_t::iterator i = db.find(key);
+        if(i != db.cb.end()) {
+          return i->data;
+        }
+        gnutls_datum_t nil;
+        std::memset(&nil, 0, sizeof(nil));
+        return nil;
+      }
+      static int delete_(void*, gnutls_datum_t key) {
+        session_db &db = session_db::get();
+        buffer_t::iterator i = db.find(key);
+        if(i != db.cb.end()) {
+          db.cb.erase(i);
+          return 0;
+        }
+        return -1;
+      }
+      static int store(void*, gnutls_datum_t key, gnutls_datum_t data) {
+        session_db &db = session_db::get();
+        db.cb.push_back(entry(key, data));
+        return 0;
+      }
+    };
+  }
+
   class session : boost::noncopyable {
     gnutls_session_t session_;
     int fd;
@@ -139,6 +221,13 @@ namespace tls {
        * webservers that need to trade security for compatibility
        */
       gnutls_session_enable_compatibility_mode(session_);
+#endif
+
+#ifndef NO_SESSION_CACHE
+      gnutls_db_set_retrieve_function(session_, session_db::fetch);
+      gnutls_db_set_remove_function(session_, session_db::delete_);
+      gnutls_db_set_store_function(session_, session_db::store);
+      gnutls_db_set_ptr(session_, 0x0);
 #endif
 
       // TODO: sollte das hier gemacht werden?
