@@ -3,6 +3,9 @@
 #include "rest/config.hpp"
 #include <stdarg.h>
 
+using rest::logger;
+using rest::plaintext_logger;
+
 void rest::utils::log(int priority, char const *message, ...) {
   static bool open = false;
   if (!open) {
@@ -20,4 +23,21 @@ void rest::utils::log(int priority, char const *message, ...) {
   va_list ap;
   va_start(ap, message);
   ::vsyslog(priority, message, ap);
+}
+
+class plaintext_logger::impl {
+public:
+};
+
+plaintext_logger::plaintext_logger(priority min_priority)
+: logger(min_priority), p(new impl)
+{}
+
+plaintext_logger::~plaintext_logger()
+{}
+
+void plaintext_logger::do_flush() {
+}
+
+void plaintext_logger::do_log(priority p, std::string const &f, std::string const &v) {
 }

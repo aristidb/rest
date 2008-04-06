@@ -14,7 +14,7 @@ namespace utils { class property_tree; }
 
 class server : boost::noncopyable {
 public:
-  server(utils::property_tree const &config, utils::logger *log);
+  server(utils::property_tree const &config, logger *log);
   ~server();
 
   void serve();

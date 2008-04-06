@@ -5,13 +5,16 @@
 #include <syslog.h>
 #include <string>
 #include <sstream>
-#include <vector>
+#include <boost/scoped_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
-namespace rest { namespace utils {
+namespace rest {
 
-void log(int priority, char const *message, ...);
+namespace utils {
+  void log(int priority, char const *message, ...);
+}
 
-class logger {
+class logger : boost::noncopyable {
 public:
   typedef unsigned short running_number_type;
 
@@ -26,6 +29,7 @@ public:
   virtual ~logger() {}
 
   void set_running_number(running_number_type running_number) {
+    do_flush();
     this->running_number = running_number;
   }
 
@@ -72,6 +76,20 @@ private:
   running_number_type running_number;
 };
 
-}}
+class plaintext_logger : public logger {
+public:
+  plaintext_logger(priority min_priority);
+  ~plaintext_logger();
+
+private:
+  void do_log(priority, std::string const &, std::string const &);
+  void do_flush();
+
+private:
+  class impl;
+  boost::scoped_ptr<impl> p;
+};
+
+}
 
 #endif

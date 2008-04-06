@@ -122,6 +122,8 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
 };
 
 int main(int argc, char **argv) {
+  rest::plaintext_logger log(rest::logger::debug);
+
   try {
     REST_ENCODING_ADD(rest::encodings::gzip);
     REST_ENCODING_ADD(rest::encodings::bzip2);
@@ -147,7 +149,7 @@ int main(int argc, char **argv) {
     rest::utils::set(tree, "musikdings.rest/0.1", "general", "name");
     conf.load(argc, argv);
 
-    rest::server s(tree, (rest::utils::logger*)0);
+    rest::server s(tree, &log);
     std::for_each(s.sockets().begin(), s.sockets().end(), rest::host::add(h));
 
     s.serve();
