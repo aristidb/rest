@@ -10,6 +10,7 @@
 
 #include <string>
 #include <cstdio>
+#include <csignal>
 #include <iostream>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -170,8 +171,11 @@ namespace tls {
 
     std::streamsize write(char_type const *buf, std::streamsize n) {
       assert(n >= 0);
-      ssize_t res = gnutls_record_send(session_.get(), buf,
-                                       n * sizeof(char_type));
+      ssize_t res;
+      do {
+        res = gnutls_record_send(session_.get(), buf,
+                                 n * sizeof(char_type));
+      } while(res == GNUTLS_E_INTERRUPTED || res == GNUTLS_E_AGAIN);
       if(res < 0)
         throw gnutls_error(res, "send");
       // TODO Alerts
@@ -180,11 +184,14 @@ namespace tls {
 
     std::streamsize read(char_type *buf, std::streamsize n) {
       assert(n >= 0);
-      ssize_t res = gnutls_record_recv(session_.get(), buf,
-                                       n * sizeof(char_type));
+      ssize_t res;
+      do {
+        res = gnutls_record_recv(session_.get(), buf,
+                                 n * sizeof(char_type));
+      } while(res == GNUTLS_E_INTERRUPTED || res == GNUTLS_E_AGAIN);
+      // TODO Alerts (zB GNUTLS_E_REHANDSHAKE)
       if(res < 0)
         throw gnutls_error(res, "recv");
-      // TODO Alerts (zB GNUTLS_E_REHANDSHAKE)
       return res;
     }
 
@@ -297,6 +304,8 @@ namespace {
 }
 
 int main() {
+  std::signal(SIGPIPE, SIG_IGN);
+
   int fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
   if(fd == -1) {
     perror("socket");

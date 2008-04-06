@@ -10,7 +10,8 @@ override BUILDDIR := $(strip $(BUILDDIR))
 
 OS	    := $(shell uname)
 ifeq ($(OS), Darwin)
-LDFLAGS     := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX)
+BOOST_SUFFIX := -mt-1_35
+LDFLAGS     := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX)
 CXXOPTFLAGS := $(CXXOPTFLAGS) -fast -mcpu=G4 -mtune=G4
 CXXSTDFLAGS := $(CXXSTDFLAGS) -DAPPLE
 endif
