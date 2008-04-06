@@ -1,6 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include <rest/process.hpp>
-#include <rest/utils/log.hpp>
+#include <rest/logger.hpp>
 #include <rest/utils/exceptions.hpp>
 #include <fstream>
 #include <sys/types.h>

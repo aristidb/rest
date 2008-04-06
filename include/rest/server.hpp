@@ -3,7 +3,7 @@
 #define REST_SERVER_HPP
 
 #include "socket_param.hpp"
-#include "utils/log.hpp"
+#include "logger.hpp"
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>

@@ -5,7 +5,7 @@
 #include "rest/cookie.hpp"
 #include "rest/config.hpp"
 #include "rest/request.hpp"
-#include "rest/utils/log.hpp"
+#include "rest/logger.hpp"
 #include "rest/utils/http.hpp"
 #include "rest/encodings/gzip.hpp"
 #include "rest/encodings/deflate.hpp"

@@ -2,7 +2,6 @@
 #include <rest/network.hpp>
 #include <rest/socket_param.hpp>
 #include <rest/utils/exceptions.hpp>
-#include <rest/utils/log.hpp>
 #include <cstddef>
 #include <boost/static_assert.hpp>
 #include <sys/types.h>
@@ -98,14 +97,6 @@ int rest::network::create_listenfd(socket_param &sock, int backlog) {
     throw utils::errno_error("could not start server (listen)");
 
   sock.fd(listenfd);
-
-  utils::log(LOG_NOTICE,
-             "created %s socket on %s:%s (timeouts r: %ld w: %ld)",
-             sock.socket_type() == network::ip4 ? "IPv4" : "IPv6",
-             sock.bind().c_str(),
-             sock.service().c_str(),
-             sock.timeout_read(),
-             sock.timeout_write());
 
   return listenfd;
 }

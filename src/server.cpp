@@ -6,7 +6,7 @@
 #include "rest/context.hpp"
 #include "rest/request.hpp"
 #include "rest/config.hpp"
-#include "rest/utils/log.hpp"
+#include "rest/logger.hpp"
 #include "rest/utils/exceptions.hpp"
 #include "rest/utils/socket_device.hpp"
 #include <boost/algorithm/string.hpp>
