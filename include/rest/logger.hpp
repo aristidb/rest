@@ -19,9 +19,14 @@ public:
   typedef unsigned short running_number_type;
 
   enum priority {
-    debug = -1000,
-    normal,
-    critical = 1000
+    debug    = -1000,
+    info     =     0,
+    notice   =   100,
+    warning  =   200,
+    err      =   300,
+    critical =  1000,
+    alert    =  1500,
+    emerg    =  2000
   };
 
   logger(priority min_priority)

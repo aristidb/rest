@@ -125,7 +125,7 @@ void server::impl::read_connections() {
   children_iterator end = config.children_end();
   children_iterator i = utils::get(config, end, "connections");
   if(i == config.children_end()) {
-    utils::log(LOG_WARNING, "no connections container");
+    log->log(logger::warning, "no connections container");
     return;
   }
 
