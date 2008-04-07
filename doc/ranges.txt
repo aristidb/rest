@@ -1,0 +1,26 @@
+$ echo -e -n 'GET / HTTP/1.1\r\nHost: www.xkcd.com\r\nRange: bytes=0-10,20-30\r\nConnection: close\r\n\r\n'|nc www.xkcd.com 80
+HTTP/1.1 206 Partial Content
+Connection: close
+Vary: Accept-Encoding
+Expires: Sun, 04 Nov 2007 18:16:54 GMT
+Cache-Control: max-age=3600
+Content-Type: multipart/byteranges; boundary=fkj49sn38dcn3
+ETag: "-643629463"
+Accept-Ranges: bytes
+Last-Modified: Fri, 02 Nov 2007 04:32:11 GMT
+Content-Length: 200
+Date: Sun, 04 Nov 2007 17:16:54 GMT
+Server: lighttpd/1.4.13
+
+
+--fkj49sn38dcn3
+Content-Range: bytes 0-10/8732
+Content-Type: text/html
+
+<?xml versi
+--fkj49sn38dcn3
+Content-Range: bytes 20-30/8732
+Content-Type: text/html
+
+encoding="u
+--fkj49sn38dcn3--

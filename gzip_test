@@ -1,0 +1,1 @@
+echo -n user=foo|gzip -c|curl --data-binary @- -H 'Transfer-Encoding: chunked' -H 'Content-Encoding: gzip' localhost:8080

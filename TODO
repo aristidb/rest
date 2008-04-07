@@ -1,0 +1,13 @@
+Big To Do File:
+
+* real request-object support
+* allow applications to check if declared keywords really were send
+* adding keyword support for cookies
+* HttpOnly support for cookies?
+* change or extend Log-Format (Apache Logs?)
+* get IP
+
+* find bugs
+* benchmark/profile
+* improve code quality
+* more unit tests
