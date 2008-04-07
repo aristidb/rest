@@ -3,6 +3,7 @@
 #include <testsoon.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/tuple/tuple_io.hpp>
+#include <cstring>
 
 using namespace boost::lambda;
 
