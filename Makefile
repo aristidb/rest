@@ -1,8 +1,7 @@
 CXX         := g++
-CXXSTDFLAGS := -pipe -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -Iinclude -Itestsoon/include
+CXXSTDFLAGS := -pipe -W -Wall -Wno-long-long -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -Iinclude -Itestsoon/include -I/usr/local/include/boost-1_35
 CXXDBGFLAGS := -g3 -ggdb3 -DDEBUG
 CXXOPTFLAGS := -O3 -DNDEBUG -Wno-unused
-LDFLAGS     := -static -L. -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lbz2 -lz
 AR          := ar
 ARFLAGS     := rcs
 BUILDDIR    := build
@@ -14,7 +13,11 @@ BOOST_SUFFIX := -mt-1_35
 LDFLAGS     := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX)
 CXXOPTFLAGS := $(CXXOPTFLAGS) -fast -mcpu=G4 -mtune=G4
 CXXSTDFLAGS := $(CXXSTDFLAGS) -DAPPLE
+else
+BOOST_SUFFIX := -gcc41-sd-1_35
 endif
+
+LDFLAGS     := -static -L. -L/usr/local/lib -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX) -lbz2 -lz
 
 CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 #CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
