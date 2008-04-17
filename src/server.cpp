@@ -251,6 +251,8 @@ void server::impl::incoming(socket_param const &sock,
     return;
   }
 
+  log->next_running_number();
+
   sigset_t mask, oldmask;
   sigfillset(&mask);
   sigprocmask(SIG_BLOCK, &mask, &oldmask);

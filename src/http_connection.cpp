@@ -222,8 +222,6 @@ void http_connection::impl::reset() {
 void http_connection::impl::serve() {
   try {
     while (open_flag) {
-      log->next_running_number();
-
       reset();
 
       response resp(handle_request());
@@ -358,6 +356,7 @@ void http_connection::impl::read_request(
         sizeof("HTTP/1.1") - 1 + 5 // 5 additional chars for higher versions
       ));
 
+  log->log(logger::info, "new-request");
   log->log(logger::info, "method", method);
   log->log(logger::info, "uri", uri);
   log->log(logger::info, "http-version", version);
@@ -914,6 +913,7 @@ void http_connection::impl::send(response r, bool entity) {
     code = 200;
 
   log->log(logger::notice, "http-response-code", code);
+  log->flush();
 
   out << code << " " << response::reason(code) << "\r\n";
 
