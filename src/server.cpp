@@ -59,7 +59,7 @@ public:
   }
 
   static sig_atomic_t terminate_flag;
-  static void term_handler(int sig) {
+  static void term_handler(int) {
     terminate_flag = 1;
   }
 
@@ -193,13 +193,15 @@ int server::impl::initialize_sockets() {
 }
 
 void server::serve() {
-  utils::log(LOG_NOTICE, "server started");
+  p->log->set_running_number(0);
+  p->log->log(logger::notice, "server-started");
+  p->log->flush();
 
   utils::property_tree &tree = config::get().tree();
 
-  process::chroot(tree);
-  process::drop_privileges(tree);
-  process::maybe_daemonize(tree);
+  process::chroot(p->log, tree);
+  process::drop_privileges(p->log, tree);
+  process::maybe_daemonize(p->log, tree);
 
   typedef void(*sighnd_t)(int);
 
@@ -229,7 +231,7 @@ void server::serve() {
     if (impl::terminate_flag)
       return;
     if (impl::restart_flag)
-      process::restart();
+      process::restart(p->log);
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
       assert(ptr);
@@ -244,7 +246,8 @@ void server::impl::incoming(socket_param const &sock,
   network::address addr;
   int connfd = network::accept(sock, addr);
   if (connfd < 0) {
-    utils::log(LOG_ERR, "accept failed: %m");
+    log->log(logger::err, "accept-failed", errno);
+    log->flush();
     return;
   }
 
@@ -256,17 +259,19 @@ void server::impl::incoming(socket_param const &sock,
   if (pid == 0) {
     do_close_on_fork();
 
-    utils::log(LOG_INFO,
-               "accept connection from %s", network::ntoa(addr).c_str());
+    log->log(logger::info, "accept-connection", network::ntoa(addr));
+    log->flush();
 
     int status = connection(sock, connfd, addr, servername);
     (void) status;
 
     exit(status);
-  }
-  else {
-    if (pid == -1)
-      utils::log(LOG_ERR, "fork failed: %m");
+  } else {
+    if (pid == -1) {
+      log->log(logger::err, "fork-failed", errno);
+      log->flush();
+    }
+
     close(connfd);
     sigprocmask(SIG_SETMASK, &oldmask, 0);
   }
@@ -277,15 +282,17 @@ int server::impl::connection(socket_param const &sock, int connfd,
                              std::string const &servername)
 {
   try {
-    http_connection conn(sock.hosts(), addr, servername);
+    http_connection conn(sock.hosts(), addr, servername, log);
     conn.serve(sock, connfd);
   }
   catch(std::exception &e) {
-    utils::log(LOG_ERR, "unexpected exception: %s", e.what());
+    log->log(logger::err, "unexpected-exception", e.what());
+    log->flush();
     return 1;
   }
   catch(...) {
-    utils::log(LOG_ERR, "unexpected exception");
+    log->log(logger::err, "unexpected-exception");
+    log->flush();
     return 1;
   }
   return 0;

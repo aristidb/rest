@@ -6,15 +6,20 @@
 #include <vector>
 #include <string>
 
-namespace rest { namespace process {
+namespace rest {
+
+class logger;
+
+namespace process {
 
 std::vector<char*> getargs(std::string const &path, std::string &data);
-void restart();
 bool set_gid(gid_t gid);
 bool set_uid(uid_t uid);
-void drop_privileges(utils::property_tree const &tree);
-void maybe_daemonize(utils::property_tree const &tree);
-void chroot(utils::property_tree const &tree);
+
+void restart(logger *);
+void drop_privileges(logger *, utils::property_tree const &tree);
+void maybe_daemonize(logger *, utils::property_tree const &tree);
+void chroot(logger *, utils::property_tree const &tree);
 
 }}
 

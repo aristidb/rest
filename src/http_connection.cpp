@@ -46,6 +46,8 @@ typedef io::stream_buffer<stdio_combination> stdio_streambuf;
 
 class http_connection::impl {
 public:
+  logger *log;
+
   host_container const &hosts;
 
   std::auto_ptr<std::streambuf> conn;
@@ -73,9 +75,11 @@ public:
   impl(
       host_container const &hosts,
       network::address const &addr,
-      std::string const &servername
+      std::string const &servername,
+      logger *log
   )
-    : hosts(hosts),
+    : log(log),
+      hosts(hosts),
       servername(servername),
       tree(config::get().tree()),
       open_flag(true),
@@ -186,8 +190,9 @@ std::size_t const http_connection::impl::method_name_length =
 http_connection::http_connection(
     host_container const &hosts,
     rest::network::address const &addr,
-    std::string const &servername)
-: p(new impl(hosts, addr, servername))
+    std::string const &servername,
+    logger *log)
+: p(new impl(hosts, addr, servername, log))
 {}
 
 http_connection::~http_connection() { }
@@ -217,6 +222,8 @@ void http_connection::impl::reset() {
 void http_connection::impl::serve() {
   try {
     while (open_flag) {
+      log->next_running_number();
+
       reset();
 
       response resp(handle_request());
@@ -351,8 +358,10 @@ void http_connection::impl::read_request(
         sizeof("HTTP/1.1") - 1 + 5 // 5 additional chars for higher versions
       ));
 
-  utils::log(LOG_INFO, "request: method %s uri %s version %s", method.c_str(),
-             uri.c_str(), version.c_str());
+  log->log(logger::info, "method", method);
+  log->log(logger::info, "uri", uri);
+  log->log(logger::info, "http-version", version);
+  log->flush();
 
   request_.set_method(method);
 
@@ -904,7 +913,7 @@ void http_connection::impl::send(response r, bool entity) {
   if (code == -1)
     code = 200;
 
-  utils::log(LOG_NOTICE, "response: %d", code);
+  log->log(logger::notice, "http-response-code", code);
 
   out << code << " " << response::reason(code) << "\r\n";
 

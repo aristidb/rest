@@ -2,6 +2,7 @@
 #include <rest/http_connection.hpp>
 #include <rest/host.hpp>
 #include <rest/headers.hpp>
+#include <rest/logger.hpp>
 #include <sstream>
 #include <testsoon.hpp>
 
@@ -26,7 +27,7 @@ struct group_fixture_t {
   group_fixture_t()
   : servername("SERVERNAME"),
     addr(ip4(0)),
-    connection(hosts, addr, servername)
+    connection(hosts, addr, servername, new rest::null_logger)
   {
   }
 

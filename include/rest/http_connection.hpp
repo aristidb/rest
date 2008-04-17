@@ -6,6 +6,7 @@
 #include "network.hpp"
 #include "response.hpp"
 #include "responder.hpp"
+#include "logger.hpp"
 #include <iosfwd>
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -18,7 +19,8 @@ class http_connection {
 public:
   http_connection(host_container const &hosts,
                   rest::network::address const &addr,
-                  std::string const &servername);
+                  std::string const &servername,
+                  logger *log);
 
   ~http_connection();
 

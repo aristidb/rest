@@ -10,10 +10,6 @@
 
 namespace rest {
 
-namespace utils {
-  void log(int priority, char const *message, ...);
-}
-
 class logger : boost::noncopyable {
 public:
   typedef unsigned short running_number_type;
@@ -37,6 +33,12 @@ public:
   void set_running_number(running_number_type running_number) {
     flush();
     this->running_number = running_number;
+  }
+
+  void next_running_number() {
+    flush();
+    if (++running_number == 0)
+      ++running_number;
   }
 
   void set_minimum_priority(priority min_priority) {
@@ -101,6 +103,14 @@ private:
 private:
   class impl;
   boost::scoped_ptr<impl> p;
+};
+
+class null_logger : public logger {
+public:
+  null_logger() : logger(logger::emerg) {}
+private:
+  void do_log(priority, std::string const &, std::string const&) {}
+  void do_flush() {}
 };
 
 }
