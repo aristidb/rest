@@ -51,7 +51,7 @@ namespace {
     "Service Unavailable", "Gateway Timeout", "HTTP Version Not Supported"
   };
 
-  rest::encoding *identity = rest::encodings_registry::get().find_encoding("");
+  rest::encoding *identity = rest::object_registry::get().find<rest::encoding>("");
 }
 
 struct response::impl {
@@ -243,7 +243,7 @@ void response::set_data(
 void response::set_data(
     input_stream &data, bool seekable, std::string const &enc)
 {
-  encoding *x = encodings_registry::get().find_encoding(enc);
+  encoding *x = object_registry::get().find<encoding>(enc);
   if (!x)
     throw invalid_encoding(enc);
   set_data(data, seekable, x);
@@ -262,7 +262,7 @@ void response::set_data(
 void response::set_data(
     std::string const &data, std::string const &enc)
 {
-  encoding *x = encodings_registry::get().find_encoding(enc);
+  encoding *x = object_registry::get().find<encoding>(enc);
   if (!x)
     throw invalid_encoding(enc);
   set_data(data, x);
@@ -298,7 +298,7 @@ bool response::has_content_encoding(encoding *content_encoding) const {
 }
 
 bool response::has_content_encoding(std::string const &enc) const {
-  encoding *x = encodings_registry::get().find_encoding(enc);
+  encoding *x = object_registry::get().find<encoding>(enc);
   if (!x)
     throw invalid_encoding(enc);
   return has_content_encoding(x);
@@ -372,7 +372,7 @@ void response::set_length(boost::int64_t len, encoding *enc) {
 }
 
 void response::set_length(boost::int64_t len, std::string const &enc) {
-  encoding *x = encodings_registry::get().find_encoding(enc);
+  encoding *x = object_registry::get().find<encoding>(enc);
   if (!x)
     throw invalid_encoding(enc);
   set_length(len, x);

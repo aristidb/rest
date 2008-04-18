@@ -125,9 +125,9 @@ int main(int argc, char **argv) {
   rest::plaintext_logger log(rest::logger::debug);
 
   try {
-    REST_ENCODING_ADD(rest::encodings::gzip);
-    REST_ENCODING_ADD(rest::encodings::bzip2);
-    REST_ENCODING_ADD(rest::encodings::deflate);
+    REST_OBJECT_ADD(rest::encodings::gzip);
+    REST_OBJECT_ADD(rest::encodings::bzip2);
+    REST_OBJECT_ADD(rest::encodings::deflate);
 
     tester t;
 

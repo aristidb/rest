@@ -5,12 +5,14 @@
 using rest::encodings::gzip;
 namespace io = boost::iostreams;
 
-std::string gzip::name() const {
-  return "gzip";
+std::string const &gzip::name() const {
+  static std::string x("gzip");
+  return x;
 }
 
-std::vector<std::string> gzip::aliases() const {
-  return std::vector<std::string>(1, "x-gzip");
+rest::object::name_list_type const &gzip::name_aliases() const {
+  static name_list_type x(1, "x-gzip");
+  return x;
 }
 
 void gzip::add_reader(input_chain &x) {

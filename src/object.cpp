@@ -38,7 +38,7 @@ public:
 object_registry::object_registry() : p(new impl) {}
 object_registry::~object_registry() {}
 
-void object_registry::add(std::auto_ptr<object> &obj_) {
+void object_registry::add(std::auto_ptr<object> obj_) {
   object *obj = obj_.get();
 
   p->object_list.push_back(obj_);

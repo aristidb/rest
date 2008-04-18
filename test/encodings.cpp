@@ -3,19 +3,19 @@
 #include <testsoon.hpp>
 
 using rest::encoding;
-using rest::encodings_registry;
+using rest::object_registry;
 
-TEST_GROUP(encodings_registry) {
+TEST_GROUP(object_registry) {
 
 TEST(invalid) {
   Equals(
-    encodings_registry::get().find_encoding("NO-ENCODING"),
+    object_registry::get().find<encoding>("NO-ENCODING"),
     (encoding*) 0);
 }
 
 TEST(identity) {
-  encoding *enc = encodings_registry::get().find_encoding("identity");
-  encoding *enc2 = encodings_registry::get().find_encoding("");
+  encoding *enc = object_registry::get().find<encoding>("identity");
+  encoding *enc2 = object_registry::get().find<encoding>("");
   Check(enc);
   Check(enc2);
   Equals(enc, enc2);

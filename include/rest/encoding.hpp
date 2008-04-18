@@ -2,6 +2,7 @@
 #ifndef REST_ENCODING_HPP
 #define REST_ENCODING_HPP
 
+#include "object.hpp"
 #include <boost/iostreams/chain.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -12,13 +13,16 @@
 
 namespace rest {
 
-class encoding {
+class encoding : public object {
 public:
-  virtual std::string name() const = 0;
+  static std::string const &type_name();
 
-  virtual std::vector<std::string> aliases() const {
-    return std::vector<std::string>();
-  }
+  static bool need_load_standard_objects;
+  static void load_standard_objects(object_registry &obj_reg);
+
+  std::string const &type() const { return type_name(); }
+
+  virtual ~encoding() = 0;
 
   virtual bool is_identity() const { return false; }
 
@@ -29,8 +33,6 @@ public:
 
   virtual void add_reader(input_chain &) = 0;
   virtual void add_writer(output_chain &) = 0;
-
-  virtual ~encoding() = 0;
 };
 
 struct compare_encoding {
@@ -50,24 +52,6 @@ struct invalid_encoding : std::logic_error {
     : std::logic_error("invalid encoding: " + enc)
   {}
 };
-
-class encodings_registry : boost::noncopyable {
-public:
-  static encodings_registry &get();
-
-  void add_encoding(std::auto_ptr<encoding>);
-  encoding *find_encoding(std::string const &) const;
-
-private:
-  encodings_registry();
-
-  class impl;
-  boost::scoped_ptr<impl> p;
-};
-
-#define REST_ENCODING_ADD(e) \
-  ::rest::encodings_registry::get().add_encoding( \
-    ::std::auto_ptr< ::rest::encoding>(new e))
 
 }
 

@@ -8,8 +8,8 @@ namespace rest { namespace encodings {
 
 class bzip2 : public encoding {
 public:
-  std::string name() const;
-  std::vector<std::string> aliases() const;
+  std::string const &name() const;
+  name_list_type const &name_aliases() const;
 
   void add_reader(input_chain &);
   void add_writer(output_chain &);

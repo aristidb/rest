@@ -672,7 +672,7 @@ int http_connection::impl::set_header_options() {
   }
 
 
-  encodings_registry &ec = encodings_registry::get();
+  object_registry &obj_reg = object_registry::get();
 
   typedef std::multimap<int, std::string> qlist_t;
 
@@ -688,7 +688,7 @@ int http_connection::impl::set_header_options() {
       if(!found && (i->second == "identity" || i->second == "*"))
         return 406;
     } else {
-      encoding *enc = ec.find_encoding(i->second);
+      encoding *enc = obj_reg.find<encoding>(i->second);
       if (enc) {
         encodings.insert(enc);
         found = true;
@@ -809,7 +809,7 @@ int http_connection::impl::handle_entity(
   boost::optional<std::string> content_encoding =
     h.get_header("Content-Encoding");
 
-  encodings_registry &ec = encodings_registry::get();
+  object_registry &obj_reg = object_registry::get();
 
   if (content_encoding) {
     std::vector<std::string> ce;
@@ -818,7 +818,7 @@ int http_connection::impl::handle_entity(
         it != ce.end();
         ++it)
     {
-      encoding *enc = ec.find_encoding(*it);
+      encoding *enc = obj_reg.find<encoding>(*it);
       if (!enc)
         return 415;
       enc->add_reader(input);
@@ -843,7 +843,7 @@ int http_connection::impl::handle_entity(
         chunked = true;
         input.push(utils::chunked_filter());
       } else {
-        encoding *enc = ec.find_encoding(*it);
+        encoding *enc = obj_reg.find<encoding>(*it);
         if (!enc)
           return 501;
         enc->add_reader(input);

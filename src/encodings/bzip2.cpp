@@ -5,12 +5,14 @@
 using rest::encodings::bzip2;
 namespace io = boost::iostreams;
 
-std::string bzip2::name() const {
-  return "bzip2";
+std::string const &bzip2::name() const {
+  static std::string x = "bzip2";
+  return x;
 }
 
-std::vector<std::string> bzip2::aliases() const {
-  return std::vector<std::string>(1, "x-bzip2");
+rest::object::name_list_type const &bzip2::name_aliases() const {
+  static name_list_type x(1, "x-bzip2");
+  return x;
 }
 
 void bzip2::add_reader(input_chain &x) {

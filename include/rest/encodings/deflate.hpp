@@ -8,8 +8,8 @@ namespace rest { namespace encodings {
 
 class deflate : public encoding {
 public:
-  std::string name() const;
-  std::vector<std::string> aliases() const;
+  std::string const &name() const;
+  name_list_type const &name_aliases() const;
 
   int priority() const;
 

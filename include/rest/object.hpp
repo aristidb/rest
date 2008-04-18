@@ -24,8 +24,15 @@ class object_registry {
 public:
   static object_registry &get();
 
-  void add(std::auto_ptr<object> &);
+  void add(std::auto_ptr<object>);
   object *find(std::string const &type, std::string const &name) const;
+
+  template<class T>
+  T *find(std::string const &name) {
+    if (T::need_load_standard_objects)
+      T::load_standard_objects(*this);
+    return static_cast<T *>(find(T::type_name(), name));
+  }
 
 private:
   object_registry();
@@ -39,6 +46,10 @@ private:
   class impl;
   boost::scoped_ptr<impl> p;
 };
+
+#define REST_OBJECT_ADD(obj_type) \
+  ::rest::object_registry::get().add( \
+    ::std::auto_ptr< ::rest::object>(new obj_type))
 
 }
 

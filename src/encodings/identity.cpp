@@ -4,14 +4,14 @@
 
 using rest::encodings::identity;
 
-std::string identity::name() const {
-  return "identity";
+std::string const &identity::name() const {
+  static std::string x("identity");
+  return x;
 }
 
-std::vector<std::string> identity::aliases() const {
-  std::vector<std::string> v;
-  v.push_back("");
-  return v;
+rest::object::name_list_type const &identity::name_aliases() const {
+  static name_list_type x(1, "");
+  return x;
 }
 
 bool identity::is_identity() const {

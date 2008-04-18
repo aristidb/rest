@@ -5,12 +5,14 @@
 using rest::encodings::deflate;
 namespace io = boost::iostreams;
 
-std::string deflate::name() const {
-  return "deflate";
+std::string const &deflate::name() const {
+  static std::string x("deflate");
+  return x;
 }
 
-std::vector<std::string> deflate::aliases() const {
-  return std::vector<std::string>();
+rest::object::name_list_type const &deflate::name_aliases() const {
+  static name_list_type x;
+  return x;
 }
 
 int deflate::priority() const {
