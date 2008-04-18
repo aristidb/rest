@@ -14,13 +14,19 @@ public:
 
 plaintext_logger::plaintext_logger(priority min_priority)
 : logger(min_priority), p(new impl)
-{}
+{
+  flush();
+}
 
 plaintext_logger::~plaintext_logger() {
   flush();
 }
 
 void plaintext_logger::do_flush() {
+  if (p->message.str().empty())
+    return;
+
+  p->message << "{" << getpid() << '/' << time(0) << "}\n\n";
   std::cerr << p->message.str();
   p->message.str(std::string());
 }
