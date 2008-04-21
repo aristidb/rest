@@ -9,7 +9,6 @@
 #include "rest/utils/chunked_filter.hpp"
 #include "rest/utils/uri.hpp"
 #include "rest/utils/string.hpp"
-#include <boost/array.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
