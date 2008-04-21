@@ -7,7 +7,6 @@
 #include "rest/request.hpp"
 #include "rest/encoding.hpp"
 #include "rest/logger.hpp"
-#include "rest/scheme.hpp"
 #include "rest/utils/http.hpp"
 #include "rest/utils/uri.hpp"
 #include "rest/utils/chunked_filter.hpp"
@@ -199,11 +198,6 @@ http_connection::http_connection(
 http_connection::~http_connection() { }
 
 void http_connection::serve(socket_param const &sock, int connfd) {
-  scheme *schm = object_registry::get().find<scheme>(sock.scheme());
-
-  if (schm == 0)
-    throw std::runtime_error("scheme not found");
-
   p->conn.reset(new connection_streambuf(
         connfd, sock.timeout_read(), sock.timeout_write()));
 

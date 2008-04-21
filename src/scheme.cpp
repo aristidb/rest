@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/scheme.hpp"
+#include "rest/http_connection.hpp"
 
 using rest::scheme;
 using rest::http_scheme;
@@ -32,3 +33,11 @@ rest::object::name_list_type const &http_scheme::name_aliases() const {
 }
 
 http_scheme::~http_scheme() {}
+
+void http_scheme::serve(
+  logger *log, int connfd, socket_param const &sock, network::address const &addr,
+  std::string const &servername)
+{
+  http_connection conn(sock.hosts(), addr, servername, log);
+  conn.serve(sock, connfd);
+}

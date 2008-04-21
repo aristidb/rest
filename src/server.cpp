@@ -1,12 +1,10 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/server.hpp"
 #include "rest/process.hpp"
-#include "rest/http_connection.hpp"
-#include "rest/host.hpp"
 #include "rest/context.hpp"
-#include "rest/request.hpp"
 #include "rest/config.hpp"
 #include "rest/logger.hpp"
+#include "rest/scheme.hpp"
 #include "rest/utils/exceptions.hpp"
 #include "rest/utils/socket_device.hpp"
 #include <boost/algorithm/string.hpp>
@@ -290,8 +288,13 @@ int server::impl::connection(socket_param const &sock, int connfd,
                              std::string const &servername)
 {
   try {
-    http_connection conn(sock.hosts(), addr, servername, log);
-    conn.serve(sock, connfd);
+    scheme *schm = object_registry::get().find<scheme>(sock.scheme());
+    if (!schm) {
+      log->log(logger::err, "unknown-scheme", sock.scheme());
+      log->flush();
+      return 1;
+    }
+    schm->serve(log, connfd, sock, addr, servername);
   }
   catch(std::exception &e) {
     log->log(logger::err, "unexpected-exception", e.what());

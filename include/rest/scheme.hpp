@@ -3,8 +3,12 @@
 #define REST_SCHEME_HPP
 
 #include "object.hpp"
+#include "network.hpp"
 
 namespace rest {
+
+class logger;
+class socket_param;
 
 class scheme : public object {
 public:
@@ -16,14 +20,25 @@ public:
   std::string const &type() const { return type_name(); }
 
   virtual ~scheme() = 0;
+
+  /* schm->serve(log, connfd, sock, addr, servername); */
+  virtual void serve(
+    logger *log,
+    int connfd,
+    socket_param const &sock,
+    network::address const &addr,
+    std::string const &servername) = 0;
 };
 
 class http_scheme : public scheme {
 public:
+  ~http_scheme();
+
+private:
   std::string const &name() const;
   name_list_type const &name_aliases() const;
 
-  ~http_scheme();
+  void serve(logger*, int, socket_param const&, network::address const&, std::string const&);
 };
 
 }
