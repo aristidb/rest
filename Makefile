@@ -17,7 +17,7 @@ CXXOPTFLAGS  := $(CXXOPTFLAGS) -fast -mcpu=G4 -mtune=G4
 CXXSTDFLAGS  := $(CXXSTDFLAGS) -DAPPLE -I/opt/local/include
 else
 BOOST_SUFFIX := -gcc41-sd-1_35
-LDFLAGS      := -static -L. -L/usr/local/lib -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX) -lbz2 -lz
+LDFLAGS      := -static -L. -L/usr/local/lib -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX) -lbz2 -lz -lgnutls -lgcrypt
 endif
 
 CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
