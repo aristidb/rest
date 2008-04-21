@@ -17,6 +17,7 @@ public:
       std::string const &service,
       network::socket_type_t type,
       std::string const &bind,
+      std::string const &scheme,
       long timeout_read,
       long timeout_write);
 
@@ -32,6 +33,8 @@ public:
   std::string const &service() const;
   network::socket_type_t socket_type() const;
   std::string const &bind() const;
+
+  std::string const &scheme() const;
 
   long timeout_read() const;
   long timeout_write() const;

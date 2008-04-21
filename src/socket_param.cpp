@@ -11,11 +11,13 @@ public:
       std::string const &service,
       network::socket_type_t type,
       std::string const &bind,
+      std::string const &scheme,
       long timeout_read,
       long timeout_write)
   : service(service),
     socket_type(type),
     bind(bind),
+    scheme(scheme),
     timeout_read(timeout_read),
     timeout_write(timeout_write),
     fd(-1)
@@ -24,6 +26,7 @@ public:
   std::string service;
   network::socket_type_t socket_type;
   std::string bind;
+  std::string scheme;
   long timeout_read;
   long timeout_write;
 
@@ -36,10 +39,11 @@ socket_param::socket_param(
     std::string const &service,
     network::socket_type_t type,
     std::string const &bind,
+    std::string const &scheme,
     long timeout_read,
     long timeout_write
   )
-: p(new impl(service, type, bind, timeout_read, timeout_write))
+: p(new impl(service, type, bind, scheme, timeout_read, timeout_write))
 { }
 
 int socket_param::fd() const {
@@ -56,6 +60,10 @@ std::string const &socket_param::service() const {
 
 std::string const &socket_param::bind() const {
   return p->bind;
+}
+
+std::string const &socket_param::scheme() const {
+  return p->scheme;
 }
 
 rest::network::socket_type_t socket_param::socket_type() const {

@@ -159,13 +159,19 @@ void server::impl::read_connections() {
     std::string bind = utils::get(**j, std::string(), "bind");
     algo::trim(bind);
 
+    std::string scheme = utils::get(**j, std::string(), "scheme");
+    algo::trim(scheme);
+
+    if (scheme.empty())
+      throw std::runtime_error("no scheme specified");
+
     long timeout_read =
       utils::get(**j, this->timeout_read, "timeout", "read");
     long timeout_write =
       utils::get(**j, this->timeout_write, "timeout", "write");
 
     socket_params.push_back(socket_param(
-      service, type, bind, timeout_read, timeout_write));
+      service, type, bind, scheme, timeout_read, timeout_write));
   }
 }
 
