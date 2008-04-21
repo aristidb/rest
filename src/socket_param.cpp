@@ -1,6 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include <rest/socket_param.hpp>
 #include <rest/host.hpp>
+#include <rest/scheme.hpp>
 #include <string>
 
 using rest::socket_param;
@@ -44,7 +45,10 @@ socket_param::socket_param(
     long timeout_write
   )
 : p(new impl(service, type, bind, scheme, timeout_read, timeout_write))
-{ }
+{
+  if (!object_registry::get().find<rest::scheme>(scheme))
+    throw std::logic_error("scheme not found");
+}
 
 int socket_param::fd() const {
   return p->fd;
