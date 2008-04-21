@@ -7,17 +7,18 @@ ARFLAGS     := rcs
 BUILDDIR    := build
 override BUILDDIR := $(strip $(BUILDDIR))
 
-OS	    := $(shell uname)
+LDFLAGS     := -static -L. -L/usr/local/lib -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX) -lbz2 -lz -lgnutls -lgcrypt
+
+OS	     := $(shell uname)
 ifeq ($(OS), Darwin)
 BOOST_SUFFIX := -mt-1_35
-LDFLAGS     := -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX)
-CXXOPTFLAGS := $(CXXOPTFLAGS) -fast -mcpu=G4 -mtune=G4
-CXXSTDFLAGS := $(CXXSTDFLAGS) -DAPPLE
+LDFLAGS      := -L/opt/local/lib  -L. ./librest.a -dynamic -lz -lbz2 -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX) -lgnutls -lgcrypt
+CXXOPTFLAGS  := $(CXXOPTFLAGS) -fast -mcpu=G4 -mtune=G4
+CXXSTDFLAGS  := $(CXXSTDFLAGS) -DAPPLE -I/opt/local/include
 else
 BOOST_SUFFIX := -gcc41-sd-1_35
+LDFLAGS      := -static -L. -L/usr/local/lib -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX) -lbz2 -lz
 endif
-
-LDFLAGS     := -static -L. -L/usr/local/lib -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX) -lbz2 -lz
 
 CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
 #CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
