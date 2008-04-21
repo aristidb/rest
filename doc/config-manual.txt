@@ -7,6 +7,7 @@ Can be changed with -c-Flag or by setting -DDEFAULT_CONFIG_PATH during compile t
 /connections/*/type             - type of socket (either 'ipv6' or 'ipv4') [default: ipv4]
 /connections/*/port             - specifies the port
 /connections/*/bind             - address to bind to (see bind(2)) [default: INADDR_ANY]
+/connections/*/scheme           - scheme to use (HTTP or HTTPS)
 
 /general -
 /general/name                   - servername [default: "musikdings.rest/0.1"]
