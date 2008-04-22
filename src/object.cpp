@@ -9,6 +9,11 @@ using rest::object_registry;
 
 object::~object() {}
 
+object::name_list_type const &object::name_aliases() const {
+  static name_list_type x;
+  return x;
+}
+
 
 object_registry &object_registry::get() {
   static object_registry obj_reg;

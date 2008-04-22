@@ -17,7 +17,7 @@ public:
 
   virtual std::string const &type() const = 0;
   virtual std::string const &name() const = 0;
-  virtual std::vector<std::string> const &name_aliases() const = 0;
+  virtual std::vector<std::string> const &name_aliases() const;
 };
 
 class object_registry {

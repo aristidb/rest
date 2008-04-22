@@ -27,15 +27,13 @@ std::string const &http_scheme::name() const {
   return x;
 }
 
-rest::object::name_list_type const &http_scheme::name_aliases() const {
-  static name_list_type x;
-  return x;
-}
-
 http_scheme::~http_scheme() {}
 
 void http_scheme::serve(
-  logger *log, int connfd, socket_param const &sock, network::address const &addr,
+  logger *log,
+  int connfd,
+  socket_param const &sock,
+  network::address const &addr,
   std::string const &servername)
 {
   http_connection conn(sock.hosts(), addr, servername, log);
