@@ -21,7 +21,6 @@ public:
 
   virtual ~scheme() = 0;
 
-  /* schm->serve(log, connfd, sock, addr, servername); */
   virtual void serve(
     logger *log,
     int connfd,
@@ -36,9 +35,9 @@ public:
 
 private:
   std::string const &name() const;
-  name_list_type const &name_aliases() const;
 
-  void serve(logger*, int, socket_param const&, network::address const&, std::string const&);
+  void serve(
+    logger*,int,socket_param const&,network::address const&,std::string const&);
 };
 
 }

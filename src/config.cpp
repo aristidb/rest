@@ -113,7 +113,7 @@ namespace utils {
 }
 
 #ifndef DEFAULT_CONFIG_PATH
-    #define DEFAULT_CONFIG_PATH "etc/musikdings/rest"
+    #define DEFAULT_CONFIG_PATH "./conf"
 #endif
 
   static void usage(int /*argc*/, char **argv) {
