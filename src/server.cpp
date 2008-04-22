@@ -218,6 +218,8 @@ void server::serve() {
   ::signal(SIGUSR1, &impl::restart_handler);
   ::siginterrupt(SIGUSR1, 0);
 
+  ::signal(SIGPIPE, SIG_IGN);
+
   // TODO: ignore SIGPIPE?
 
   std::string const &servername =
