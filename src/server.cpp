@@ -10,6 +10,8 @@
 #include <boost/algorithm/string.hpp>
 #include <signal.h>
 #include <sys/wait.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #ifdef APPLE
 #include "compat/epoll.h"
@@ -186,6 +188,10 @@ int server::impl::initialize_sockets() {
   {
     int listenfd = network::create_listenfd(*i, listenq);
 
+    int flags = ::fcntl(listenfd, F_GETFL);
+    flags |= O_NONBLOCK;
+    ::fcntl(listenfd, F_SETFL, flags);
+
     close_on_fork.insert(listenfd);
 
     epolle.data.ptr = &*i;
@@ -244,6 +250,8 @@ void server::impl::incoming(socket_param const &sock,
   network::address addr;
   int connfd = network::accept(sock, addr);
   if (connfd < 0) {
+    if (errno == EAGAIN || errno == EINTR)
+      return;
     log->log(logger::err, "accept-failed", errno);
     log->flush();
     return;
