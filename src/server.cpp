@@ -210,17 +210,9 @@ void server::serve() {
   typedef void(*sighnd_t)(int);
 
   ::signal(SIGTERM, &impl::term_handler);
-  ::siginterrupt(SIGTERM, 0);
-
   ::signal(SIGCHLD, &sigchld_handler);
-  ::siginterrupt(SIGCHLD, 0);
-
   ::signal(SIGUSR1, &impl::restart_handler);
-  ::siginterrupt(SIGUSR1, 0);
-
   ::signal(SIGPIPE, SIG_IGN);
-
-  // TODO: ignore SIGPIPE?
 
   std::string const &servername =
     utils::get(tree, std::string(), "general", "name");
