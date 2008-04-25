@@ -30,7 +30,6 @@ public:
 
   void reset();
 
-  operator input_stream &() { return *this; }
   std::istream &operator*() const { return *stream; }
   std::istream *operator->() const { return stream; }
   std::istream *get() const { return stream; }

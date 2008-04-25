@@ -181,6 +181,10 @@ response::response(response &o) {
   p.swap(o.p);
 }
 
+response::response(_ref ref) {
+  p.swap(ref.ref.p);
+}
+
 response::~response() { }
 
 void response::move(response &o) {

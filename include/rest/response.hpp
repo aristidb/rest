@@ -29,10 +29,17 @@ public:
   response(std::string const &type);
   response(std::string const &type, std::string const &data);
   response(int code, std::string const &type, std::string const &data);
-  response(response &r);
+
+  struct _ref {
+    response &ref;
+    explicit _ref(response &ref) : ref(ref) {}
+  };
+
+  response(_ref ref);
+  response(response &ref);
   ~response();
 
-  operator response &() { return *this; }
+  operator _ref() { return _ref(*this); }
 
   struct empty_tag_t {};
   response(empty_tag_t);

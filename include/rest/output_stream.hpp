@@ -31,7 +31,6 @@ public:
     stream = 0;
   }
 
-  operator output_stream &() { return *this; }
   std::ostream &operator*() const { return *stream; }
   std::ostream *operator->() const { return stream; }
   std::ostream *get() const { return stream; }

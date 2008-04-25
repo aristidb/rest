@@ -97,7 +97,8 @@ TEST(main) {
   Equals(kw["xyz"], "b la");
 
   std::istringstream stream("test");
-  kw.set_stream("other", rest::input_stream(stream));
+  rest::input_stream input(stream);
+  kw.set_stream("other", input);
   Equals(kw["other"], "test");
 
   context.find_responder("/foo/bar/bum=xy", path_id, responder, local, kw);
