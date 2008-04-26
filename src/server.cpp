@@ -210,6 +210,7 @@ void server::serve() {
   typedef void(*sighnd_t)(int);
 
   ::signal(SIGTERM, &impl::term_handler);
+  ::signal(SIGINT, &impl::term_handler);
   ::signal(SIGUSR1, &impl::restart_handler);
   ::signal(SIGCHLD, SIG_IGN);
   ::signal(SIGPIPE, SIG_IGN);
@@ -223,19 +224,25 @@ void server::serve() {
 
   int const EVENTS_N = 8;
 
-  for(;;) {
+  while (!impl::terminate_flag && !impl::restart_flag) {
     epoll_event events[EVENTS_N];
     int nfds = epoll::wait(epollfd, events, EVENTS_N);
-    if (impl::terminate_flag)
-      return;
-    if (impl::restart_flag)
-      process::restart(p->log);
+
+    if (impl::terminate_flag | impl::restart_flag)
+      break;
+
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
       assert(ptr);
       p->incoming(*ptr, servername);
     }
   }
+
+  p->log->log(logger::notice, "server-stopped");
+  p->log->flush();
+
+  if (impl::restart_flag)
+    process::restart(p->log);
 }
 
 void server::impl::incoming(socket_param const &sock,
