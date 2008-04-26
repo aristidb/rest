@@ -266,15 +266,19 @@ void server::impl::incoming(socket_param const &sock,
 
   pid_t pid = ::fork();
   if (pid == 0) {
-    do_close_on_fork();
+    try {
+      do_close_on_fork();
 
-    log->log(logger::info, "accept-connection", network::ntoa(addr));
-    log->flush();
+      log->log(logger::info, "accept-connection", network::ntoa(addr));
+      log->flush();
 
-    int status = connection(sock, connfd, addr, servername);
-    (void) status;
+      int status = connection(sock, connfd, addr, servername);
+      (void) status;
 
-    exit(status);
+      _exit(status);
+    } catch (...) {
+      _exit(6);
+    }
   } else {
     if (pid == -1) {
       log->log(logger::err, "fork-failed", errno);
