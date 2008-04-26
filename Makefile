@@ -20,8 +20,8 @@ BOOST_SUFFIX := -gcc41-sd-1_35
 LDFLAGS      := -static -L. -L/usr/local/lib -lrest -lboost_filesystem$(BOOST_SUFFIX) -lboost_iostreams$(BOOST_SUFFIX) -lboost_system$(BOOST_SUFFIX) -lbz2 -lz -lgnutls -lgcrypt
 endif
 
-CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
-#CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
+#CXXFLAGS    := $(CXXSTDFLAGS) $(CXXDBGFLAGS)
+CXXFLAGS    := $(CXXSTDFLAGS) $(CXXOPTFLAGS)
 
 LIBREST_SOURCES := $(wildcard src/*.cpp) $(wildcard src/encodings/*.cpp)
 
