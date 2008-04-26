@@ -113,12 +113,6 @@ namespace {
       return nfds;
     }
   }
-
-  static void sigchld_handler(int) {
-    int errno_backup = errno;
-    while(::waitpid(-1, 0, WNOHANG) > 0);
-    errno = errno_backup;
-  }
 }
 
 void server::impl::read_connections() {
@@ -216,8 +210,8 @@ void server::serve() {
   typedef void(*sighnd_t)(int);
 
   ::signal(SIGTERM, &impl::term_handler);
-  ::signal(SIGCHLD, &sigchld_handler);
   ::signal(SIGUSR1, &impl::restart_handler);
+  ::signal(SIGCHLD, SIG_IGN);
   ::signal(SIGPIPE, SIG_IGN);
 
   std::string const &servername =
