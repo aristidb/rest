@@ -222,6 +222,8 @@ void server::serve() {
 
   int const EVENTS_N = 8;
 
+  // TODO: use epoll_pwait and sigprocmask instead
+
   while (!impl::terminate_flag && !impl::restart_flag) {
     epoll_event events[EVENTS_N];
     int nfds = epoll::wait(epollfd, events, EVENTS_N);
