@@ -207,8 +207,6 @@ void server::serve() {
   process::drop_privileges(p->log, tree);
   process::maybe_daemonize(p->log, tree);
 
-  typedef void(*sighnd_t)(int);
-
   ::signal(SIGTERM, &impl::term_handler);
   ::signal(SIGINT, &impl::term_handler);
   ::signal(SIGUSR1, &impl::restart_handler);
@@ -228,7 +226,7 @@ void server::serve() {
     epoll_event events[EVENTS_N];
     int nfds = epoll::wait(epollfd, events, EVENTS_N);
 
-    if (impl::terminate_flag | impl::restart_flag)
+    if (impl::terminate_flag || impl::restart_flag)
       break;
 
     for(int i = 0; i < nfds; ++i) {
@@ -272,11 +270,17 @@ void server::impl::incoming(socket_param const &sock,
       log->log(logger::info, "accept-connection", network::ntoa(addr));
       log->flush();
 
-      int status = connection(sock, connfd, addr, servername);
-      (void) status;
-
+      int const status = connection(sock, connfd, addr, servername);
       _exit(status);
-    } catch (...) {
+    }
+    catch(std::exception &e) {
+      log->log(logger::err, "unexpected-exception", e.what());
+      log->flush();
+      _exit(5);
+    }
+    catch(...) {
+      log->log(logger::err, "unexpected-exception");
+      log->flush();
       _exit(6);
     }
   } else {
@@ -294,24 +298,12 @@ int server::impl::connection(socket_param const &sock, int connfd,
                              network::address const &addr,
                              std::string const &servername)
 {
-  try {
-    scheme *schm = object_registry::get().find<scheme>(sock.scheme());
-    if (!schm) {
-      log->log(logger::err, "unknown-scheme", sock.scheme());
-      log->flush();
-      return 1;
-    }
-    schm->serve(log, connfd, sock, addr, servername);
-  }
-  catch(std::exception &e) {
-    log->log(logger::err, "unexpected-exception", e.what());
+  scheme *schm = object_registry::get().find<scheme>(sock.scheme());
+  if (!schm) {
+    log->log(logger::err, "unknown-scheme", sock.scheme());
     log->flush();
     return 1;
   }
-  catch(...) {
-    log->log(logger::err, "unexpected-exception");
-    log->flush();
-    return 1;
-  }
+  schm->serve(log, connfd, sock, addr, servername);
   return 0;
 }
