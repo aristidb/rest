@@ -27,7 +27,7 @@ std::vector<char*> rest::process::getargs(
 }
 
 void rest::process::restart(logger *log) {
-  log->set_running_number(0);
+  log->set_sequence_number(0);
   log->log(logger::notice, "server-restart");
   log->flush();
 

@@ -12,7 +12,7 @@ namespace rest {
 
 class logger : boost::noncopyable {
 public:
-  typedef unsigned short running_number_type;
+  typedef unsigned short sequence_number_type;
 
   enum priority {
     debug    = -1000,
@@ -26,19 +26,19 @@ public:
   };
 
   logger(priority min_priority)
-  : min_priority(min_priority), running_number(0U) {}
+  : min_priority(min_priority), sequence_number(0U) {}
 
   virtual ~logger() {}
 
-  void set_running_number(running_number_type running_number) {
+  void set_sequence_number(sequence_number_type sequence_number) {
     flush();
-    this->running_number = running_number;
+    this->sequence_number = sequence_number;
   }
 
-  void next_running_number() {
+  void next_sequence_number() {
     flush();
-    if (++running_number == 0)
-      ++running_number;
+    if (++sequence_number == 0)
+      ++sequence_number;
   }
 
   void set_minimum_priority(priority min_priority) {
@@ -76,8 +76,8 @@ public:
   }
 
 protected:
-  running_number_type get_running_number() const {
-    return running_number;
+  sequence_number_type get_sequence_number() const {
+    return sequence_number;
   }
 
 protected:
@@ -88,7 +88,7 @@ protected:
 
 private:
   priority min_priority;
-  running_number_type running_number;
+  sequence_number_type sequence_number;
 };
 
 class plaintext_logger : public logger {

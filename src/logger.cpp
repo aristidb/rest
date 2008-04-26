@@ -32,7 +32,7 @@ void plaintext_logger::do_flush() {
 }
 
 void plaintext_logger::do_log(priority prio, std::string const &f, std::string const &v) {
-  p->message << get_running_number() << ' ' << prio << " [" << f << "]";
+  p->message << get_sequence_number() << ' ' << prio << " [" << f << "]";
   if (!v.empty())
     p->message << " = [" << v << "]";
   p->message << '\n';

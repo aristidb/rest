@@ -197,7 +197,7 @@ int server::impl::initialize_sockets() {
 }
 
 void server::serve() {
-  p->log->set_running_number(0);
+  p->log->set_sequence_number(0);
   p->log->log(logger::notice, "server-started");
   p->log->flush();
 
@@ -256,7 +256,7 @@ void server::impl::incoming(socket_param const &sock,
     return;
   }
 
-  log->next_running_number();
+  log->next_sequence_number();
 
   sigset_t mask, oldmask;
   sigfillset(&mask);
