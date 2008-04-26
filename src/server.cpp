@@ -5,6 +5,7 @@
 #include "rest/config.hpp"
 #include "rest/logger.hpp"
 #include "rest/scheme.hpp"
+#include "rest/signals.hpp"
 #include "rest/utils/exceptions.hpp"
 #include "rest/utils/socket_device.hpp"
 #include <boost/algorithm/string.hpp>
@@ -25,6 +26,8 @@ namespace algo = boost::algorithm;
 
 class server::impl {
 public:
+  signals sig;
+
   std::vector<socket_param> socket_params;
   std::set<int> close_on_fork;
 
@@ -104,7 +107,11 @@ namespace {
     }
 
     int wait(int epollfd, epoll_event *events, int maxevents) {
-      int nfds = ::epoll_wait(epollfd, events, maxevents, -1);
+      sigset_t empty_mask;
+      sigemptyset(&empty_mask);
+
+      int nfds = ::epoll_pwait(epollfd, events, maxevents, -1, &empty_mask);
+
       if(nfds == -1) {
         if(errno == EINTR)
           return 0;
@@ -207,11 +214,12 @@ void server::serve() {
   process::drop_privileges(p->log, tree);
   process::maybe_daemonize(p->log, tree);
 
-  ::signal(SIGTERM, &impl::term_handler);
-  ::signal(SIGINT, &impl::term_handler);
-  ::signal(SIGUSR1, &impl::restart_handler);
-  ::signal(SIGCHLD, SIG_IGN);
-  ::signal(SIGPIPE, SIG_IGN);
+  p->sig.ignore(SIGCHLD);
+  p->sig.ignore(SIGPIPE);
+  p->sig.add(SIGTERM);
+  p->sig.add(SIGINT);
+  p->sig.add(SIGUSR1);
+  p->sig.block();
 
   std::string const &servername =
     utils::get(tree, std::string(), "general", "name");
@@ -222,13 +230,11 @@ void server::serve() {
 
   int const EVENTS_N = 8;
 
-  // TODO: use epoll_pwait and sigprocmask instead
-
-  while (!impl::terminate_flag && !impl::restart_flag) {
+  for (;;) {
     epoll_event events[EVENTS_N];
     int nfds = epoll::wait(epollfd, events, EVENTS_N);
 
-    if (impl::terminate_flag || impl::restart_flag)
+    if (p->sig.is_pending(SIGTERM) || p->sig.is_pending(SIGINT) || p->sig.is_pending(SIGUSR1))
       break;
 
     for(int i = 0; i < nfds; ++i) {
@@ -241,7 +247,7 @@ void server::serve() {
   p->log->log(logger::notice, "server-stopped");
   p->log->flush();
 
-  if (impl::restart_flag)
+  if (p->sig.is_pending(SIGUSR1))
     process::restart(p->log);
 }
 
