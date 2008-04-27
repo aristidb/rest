@@ -29,25 +29,26 @@ def configure(conf):
     pkgconf.run()
     
     libconf = conf.create_library_configurator()
-    libconf.uselib = 'gcrypt'
-    libconf.name = 'gcrypt'
-    libconf.paths = ['/opt/local/lib','/usr/lib','/usr/local/lib','/sw/lib']
-    libconf.mandatory = 1
-    libconf.run()
-    
-    libconf = conf.create_library_configurator()
     libconf.uselib = 'z'
     libconf.name   = 'z'
-    libconf.paths = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
+    libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
     libconf.run()
     
     libconf = conf.create_library_configurator()
     libconf.uselib = 'bz2'
     libconf.name   = 'bz2'
-    libconf.paths = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
+    libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
     libconf.run()
+    
+    libconf = conf.create_library_configurator()
+    libconf.uselib = 'gcrypt'
+    libconf.name   = 'gcrypt'
+    libconf.path = ['/opt/local/lib','/usr/lib','/usr/local/lib','/sw/lib']
+    libconf.mandatory = 1
+    libconf.run()
+    
 #    conf.sub_config('src')
 #    conf.sub_config('test')
 #    conf.sub_config('sandbox')
