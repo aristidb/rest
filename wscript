@@ -17,7 +17,7 @@ def configure(conf):
     conf.env['CXXFLAGS_DEBUG'] = '-g3 -ggdb3 -DDEBUG'
     conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG'
     
-    conf.env['WANT_BOOST'] = 'BOOST_IOSTREAM BOOST_FILESYSTEM BOOST_SYSTEM'
+    conf.env['WANT_BOOST'] = 'BOOST_IOSTREAM_ST BOOST_FILESYSTEM_ST BOOST_SYSTEM_ST'
     
     conf.check_tool('g++')
     conf.check_tool('boost')
