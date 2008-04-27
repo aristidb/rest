@@ -9,18 +9,20 @@ blddir = 'build'
 def init(): pass
 
 def set_options(opt):
-    #opt.sub_options('src')
     opt.tool_options('g++')
+    opt.tool_options('boost2')
 
 def configure(conf):
     conf.env['CXXFLAGS'] = '-pipe -Wno-long-long -Wall -W -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -Iinclude -Itestsoon/include'
     conf.env['CXXFLAGS_DEBUG'] = '-g3 -ggdb3 -DDEBUG'
     conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG'
     
-    conf.env['WANT_BOOST'] = 'BOOST_IOSTREAM_ST BOOST_FILESYSTEM_ST BOOST_SYSTEM_ST'
-    
     conf.check_tool('g++')
-    conf.check_tool('boost')
+    conf.check_tool('boost2')
+
+    boostconf = conf.create_boost_configurator()
+    boostconf.lib = ['iostream', 'filesystem', 'system']
+    boostconf.run()
     
     pkgconf = conf.create_pkgconfig_configurator()
     pkgconf.uselib = 'GNUTLS'
