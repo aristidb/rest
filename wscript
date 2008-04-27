@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import sys
+
 VERSION='dev'
 APPNAME='librest'
 
@@ -22,7 +24,11 @@ def configure(conf):
 
     boostconf = conf.create_boost_configurator()
     boostconf.lib = ['iostream', 'filesystem', 'system']
-    boostconf.static = 'onlystatic'
+    if sys.platform.startswith('darwin'):
+        boostconf.static = 'nostatic'
+    else:
+        boostconf.static = 'onlystatic'
+        boostconf.threadingtag = 'st'
     boostconf.run()
     
     pkgconf = conf.create_pkgconfig_configurator()
