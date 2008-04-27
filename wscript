@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 VERSION='dev'
 APPNAME='librest'
@@ -6,8 +6,7 @@ APPNAME='librest'
 srcdir = '.'
 blddir = 'build'
 
-def init():
-    1 + 2
+def init(): pass
 
 def set_options(opt):
     #opt.sub_options('src')
@@ -57,5 +56,4 @@ def build(bld):
     bld.add_subdirs('sandbox')
     #bld.add_subdirs('src test sandbox')
 
-def shutdown():
-    1 + 2
+def shutdown(): pass
