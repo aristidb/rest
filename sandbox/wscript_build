@@ -4,5 +4,5 @@ obj = bld.create_obj('cpp', 'program')
 obj.source = 'tls-example.cpp'
 #obj.cxxflags='-Wall -W -pedantic -std=c++98'
 obj.ldflags = '-lgcrypt'
-obj.uselib = 'gnutls boost gcrypt'
+obj.uselib = 'GNUTLS BOOST GCRYPT'
 obj.target = 'tls-example'

@@ -23,26 +23,26 @@ def configure(conf):
     conf.check_tool('boost')
     
     pkgconf = conf.create_pkgconfig_configurator()
-    pkgconf.uselib = 'gnutls'
+    pkgconf.uselib = 'GNUTLS'
     pkgconf.name = 'gnutls'
     pkgconf.run()
     
     libconf = conf.create_library_configurator()
-    libconf.uselib = 'z'
+    libconf.uselib = 'Z'
     libconf.name   = 'z'
     libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
     libconf.run()
     
     libconf = conf.create_library_configurator()
-    libconf.uselib = 'bz2'
+    libconf.uselib = 'BZ2'
     libconf.name   = 'bz2'
     libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
     libconf.run()
     
     libconf = conf.create_library_configurator()
-    libconf.uselib = 'gcrypt'
+    libconf.uselib = 'GCRYPT'
     libconf.name   = 'gcrypt'
     libconf.path = ['/opt/local/lib','/usr/lib','/usr/local/lib','/sw/lib']
     libconf.mandatory = 1
