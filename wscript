@@ -17,7 +17,7 @@ def configure(conf):
     conf.env['CXXFLAGS_DEBUG'] = '-g3 -ggdb3 -DDEBUG'
     conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG'
     
-    conf.env['BOOST_WANTS'] = 'iostreams'
+    conf.env['WANT_BOOST'] = 'BOOST_IOSTREAM BOOST_FILESYSTEM BOOST_SYSTEM'
     
     conf.check_tool('g++')
     conf.check_tool('boost')
@@ -47,13 +47,9 @@ def configure(conf):
     libconf.path = ['/opt/local/lib','/usr/lib','/usr/local/lib','/sw/lib']
     libconf.mandatory = 1
     libconf.run()
-    
-#    conf.sub_config('src')
-#    conf.sub_config('test')
-#    conf.sub_config('sandbox')
 
 def build(bld):
-    bld.add_subdirs('sandbox')
+    bld.add_subdirs('sandbox test')
     #bld.add_subdirs('src test sandbox')
 
 def shutdown(): pass
