@@ -22,6 +22,7 @@ def configure(conf):
 
     boostconf = conf.create_boost_configurator()
     boostconf.lib = ['iostream', 'filesystem', 'system']
+    boostconf.static = 'onlystatic'
     boostconf.run()
     
     pkgconf = conf.create_pkgconfig_configurator()
