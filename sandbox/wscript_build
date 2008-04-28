@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 obj = bld.create_obj('cpp', 'program')
 obj.source = 'tls-example.cpp'
 #obj.cxxflags='-Wall -W -pedantic -std=c++98'

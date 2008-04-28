@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import sys
 
 VERSION='dev'
@@ -58,7 +56,6 @@ def configure(conf):
     libconf.run()
 
 def build(bld):
-    bld.add_subdirs('sandbox test')
-    #bld.add_subdirs('src test sandbox')
+    bld.add_subdirs('src test sandbox')
 
 def shutdown(): pass
