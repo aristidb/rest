@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+darwin = sys.platform.startswith('darwin')
+
 obj = bld.create_obj('cpp', 'program')
 obj.source = '''
 unit.cpp filter_tests.cpp test1.cpp http_connection.cpp http_utils.cpp
@@ -7,16 +9,18 @@ config_tests.cpp keywords.cpp uri.cpp encodings.cpp logger.cpp
 '''
 obj.includes = ['../include', '../testsoon/include']
 obj.uselib = '''
-BOOST BOOST_IOSTREAM BOOST_FILESYSTEM BOOST_SYSTEM BZ2 Z GNUTLS GCRYPT
+BOOST BOOST_IOSTREAM BOOST_SYSTEM BOOST_FILESYSTEM BZ2 Z GNUTLS GCRYPT restosx
 '''
-obj.uselib_local = 'rest'
+if not darwin:
+    obj.uselib_local = 'rest'
 obj.target = 'unit'
 
 obj = bld.create_obj('cpp', 'program')
 obj.source = 'http-handler-test.cpp'
 obj.uselib = '''
-BOOST BOOST_IOSTREAM BOOST_FILESYSTEM BOOST_SYSTEM BZ2 Z GNUTLS GCRYPT
+BOOST BOOST_IOSTREAM BOOST_FILESYSTEM BOOST_SYSTEM BZ2 Z GNUTLS GCRYPT restosx
 '''
 obj.includes = ['../include', '../testsoon/include']
-obj.uselib_local = 'rest'
+if not darwin:
+    obj.uselib_local = 'rest'
 obj.target = 'http-handler-test'

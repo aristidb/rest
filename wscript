@@ -13,20 +13,27 @@ def set_options(opt):
     opt.tool_options('boost2')
 
 def configure(conf):
-    conf.env['CXXFLAGS'] = '-pipe -Wno-long-long -Wall -W -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -Iinclude -Itestsoon/include'
-    conf.env['CXXFLAGS_DEBUG'] = '-g3 -ggdb3 -DDEBUG'
-    conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG'
+    darwin = sys.platform.startswith('darwin')
+    conf.check_message('platform', '', 1, sys.platform)
+
+    conf.env['CXXFLAGS'] = '-pipe -Wno-long-long -Wall -W -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -Iinclude -Itestsoon/include '
+    if darwin:
+        conf.env['CXXFLAGS'] += ' -DAPPLE '
+    conf.env['CXXFLAGS_DEBUG'] = '-g3 -ggdb3 -DDEBUG '
+    conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG '
+    if darwin:
+        conf.env['CXXFLAGS_OPTIMIZED'] += ' -fast '
     
     conf.check_tool('g++')
     conf.check_tool('boost2')
 
     boostconf = conf.create_boost_configurator()
     boostconf.lib = ['iostream', 'filesystem', 'system']
-    if sys.platform.startswith('darwin'):
+    if darwin:
         boostconf.static = 'nostatic'
     else:
         boostconf.static = 'onlystatic'
-        boostconf.threadingtag = 'st'
+    boostconf.threadingtag = 'st'
     boostconf.run()
     
     pkgconf = conf.create_pkgconfig_configurator()
@@ -54,6 +61,9 @@ def configure(conf):
     libconf.path = ['/opt/local/lib','/usr/lib','/usr/local/lib','/sw/lib']
     libconf.mandatory = 1
     libconf.run()
+
+    if darwin:
+        conf.env['LINKFLAGS_restosx'] = ' ../librest.a '
 
 def build(bld):
     bld.add_subdirs('src test sandbox')

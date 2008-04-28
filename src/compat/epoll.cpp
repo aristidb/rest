@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,6 +57,12 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
 int epoll_wait(int epfd, struct epoll_event *events,
                int maxevents, int milliseconds)
 {
+  return epoll_pwait(epfd, events, maxevents, milliseconds, NULL);
+}
+
+int epoll_pwait(int epfd, struct epoll_event *events,
+                int maxevents, int milliseconds, sigset_t const *sigmask)
+{
   struct timespec timeout;
   struct timespec const *timeout_ = 0x0;
   if(milliseconds != -1) {
@@ -74,7 +81,13 @@ int epoll_wait(int epfd, struct epoll_event *events,
     return -1;
   }
 
+  sigset_t origmask;
+
+  if(sigmask)
+    sigprocmask(SIG_SETMASK, sigmask, &origmask); // this is a race condition!
   int n = kevent(epfd, 0, 0, kevents, maxevents, timeout_);
+  if(sigmask)
+    sigprocmask(SIG_SETMASK, &origmask, NULL); 
   if(n != -1) {
     int ev_pos = 0;
     for(int i = 0; i < n; ++i) {

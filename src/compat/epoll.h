@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <signal.h>
 
 enum EPOLL_EVENTS {
   EPOLLIN = 0x001,
@@ -50,6 +51,9 @@ extern int epoll_ctl(int epfd, int op, int fd,
                      struct epoll_event *event);
 extern int epoll_wait(int epfd, struct epoll_event *events,
                       int maxevents, int timeout); 
+extern int epoll_pwait(int epfd, struct epoll_event *events,
+                       int maxevents, int timeout,
+                       sigset_t const *sigmask);
 
 #ifdef __cplusplus
 }
