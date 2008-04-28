@@ -1,3 +1,4 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include <cassert>
 #include <stdexcept>
 
@@ -117,7 +118,7 @@ namespace tls {
     gnutls_priority_t get() const { return priority_cache; }
   };
 
-  namespace {
+  //namespace {
     class session_db : boost::noncopyable {
 
       static std::size_t const cache_size = 50;
@@ -190,7 +191,7 @@ namespace tls {
         return 0;
       }
     };
-  }
+  //}
 
   class session : boost::noncopyable {
     gnutls_session_t session_;
