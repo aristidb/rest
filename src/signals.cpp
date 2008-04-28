@@ -6,7 +6,7 @@ using rest::signals;
 
 static std::vector<signals*> handlers;
 
-static void common_handler(int sig) {
+static void common_handler(signals::signal_type sig) {
   if (handlers.size() <= sig || handlers[sig] == 0)
     _exit(6);
   handlers[sig]->handle(sig);
@@ -25,17 +25,17 @@ signals::signals() : p(new impl) {
 
 signals::~signals() {}
 
-void signals::add(int sig) {
+void signals::add(signal_type sig) {
   if (handlers.size() <= sig)
     handlers.resize(sig + 1);
   handlers[sig] = this;
 
-  signal(sig, &common_handler);
+  signal(sig, (void (*)(int)) &common_handler);
 
   sigaddset(&p->members, sig);
 }
 
-void signals::ignore(int sig) {
+void signals::ignore(signal_type sig) {
   signal(sig, SIG_IGN);
   sigdelset(&p->members, sig);
 }
@@ -56,10 +56,10 @@ void signals::reset_pending() {
   sigemptyset(&p->pending);
 }
 
-bool signals::is_pending(int sig) const {
+bool signals::is_pending(signal_type sig) const {
   return sigismember(&p->pending, sig);
 }
 
-void signals::handle(int sig) {
+void signals::handle(signal_type sig) {
   sigaddset(&p->pending, sig);
 }

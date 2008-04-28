@@ -10,11 +10,13 @@ namespace rest {
 
 class signals : boost::noncopyable {
 public:
+  typedef unsigned int signal_type;
+
   signals();
   ~signals();
 
-  void add(int sig);
-  void ignore(int sig);
+  void add(signal_type sig);
+  void ignore(signal_type sig);
 
   void block();
 
@@ -23,9 +25,9 @@ public:
   sigset_t const *pending_signals() const;
   void reset_pending();
 
-  bool is_pending(int sig) const;
+  bool is_pending(signal_type sig) const;
 
-  void handle(int sig);
+  void handle(signal_type sig);
 
 private:
   class impl;
