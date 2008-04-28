@@ -218,7 +218,7 @@ void server::serve() {
   p->sig.ignore(SIGPIPE);
   p->sig.ignore(SIGTSTP);
   p->sig.ignore(SIGTTIN);
-  p->sig.ignore(SIGTTOUT);
+  p->sig.ignore(SIGTTOU);
   p->sig.ignore(SIGHUP);
   p->sig.add(SIGTERM);
   p->sig.add(SIGINT);
