@@ -9,18 +9,22 @@ config_tests.cpp keywords.cpp uri.cpp encodings.cpp logger.cpp
 '''
 obj.includes = ['../include', '../testsoon/include']
 obj.uselib = '''
-BOOST BOOST_IOSTREAM BOOST_SYSTEM BOOST_FILESYSTEM BZ2 Z GNUTLS GCRYPT restosx
+BOOST BOOST_IOSTREAM BOOST_SYSTEM BOOST_FILESYSTEM BZ2 Z GNUTLS GCRYPT
 '''
-if not darwin:
+if darwin:
+    obj.env['LINKFLAGS'] += ['../librest.a']
+else:
     obj.uselib_local = 'rest'
 obj.target = 'unit'
 
 obj = bld.create_obj('cpp', 'program')
 obj.source = 'http-handler-test.cpp'
 obj.uselib = '''
-BOOST BOOST_IOSTREAM BOOST_FILESYSTEM BOOST_SYSTEM BZ2 Z GNUTLS GCRYPT restosx
+BOOST BOOST_IOSTREAM BOOST_FILESYSTEM BOOST_SYSTEM BZ2 Z GNUTLS GCRYPT
 '''
 obj.includes = ['../include', '../testsoon/include']
-if not darwin:
+if darwin:
+    obj.env['LINKFLAGS'] += ['../librest.a']
+else:
     obj.uselib_local = 'rest'
 obj.target = 'http-handler-test'

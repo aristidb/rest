@@ -62,9 +62,6 @@ def configure(conf):
     libconf.mandatory = 1
     libconf.run()
 
-    if darwin:
-        conf.env['LINKFLAGS_restosx'] = ' ../librest.a '
-
 def build(bld):
     bld.add_subdirs('src test sandbox')
 
