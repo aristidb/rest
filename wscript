@@ -23,12 +23,13 @@ def configure(conf):
     conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG '
     if darwin:
         conf.env['CXXFLAGS_OPTIMIZED'] += ' -fast '
+    conf.env['FULLSTATIC'] = True
     
     conf.check_tool('g++')
     conf.check_tool('boost2')
 
     boostconf = conf.create_boost_configurator()
-    boostconf.lib = ['iostream', 'filesystem', 'system']
+    boostconf.lib = ['iostreams', 'filesystem', 'system']
     if darwin:
         boostconf.static = 'nostatic'
     else:
@@ -39,6 +40,7 @@ def configure(conf):
     pkgconf = conf.create_pkgconfig_configurator()
     pkgconf.uselib = 'GNUTLS'
     pkgconf.name = 'gnutls'
+    pkgconf.static = True
     pkgconf.run()
     
     libconf = conf.create_library_configurator()
@@ -46,6 +48,7 @@ def configure(conf):
     libconf.name   = 'z'
     libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
+    libconf.static = True
     libconf.run()
     
     libconf = conf.create_library_configurator()
@@ -53,13 +56,7 @@ def configure(conf):
     libconf.name   = 'bz2'
     libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
-    libconf.run()
-    
-    libconf = conf.create_library_configurator()
-    libconf.uselib = 'GCRYPT'
-    libconf.name   = 'gcrypt'
-    libconf.path = ['/opt/local/lib','/usr/lib','/usr/local/lib','/sw/lib']
-    libconf.mandatory = 1
+    libconf.static = True
     libconf.run()
 
 def build(bld):
