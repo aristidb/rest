@@ -23,7 +23,8 @@ def configure(conf):
     conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG '
     if darwin:
         conf.env['CXXFLAGS_OPTIMIZED'] += ' -fast '
-    conf.env['FULLSTATIC'] = True
+    else:
+        conf.env['FULLSTATIC'] = True
     
     conf.check_tool('g++')
     conf.check_tool('boost2')
@@ -40,7 +41,8 @@ def configure(conf):
     pkgconf = conf.create_pkgconfig_configurator()
     pkgconf.uselib = 'GNUTLS'
     pkgconf.name = 'gnutls'
-    pkgconf.static = True
+    if not darwin:
+        pkgconf.static = True
     pkgconf.run()
     
     libconf = conf.create_library_configurator()
