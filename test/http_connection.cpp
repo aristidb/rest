@@ -3,6 +3,7 @@
 #include <rest/host.hpp>
 #include <rest/headers.hpp>
 #include <rest/logger.hpp>
+#include <boost/iostreams/combine.hpp>
 #include <sstream>
 #include <testsoon.hpp>
 
@@ -33,7 +34,14 @@ struct group_fixture_t {
 
   void serve(std::string const &input) {
     std::istringstream in(input);
-    connection.serve(in, output);
+
+    namespace io = boost::iostreams;
+
+    typedef io::combination<std::istringstream, std::stringstream> combination_type;
+    combination_type dev = io::combine(boost::ref(in), boost::ref(output));
+    std::auto_ptr<std::streambuf> p(new io::stream_buffer<combination_type>(dev));
+
+    connection.serve(p);
   }
 };
 

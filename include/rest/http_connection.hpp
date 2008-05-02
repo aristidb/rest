@@ -2,18 +2,19 @@
 #ifndef REST_HTTP_CONNECTION_HPP
 #define REST_HTTP_CONNECTION_HPP
 
-#include "socket_param.hpp"
 #include "network.hpp"
 #include "response.hpp"
 #include "responder.hpp"
-#include "logger.hpp"
 #include <iosfwd>
 #include <string>
+#include <memory>
 #include <boost/scoped_ptr.hpp>
 
 namespace rest {
 
 class keywords;
+class host_container;
+class logger;
 
 class http_connection {
 public:
@@ -24,8 +25,7 @@ public:
 
   ~http_connection();
 
-  void serve(socket_param const &sock, int connfd);
-  void serve(std::istream &in, std::ostream &out);
+  void serve(std::auto_ptr<std::streambuf> conn);
 
 private:
   class impl;

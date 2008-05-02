@@ -1,5 +1,6 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/http_connection.hpp"
+#include "rest/config.hpp"
 #include "rest/headers.hpp"
 #include "rest/host.hpp"
 #include "rest/context.hpp"
@@ -12,13 +13,10 @@
 #include "rest/utils/chunked_filter.hpp"
 #include "rest/utils/length_filter.hpp"
 #include "rest/utils/no_flush_writer.hpp"
-#include "rest/utils/socket_device.hpp"
-#include <rest/config.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/iostreams/combine.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <map>
 #include <sstream>
@@ -30,19 +28,6 @@ using namespace rest;
 namespace det = rest::detail;
 namespace algo = boost::algorithm;
 namespace io = boost::iostreams;
-
-typedef
-  boost::iostreams::stream_buffer<utils::socket_device>
-  connection_streambuf;
-
-typedef
-  io::combination<
-    std::istream,
-    std::ostream
-  >
-  stdio_combination;
-
-typedef io::stream_buffer<stdio_combination> stdio_streambuf;
 
 class http_connection::impl {
 public:
@@ -197,18 +182,8 @@ http_connection::http_connection(
 
 http_connection::~http_connection() { }
 
-void http_connection::serve(socket_param const &sock, int connfd) {
-  p->conn.reset(new connection_streambuf(
-        connfd, sock.timeout_read(), sock.timeout_write()));
-
-  p->serve();
-}
-
-void http_connection::serve(std::istream &in, std::ostream &out) {
-  p->conn.reset(new stdio_streambuf(
-        boost::iostreams::combine(
-          boost::ref(in),
-          boost::ref(out))));
+void http_connection::serve(std::auto_ptr<std::streambuf> conn) {
+  p->conn.reset(conn.release());
 
   p->serve();
 }
