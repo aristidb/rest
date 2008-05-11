@@ -14,13 +14,15 @@ public:
       std::string const &bind,
       std::string const &scheme,
       long timeout_read,
-      long timeout_write)
+      long timeout_write,
+      boost::any const &scheme_specific)
   : service(service),
     socket_type(type),
     bind(bind),
     scheme(scheme),
     timeout_read(timeout_read),
     timeout_write(timeout_write),
+    scheme_specific(scheme_specific),
     fd(-1)
   { }
 
@@ -30,6 +32,7 @@ public:
   std::string scheme;
   long timeout_read;
   long timeout_write;
+  boost::any scheme_specific;
 
   host_container hosts;
 
@@ -42,9 +45,10 @@ socket_param::socket_param(
     std::string const &bind,
     std::string const &scheme,
     long timeout_read,
-    long timeout_write
+    long timeout_write,
+    boost::any const &scheme_specific
   )
-: p(new impl(service, type, bind, scheme, timeout_read, timeout_write))
+: p(new impl(service, type, bind, scheme, timeout_read, timeout_write, scheme_specific))
 {
   if (!object_registry::get().find<rest::scheme>(scheme))
     throw std::logic_error("scheme not found");
@@ -80,6 +84,10 @@ long socket_param::timeout_read() const {
 
 long socket_param::timeout_write() const {
   return p->timeout_write;
+}
+
+boost::any const &socket_param::scheme_specific() const {
+  return p->scheme_specific;
 }
 
 rest::host_container &socket_param::hosts() {

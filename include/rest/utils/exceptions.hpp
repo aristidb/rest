@@ -8,8 +8,17 @@
 
 namespace rest { namespace utils {
 
-class errno_error
+class error 
   : public std::runtime_error
+{
+public:
+  errno_error(std::string const &s)
+    : std::runtime_error(s)
+  { }
+};
+
+class errno_error
+  : public error
 {
 public:
   errno_error(std::string const &s)

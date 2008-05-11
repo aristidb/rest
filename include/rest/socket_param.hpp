@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/any.hpp>
 
 namespace rest {
 
@@ -19,7 +20,8 @@ public:
       std::string const &bind,
       std::string const &scheme,
       long timeout_read,
-      long timeout_write);
+      long timeout_write,
+      boost::any const &scheme_specific);
 
   socket_param &operator=(socket_param o) {
     o.swap(*this);
@@ -35,6 +37,8 @@ public:
   std::string const &bind() const;
 
   std::string const &scheme() const;
+
+  boost::any const &scheme_specific() const;
 
   long timeout_read() const;
   long timeout_write() const;

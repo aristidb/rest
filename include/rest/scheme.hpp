@@ -4,11 +4,14 @@
 
 #include "object.hpp"
 #include "network.hpp"
+#include <boost/any.hpp>
 
 namespace rest {
 
 class logger;
 class socket_param;
+
+namespace utils { class property_tree; }
 
 class scheme : public object {
 public:
@@ -27,6 +30,8 @@ public:
     socket_param const &sock,
     network::address const &addr,
     std::string const &servername) = 0;
+
+  virtual boost::any create_context(utils::property_tree const &socket_data) const;
 };
 
 class http_scheme : public scheme {

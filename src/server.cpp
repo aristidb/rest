@@ -166,13 +166,20 @@ void server::impl::read_connections() {
     if (scheme.empty())
       throw std::runtime_error("no scheme specified");
 
+    rest::scheme *p_scheme = rest::object_registry::get().find<rest::scheme>(scheme);
+
+    if (!p_scheme)
+      throw std::runtime_error("invalid scheme");
+
+    boost::any scheme_specific = p_scheme->create_context(**j);
+
     long timeout_read =
       utils::get(**j, this->timeout_read, "timeout", "read");
     long timeout_write =
       utils::get(**j, this->timeout_write, "timeout", "write");
 
     socket_params.push_back(socket_param(
-      service, type, bind, scheme, timeout_read, timeout_write));
+      service, type, bind, scheme, timeout_read, timeout_write, scheme_specific));
   }
 }
 

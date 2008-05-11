@@ -1,7 +1,7 @@
 #ifndef REST_TLS_HPP
 #define REST_TLS_HPP
 
-#include <stdexcept>
+#include <utils/exceptions.hpp>
 
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/categories.hpp>
@@ -10,7 +10,7 @@
 #include <boost/scoped_ptr.hpp>
 
 namespace rest { namespace tls {
-  struct gnutls_error : std::runtime_error {
+  struct gnutls_error : utils::error {
     explicit gnutls_error(int ret, std::string const &msg = "");
   };
 
