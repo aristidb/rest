@@ -15,7 +15,6 @@ public:
   }
 
   struct context {
-    boost::shared_ptr<tls::dh_params> dh;
     boost::shared_ptr<tls::x509_certificate_credentials> cred;
     boost::shared_ptr<tls::priority> prio;
   };
@@ -39,9 +38,6 @@ boost::any https_scheme::create_context(
 
   impl::context x;
 
-  x.dh.reset(new tls::dh_params(utils::get(socket_data, 2048,
-                                           "tls", "dh_bits"))); // TODO
-
   std::string cafile   = utils::get(socket_data, std::string(),
                                     "tls", "cafile");
   std::string crlfile  = utils::get(socket_data, std::string(),
@@ -60,7 +56,7 @@ boost::any https_scheme::create_context(
       crlfile.c_str(),
       certfile.c_str(),
       keyfile.c_str(),
-      *x.dh));
+      tls::get_dh_params()));
 
   std::string prio = utils::get(socket_data, std::string("NORMAL"),
                                 "tls", "priority");

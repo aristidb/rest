@@ -12,7 +12,11 @@ namespace rest { namespace tls {
 
   namespace {
     class gnutls : boost::noncopyable {
-      gnutls() {
+      boost::scoped_ptr<dh_params> dh_;
+      
+      gnutls(unsigned int bits = 2048)
+        : dh_(new dh_params(bits))
+      {
         if(!gnutls_check_version("2.2.0"))
           throw gnutls_error(0, "Wrong Version");
 #ifndef ENABLE_DEV_RANDOM
@@ -23,12 +27,28 @@ namespace rest { namespace tls {
       ~gnutls() {
         gnutls_global_deinit();
       }
-      friend void ::rest::tls::init();
+      public:
+      dh_params const &dh() { return *dh_; }
+
+      static gnutls const &get(unsigned int bits = 2048) {
+        static gnutls g(bits);
+        return g;
+      }
+
+      friend void ::rest::tls::reinit_dh_params(unsigned int bits);
     };
   }
 
-  void init() {
-    static gnutls g;
+  void init(unsigned int bits) {
+    gnutls::get(bits);
+  }
+
+  dh_params const &::rest::tls::get_dh_params() {
+    return gnutls::get().dh();
+  }
+
+  void reinit_dh_params(unsigned int bits) {
+    dh.reset(new dh_params(bits));
   }
 
   struct dh_params::impl {
