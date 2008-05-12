@@ -162,4 +162,8 @@ namespace utils {
   utils::property_tree &config::tree() {
     return tree_;
   }
+
+  std::string const &config::config_path() const {
+    return config_path_;
+  }
 }
