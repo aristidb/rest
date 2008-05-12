@@ -289,6 +289,7 @@ namespace utils {
     void load(int argc, char **argv, char const *config_path = 0x0,
               bool allow_params = true);
     utils::property_tree &tree();
+    std::string const &config_path() const;
 
   private:
     config();
@@ -298,6 +299,7 @@ namespace utils {
     config &operator =(config const &);
 
     utils::property_tree tree_;
+    std::string config_path_;
   };
 }
 

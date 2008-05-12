@@ -148,6 +148,7 @@ namespace utils {
           }
         }
 
+    config_path_ = config_path;
     utils::read_config(config_path, tree_);
   }
 

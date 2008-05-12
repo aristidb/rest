@@ -135,6 +135,7 @@ struct response::impl {
       compute_from(identity),
       length(-1)
     {
+      (void)o;
       assert(o.type == NIL);
     }
   };

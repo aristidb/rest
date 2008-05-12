@@ -13,9 +13,7 @@ using rest::https_scheme;
 
 class https_scheme::impl {
 public:
-  impl()
-  {
-  }
+  impl() { }
 
   struct context {
     boost::shared_ptr<tls::x509_certificate_credentials> cred;
@@ -40,19 +38,24 @@ boost::any https_scheme::create_context(
 {
   assert(log);
 
-  std::string cafile   = utils::get(socket_data, std::string(),
+  std::string config_path = config::get().config_path();
+  if( *(config_path.end()-1) != '/')
+    config_path += '/';
+
+  std::string cafile   = utils::get(socket_data,
+                                    config_path + "tls/x509-ca.pem",
                                     "tls", "cafile");
   std::string crlfile  = utils::get(socket_data, std::string(),
-                                    "tls", "crlfile");
-  std::string certfile = utils::get(socket_data, std::string(),
+                                    "tls", "crlfile");    
+  std::string certfile = utils::get(socket_data,
+                                    config_path + "tls/x509-server.pem",
                                     "tls", "certfile");
-  std::string keyfile  = utils::get(socket_data, std::string(),
+  std::string keyfile  = utils::get(socket_data,
+                                    config_path + "tls/x509-server-key.pem",
                                     "tls", "keyfile");
 
-  if (cafile.empty() || crlfile.empty() || certfile.empty() || keyfile.empty())
-    throw utils::error("cafile, crlfile, certfile or keyfile not set");
-
-  log->log(logger::notice, "begin tls-initialisation");
+  log->log(logger::notice, std::string("begin tls-initialisation (")
+           + cafile + ", " + crlfile + ", " + certfile + ", " + keyfile + ')');
   tls::init();
 
   impl::context x;
@@ -60,7 +63,7 @@ boost::any https_scheme::create_context(
   x.cred.reset(
     new tls::x509_certificate_credentials(
       cafile.c_str(),
-      crlfile.c_str(),
+      crlfile.empty() ? 0x0 : crlfile.c_str(),
       certfile.c_str(),
       keyfile.c_str(),
       tls::get_dh_params()));

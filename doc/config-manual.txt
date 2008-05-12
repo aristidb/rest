@@ -8,6 +8,12 @@ Can be changed with -c-Flag or by setting -DDEFAULT_CONFIG_PATH during compile t
 /connections/*/port             - specifies the port
 /connections/*/bind             - address to bind to (see bind(2)) [default: INADDR_ANY]
 /connections/*/scheme           - scheme to use (HTTP or HTTPS)
+/connections/*/tls -
+/connections/*/tls/cafile       - path to cafile [default: $CONFIG_PATH/tls/x509-ca.pem]
+/connections/*/tls/crlfile      - path to crlfile [default: none]
+/connections/*/tls/certfile     - path to certfile [default: $CONFIG_PATH/tls/x509-server.pem]
+/connections/*/tls/keyfile      - path to certfile [default: $CONFIG_PATH/tls/x509-server-key.pem]
+/connections/*/tls/priority     - priority [default: NORMAL]
 
 /general -
 /general/name                   - servername [default: "musikdings.rest/0.1"]
