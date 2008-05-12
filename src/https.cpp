@@ -40,9 +40,6 @@ boost::any https_scheme::create_context(
 {
   assert(log);
 
-  log->log(logger::notice, "begin tls-initialisation");
-  tls::init();
-
   impl::context x;
 
   std::string cafile   = utils::get(socket_data, std::string(),
@@ -56,6 +53,9 @@ boost::any https_scheme::create_context(
 
   if (cafile.empty() || crlfile.empty() || certfile.empty() || keyfile.empty())
     throw utils::error("cafile, crlfile, certfile or keyfile not set");
+
+  log->log(logger::notice, "begin tls-initialisation");
+  tls::init();
 
   x.cred.reset(
     new tls::x509_certificate_credentials(
