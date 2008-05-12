@@ -20,7 +20,7 @@ obj.target = 'unit'
 obj = bld.create_obj('cpp', 'program')
 obj.source = 'http-handler-test.cpp'
 obj.uselib = '''
-BOOST BOOST_IOSTREAMS BOOST_FILESYSTEM BOOST_SYSTEM GNUTLS GCRYPT BZ2 Z
+BOOST BOOST_IOSTREAMS BOOST_FILESYSTEM BOOST_SYSTEM GNUTLS GPGERR BZ2 Z
 '''
 obj.includes = ['../include', '../testsoon/include']
 if darwin:
