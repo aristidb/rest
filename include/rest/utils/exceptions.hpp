@@ -18,6 +18,15 @@ public:
   { }
 };
 
+class error 
+  : public std::runtime_error
+{
+public:
+  errno_error(std::string const &s)
+    : std::runtime_error(s)
+  { }
+};
+
 class errno_error
   : public error
 {

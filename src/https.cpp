@@ -35,14 +35,21 @@ std::string const &https_scheme::name() const {
 boost::any https_scheme::create_context(
   utils::property_tree const &socket_data) const
 {
+  tls::init();
+
   impl::context x;
 
-  x.dh.reset(new tls::dh_params(utils::get(socket_data, 2048, "tls", "dh_bits"))); // TODO
+  x.dh.reset(new tls::dh_params(utils::get(socket_data, 2048,
+                                           "tls", "dh_bits"))); // TODO
 
-  std::string cafile   = utils::get(socket_data, std::string(), "tls", "cafile");
-  std::string crlfile  = utils::get(socket_data, std::string(), "tls", "crlfile");
-  std::string certfile = utils::get(socket_data, std::string(), "tls", "certfile");
-  std::string keyfile  = utils::get(socket_data, std::string(), "tls", "keyfile");
+  std::string cafile   = utils::get(socket_data, std::string(),
+                                    "tls", "cafile");
+  std::string crlfile  = utils::get(socket_data, std::string(),
+                                    "tls", "crlfile");
+  std::string certfile = utils::get(socket_data, std::string(),
+                                    "tls", "certfile");
+  std::string keyfile  = utils::get(socket_data, std::string(),
+                                    "tls", "keyfile");
 
   if (cafile.empty() || crlfile.empty() || certfile.empty() || keyfile.empty())
     throw utils::error("cafile, crlfile, certfile or keyfile not set");
@@ -55,7 +62,8 @@ boost::any https_scheme::create_context(
       keyfile.c_str(),
       *x.dh));
 
-  std::string prio = utils::get(socket_data, std::string("NORMAL"), "tls", "priority");
+  std::string prio = utils::get(socket_data, std::string("NORMAL"),
+                                "tls", "priority");
 
   x.prio.reset(new tls::priority(prio.c_str()));
 
