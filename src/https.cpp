@@ -40,8 +40,6 @@ boost::any https_scheme::create_context(
 {
   assert(log);
 
-  impl::context x;
-
   std::string cafile   = utils::get(socket_data, std::string(),
                                     "tls", "cafile");
   std::string crlfile  = utils::get(socket_data, std::string(),
@@ -56,6 +54,8 @@ boost::any https_scheme::create_context(
 
   log->log(logger::notice, "begin tls-initialisation");
   tls::init();
+
+  impl::context x;
 
   x.cred.reset(
     new tls::x509_certificate_credentials(
