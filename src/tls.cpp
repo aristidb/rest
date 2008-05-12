@@ -7,7 +7,7 @@
 
 namespace rest { namespace tls {
   gnutls_error::gnutls_error(int ret, std::string const &msg)
-    : std::runtime_error(msg + ": " + gnutls_strerror(ret))
+    : error(msg + ": " + gnutls_strerror(ret))
   { }
 
   namespace {

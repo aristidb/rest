@@ -1,8 +1,7 @@
 #ifndef REST_TLS_HPP
 #define REST_TLS_HPP
 
-#include <utils/exceptions.hpp>
-
+#include "rest/utils/exceptions.hpp"
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/categories.hpp>
 #include <boost/iostreams/stream.hpp>
