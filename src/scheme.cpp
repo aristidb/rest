@@ -22,7 +22,7 @@ void scheme::load_standard_objects(object_registry &obj_reg) {
   need_load_standard_objects = false;
 }
 
-boost::any scheme::create_context(utils::property_tree const &) const {
+boost::any scheme::create_context(logger *, utils::property_tree const &) const{
   return boost::any();
 }
 

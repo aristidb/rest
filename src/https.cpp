@@ -1,10 +1,13 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/https.hpp"
 #include "rest/tls.hpp"
+#include "rest/logger.hpp"
 #include "rest/config.hpp"
 #include "rest/socket_param.hpp"
 #include "rest/http_connection.hpp"
 #include <boost/shared_ptr.hpp>
+
+#include <cassert>
 
 using rest::https_scheme;
 
@@ -32,8 +35,12 @@ std::string const &https_scheme::name() const {
 }
 
 boost::any https_scheme::create_context(
+  logger *log,
   utils::property_tree const &socket_data) const
 {
+  assert(log);
+
+  log->log(logger::notice, "begin tls-initialisation");
   tls::init();
 
   impl::context x;
@@ -62,6 +69,7 @@ boost::any https_scheme::create_context(
                                 "tls", "priority");
 
   x.prio.reset(new tls::priority(prio.c_str()));
+  log->log(logger::notice, "end tls-initialisation");
 
   return boost::any(x);
 }
@@ -75,8 +83,6 @@ void https_scheme::serve(
 {
   // TODO: timeout with setsockopt...
 
-
-  // hier auch gucken
   boost::any const &scheme_specific = sock.scheme_specific();
   impl::context x = boost::any_cast<impl::context>(scheme_specific);
 

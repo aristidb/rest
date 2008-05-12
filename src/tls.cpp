@@ -27,8 +27,8 @@ namespace rest { namespace tls {
       ~gnutls() {
         gnutls_global_deinit();
       }
-      public:
-      dh_params const &dh() { return *dh_; }
+    public:
+      dh_params const &dh() const { return *dh_; }
 
       static gnutls const &get(unsigned int bits = 2048) {
         static gnutls g(bits);
@@ -43,12 +43,12 @@ namespace rest { namespace tls {
     gnutls::get(bits);
   }
 
-  dh_params const &::rest::tls::get_dh_params() {
+  dh_params const &get_dh_params() {
     return gnutls::get().dh();
   }
 
   void reinit_dh_params(unsigned int bits) {
-    dh.reset(new dh_params(bits));
+    const_cast<gnutls&>(gnutls::get()).dh_.reset(new dh_params(bits));
   }
 
   struct dh_params::impl {

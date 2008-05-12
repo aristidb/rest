@@ -26,7 +26,7 @@ namespace rest { namespace tls {
   };
 
   dh_params const &get_dh_params();
-  reinit_dh_params(unsigned int bits = 2048);
+  void reinit_dh_params(unsigned int bits = 2048);
 
   class x509_certificate_credentials : boost::noncopyable {
     struct impl;

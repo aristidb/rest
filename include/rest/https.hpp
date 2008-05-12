@@ -20,7 +20,8 @@ private:
   std::string const &name() const;
   void serve(
     logger*,int,socket_param const&,network::address const&,std::string const&);
-  boost::any create_context(utils::property_tree const &socket_data) const;
+  boost::any create_context(
+    logger *log, utils::property_tree const &socket_data) const;
 };
 
 }

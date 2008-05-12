@@ -171,7 +171,7 @@ void server::impl::read_connections() {
     if (!p_scheme)
       throw std::runtime_error("invalid scheme");
 
-    boost::any scheme_specific = p_scheme->create_context(**j);
+    boost::any scheme_specific = p_scheme->create_context(log, **j);
 
     long timeout_read =
       utils::get(**j, this->timeout_read, "timeout", "read");

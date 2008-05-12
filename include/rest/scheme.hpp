@@ -31,7 +31,8 @@ public:
     network::address const &addr,
     std::string const &servername) = 0;
 
-  virtual boost::any create_context(utils::property_tree const &socket_data) const;
+  virtual boost::any create_context(
+    logger *log, utils::property_tree const &socket_data) const;
 };
 
 class http_scheme : public scheme {
@@ -48,3 +49,8 @@ private:
 }
 
 #endif
+// Local Variables: **
+// mode: C++ **
+// coding: utf-8 **
+// c-electric-flag: nil **
+// End: **
