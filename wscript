@@ -50,7 +50,8 @@ def configure(conf):
     libconf.name = 'gpg-error'
     libconf.path = ['/usr/lib', '/usr/local/lib', '/sw/lib', '/opt/local/lib']
     libconf.mandatory = 1
-    libconf.static = True
+    if not darwin:
+        libconf.static = True
     libconf.run()
     
     libconf = conf.create_library_configurator()
@@ -58,7 +59,8 @@ def configure(conf):
     libconf.name   = 'z'
     libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
-    libconf.static = True
+    if not darwin:
+        libconf.static = True
     libconf.run()
     
     libconf = conf.create_library_configurator()
@@ -66,7 +68,8 @@ def configure(conf):
     libconf.name   = 'bz2'
     libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
-    libconf.static = True
+    if not darwin:
+        libconf.static = True
     libconf.run()
 
 def build(bld):
