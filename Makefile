@@ -1,11 +1,9 @@
 .PHONY: configure all clean
-all: configure
+all: .configure
 	./waf -v 2>&1 | sed -e 's/^\.\.\//\.\//'
 
-configure: .configured
+.configure:
 	./waf configure
-
-.configured:
 	@touch .configured
 
 clean:
