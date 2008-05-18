@@ -182,7 +182,7 @@ http_connection::http_connection(
 
 http_connection::~http_connection() { }
 
-void rest::http_connection::serve(std::auto_ptr<std::streambuf> conn) {
+void http_connection::serve(std::auto_ptr<std::streambuf> conn) {
   p->conn.reset(conn.release());
 
   p->serve();
