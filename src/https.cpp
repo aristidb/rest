@@ -84,7 +84,21 @@ void https_scheme::serve(
   network::address const &addr,
   std::string const &servername)
 {
-  // TODO: timeout with setsockopt...
+  long timeout_rd = sock.timeout_read();
+  long timeout_wr = sock.timeout_write();
+
+  struct timeval timeout;
+  timeout.tv_usec = 0;
+
+  if (timeout_rd > 0) {
+    timeout.tv_sec = timeout_rd;
+    ::setsockopt(connfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+  }
+
+  if (timeout_wr > 0) {
+    timeout.tv_sec = timeout_wr;
+    ::setsockopt(connfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  }
 
   boost::any const &scheme_specific = sock.scheme_specific();
   impl::context x = boost::any_cast<impl::context>(scheme_specific);
