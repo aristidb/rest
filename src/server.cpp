@@ -56,16 +56,6 @@ public:
     read_connections();
   }
 
-  static sig_atomic_t restart_flag;
-  static void restart_handler(int) {
-    restart_flag = 1;
-  }
-
-  static sig_atomic_t terminate_flag;
-  static void term_handler(int) {
-    terminate_flag = 1;
-  }
-
   void read_connections();
   int initialize_sockets();
   void incoming(socket_param const &sock, std::string const &severname);
@@ -73,8 +63,6 @@ public:
                  rest::network::address const &addr, std::string const &name);
 };
 
-sig_atomic_t server::impl::restart_flag = 0;
-sig_atomic_t server::impl::terminate_flag = 0;
 int const server::impl::DEFAULT_LISTENQ = 5;
 long const server::impl::DEFAULT_TIMEOUT = 10;
 
