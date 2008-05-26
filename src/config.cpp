@@ -22,6 +22,12 @@ namespace utils {
         data_.assign(
             std::istreambuf_iterator<char>(in.rdbuf()),
             std::istreambuf_iterator<char>());
+        std::string::iterator it = data_.end();
+        if (*(it - 1) == '\n')
+          --it;
+        if (*(it - 1) == '\r')
+          --it;
+        data_.erase(it, data_.end());
       }
 
       explicit data_handler(std::string const &data)

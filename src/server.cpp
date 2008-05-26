@@ -205,7 +205,6 @@ void server::serve() {
 
   utils::property_tree &tree = config::get().tree();
 
-  process::drop_privileges(p->log, tree);
   process::maybe_daemonize(p->log, tree);
 
   p->sig.ignore(SIGCHLD);
@@ -226,6 +225,7 @@ void server::serve() {
   int epollfd = p->initialize_sockets();
 
   process::chroot(p->log, tree);
+  process::drop_privileges(p->log, tree);
 
   int const EVENTS_N = 8;
 

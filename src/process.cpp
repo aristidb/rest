@@ -88,9 +88,15 @@ void rest::process::chroot(logger *log, utils::property_tree const &tree) {
     return;
   }
 
-  if(::chroot(".") == -1) {
+  log->log(logger::info, "chroot", dir);
+
+  if (::chroot(dir.c_str()) == -1) {
     if(errno != EPERM)
       throw utils::errno_error("chroot failed");
     log->log(logger::warning, "chroot-error","insufficient permissions");
+  }
+
+  if (::chdir("/") == -1) {
+    throw utils::errno_error("chdir (chroot)");
   }
 }
