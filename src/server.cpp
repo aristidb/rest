@@ -205,7 +205,6 @@ void server::serve() {
 
   utils::property_tree &tree = config::get().tree();
 
-  process::chroot(p->log, tree);
   process::drop_privileges(p->log, tree);
   process::maybe_daemonize(p->log, tree);
 
@@ -225,6 +224,8 @@ void server::serve() {
   assert(!servername.empty());
 
   int epollfd = p->initialize_sockets();
+
+  process::chroot(p->log, tree);
 
   int const EVENTS_N = 8;
 
