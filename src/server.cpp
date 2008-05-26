@@ -217,7 +217,6 @@ void server::serve() {
   p->sig.ignore(SIGHUP);
   p->sig.add(SIGTERM);
   p->sig.add(SIGINT);
-  p->sig.add(SIGUSR1);
   p->sig.block();
 
   std::string const &servername =
@@ -233,7 +232,7 @@ void server::serve() {
     epoll_event events[EVENTS_N];
     int nfds = epoll::wait(epollfd, events, EVENTS_N);
 
-    if (p->sig.is_pending(SIGTERM) || p->sig.is_pending(SIGINT) || p->sig.is_pending(SIGUSR1))
+    if (p->sig.is_pending(SIGTERM) || p->sig.is_pending(SIGINT))
       break;
 
     for(int i = 0; i < nfds; ++i) {
@@ -245,9 +244,6 @@ void server::serve() {
 
   p->log->log(logger::notice, "server-stopped");
   p->log->flush();
-
-  if (p->sig.is_pending(SIGUSR1))
-    process::restart(p->log);
 }
 
 void server::impl::incoming(socket_param const &sock,

@@ -26,33 +26,6 @@ std::vector<char*> rest::process::getargs(
   return ret;
 }
 
-void rest::process::restart(logger *log) {
-  log->set_sequence_number(0);
-  log->log(logger::notice, "server-restart");
-  log->flush();
-
-  std::string cmdbuffer;
-  std::string envbuffer;
-
-  char resolved_cmd[8192];
-  int n = readlink("/proc/self/exe", resolved_cmd, sizeof(resolved_cmd) - 1);
-  if (n < 0) {
-    log->log(logger::err, "server-restart-error", "readlink failed");
-    log->log(logger::err, "server-restart-errorcode", errno);
-    log->flush();
-    return;
-  }
-  resolved_cmd[n] = '\0';
-
-  if(::execve(resolved_cmd, &getargs("/proc/self/cmdline", cmdbuffer)[0],
-              &getargs("/proc/self/environ", envbuffer)[0]) == -1)
-  {
-    log->log(logger::err, "server-restart-error", "execve failed");
-    log->log(logger::err, "server-restart-errorcode", errno);
-    log->flush();
-  }
-}
-
 bool rest::process::set_gid(gid_t gid) {
   if(::setgroups(1, &gid) == -1) {
     if(errno != EPERM)
