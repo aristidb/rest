@@ -25,14 +25,31 @@ namespace rest { namespace tls {
 #endif
         gnutls_global_init();
       }
+
+      explicit gnutls(char const *filename)
+        : dh_(new dh_params(filename))
+      {
+        if(!gnutls_check_version("2.2.0"))
+          throw gnutls_error(0, "Wrong Version");
+#ifndef ENABLE_DEV_RANDOM
+        gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+#endif
+        gnutls_global_init();
+      }
+
       ~gnutls() {
         gnutls_global_deinit();
       }
-      public:
+    public:
       dh_params const &dh() const { return *dh_; }
 
-      static gnutls &get(unsigned int bits = 2048) {
-        static gnutls g(bits);
+      static gnutls &get(char const *filename = 0x0) {
+#ifndef NDEBUG
+        static bool initialized = false;
+        if(!initialized && !filename)
+          throw utils::error("using tls::get without proper initialization!");
+#endif
+        static gnutls g(filename);
         return g;
       }
 
@@ -41,8 +58,8 @@ namespace rest { namespace tls {
     };
   }
 
-  void init(unsigned int bits) {
-    gnutls::get(bits);
+  void init(char const *filename) {
+    gnutls::get(filename);
   }
 
   dh_params const &get_dh_params() {
@@ -82,9 +99,9 @@ namespace rest { namespace tls {
       throw gnutls_error(ret, "initialize dh params");
 
     std::ifstream in(filename);
-    enum { BITS = 2049 };
-    char bitdata[BITS];
-    std::streamsize size = in.readsome(bitdata, BITS-1);
+    enum { SIZE = 2049 };
+    char bitdata[SIZE];
+    std::streamsize size = in.readsome(bitdata, SIZE-1);
     if(size < 0)
       throw utils::error("reading dh params from file");
     bitdata[size] = 0;

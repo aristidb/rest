@@ -13,7 +13,8 @@ namespace rest { namespace tls {
     explicit gnutls_error(int ret, std::string const &msg = "");
   };
 
-  void init(unsigned int bits = 2048);
+  void init(char const *filename);
+  inline void init(std::string const &str) { init(str.c_str()); }
 
   class dh_params : boost::noncopyable {
     struct impl;
@@ -32,6 +33,9 @@ namespace rest { namespace tls {
   dh_params const &get_dh_params();
   void reinit_dh_params(unsigned int bits = 2048);
   void reinit_dh_params(char const *filename);
+  inline void reinit_dh_params(std::string const &filename) {
+    reinit_dh_params(filename.c_str());
+  }
 
   class x509_certificate_credentials : boost::noncopyable {
     struct impl;

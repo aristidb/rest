@@ -54,9 +54,14 @@ boost::any https_scheme::create_context(
                                     config_path + "tls/x509-server-key.pem",
                                     "tls", "keyfile");
 
+  std::string dhfile   = utils::get(socket_data,
+                                    config_path + "tls/dhparams.pem",
+                                    "tls", "dhfile");
+
   log->log(logger::notice, std::string("begin tls-initialisation (")
-           + cafile + ", " + crlfile + ", " + certfile + ", " + keyfile + ')');
-  tls::init();
+           + cafile + ", " + crlfile + ", " + certfile + ", " + keyfile + ", " +
+           dhfile + ')');
+  tls::init(dhfile);
 
   impl::context x;
 
