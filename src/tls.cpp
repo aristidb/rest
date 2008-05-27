@@ -15,26 +15,24 @@ namespace rest { namespace tls {
     class gnutls : boost::noncopyable {
       boost::scoped_ptr<dh_params> dh_;
       
-      gnutls(unsigned int bits = 2048)
-        : dh_(new dh_params(bits))
-      {
+      gnutls(unsigned int bits = 2048) {
         if(!gnutls_check_version("2.2.0"))
           throw gnutls_error(0, "Wrong Version");
 #ifndef ENABLE_DEV_RANDOM
         gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #endif
         gnutls_global_init();
+        dh_.reset(new dh_params(bits));
       }
 
-      explicit gnutls(char const *filename)
-        : dh_(new dh_params(filename))
-      {
+      explicit gnutls(char const *filename) {
         if(!gnutls_check_version("2.2.0"))
           throw gnutls_error(0, "Wrong Version");
 #ifndef ENABLE_DEV_RANDOM
         gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #endif
         gnutls_global_init();
+        dh_.reset(new dh_params(filename));
       }
 
       ~gnutls() {
