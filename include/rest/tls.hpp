@@ -18,8 +18,12 @@ namespace rest { namespace tls {
   class dh_params : boost::noncopyable {
     struct impl;
     boost::scoped_ptr<impl> p;
+
+    void load_pkcs3(char const *filename);
   public:
     explicit dh_params(unsigned int bits = 2048);
+    explicit dh_params(char const *filename);
+    explicit dh_params(std::string const &filename);
     ~dh_params();
 
     impl const &i_get_() const { return *p.get(); } // internal!
@@ -27,6 +31,7 @@ namespace rest { namespace tls {
 
   dh_params const &get_dh_params();
   void reinit_dh_params(unsigned int bits = 2048);
+  void reinit_dh_params(char const *filename);
 
   class x509_certificate_credentials : boost::noncopyable {
     struct impl;

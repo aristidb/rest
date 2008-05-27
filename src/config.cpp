@@ -32,7 +32,7 @@ namespace utils {
 
       explicit data_handler(std::string const &data)
         : data_(data)
-      {}
+      { }
 
       std::string const &data() const {
         return data_;
@@ -64,8 +64,7 @@ namespace utils {
     : impl_(new impl(name, file))
   { }
 
-  property::property(std::string const &name,
-                     std::string const &data)
+  property::property(std::string const &name, std::string const &data)
     : impl_(new impl(name, data))
   { }
 

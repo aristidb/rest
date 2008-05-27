@@ -4,6 +4,7 @@
 #include <gnutls/gnutls.h>
 
 #include <cassert>
+#include <fstream>
 
 namespace rest { namespace tls {
   gnutls_error::gnutls_error(int ret, std::string const &msg)
@@ -36,6 +37,7 @@ namespace rest { namespace tls {
       }
 
       friend void ::rest::tls::reinit_dh_params(unsigned int bits);
+      friend void ::rest::tls::reinit_dh_params(char const *filename);
     };
   }
 
@@ -51,6 +53,10 @@ namespace rest { namespace tls {
     gnutls::get().dh_.reset(new dh_params(bits));
   }
 
+  void reinit_dh_params(char const *filename) {
+    gnutls::get().dh_.reset(new dh_params(filename));
+  }
+
   struct dh_params::impl {
     gnutls_dh_params_t dh_params_;
   };
@@ -61,11 +67,47 @@ namespace rest { namespace tls {
     }
   }
 
+  dh_params::dh_params(char const *filename) {
+    load_pkcs3(filename);
+  }
+
+  dh_params::dh_params(std::string const &filename) {
+    load_pkcs3(filename.c_str());
+  }
+
+  void dh_params::load_pkcs3(char const *filename) {
+    p.reset(new impl);
+    int ret = gnutls_dh_params_init(&p->dh_params_);
+    if(ret < 0)
+      throw gnutls_error(ret, "initialize dh params");
+
+    std::ifstream in(filename);
+    enum { BITS = 2049 };
+    char bitdata[BITS];
+    std::streamsize size = in.readsome(bitdata, BITS-1);
+    if(size < 0)
+      throw utils::error("reading dh params from file");
+    bitdata[size] = 0;
+    
+    gnutls_datum params;
+    params.data = reinterpret_cast<unsigned char*>(bitdata);
+    params.size = size;
+
+    ret = gnutls_dh_params_import_pkcs3(p->dh_params_, &params,
+                                        GNUTLS_X509_FMT_PEM);
+    if(ret < 0)
+      throw gnutls_error(ret, "importing dh params from file");
+  }
+
   dh_params::dh_params(unsigned int bits)
     : p(new impl)
   {
-    gnutls_dh_params_init(&p->dh_params_);
-    gnutls_dh_params_generate2(p->dh_params_, bits);
+    int ret = gnutls_dh_params_init(&p->dh_params_);
+    if(ret < 0)
+      throw gnutls_error(ret, "initialize dh params");
+    ret = gnutls_dh_params_generate2(p->dh_params_, bits);
+    if(ret < 0)
+      throw gnutls_error(ret, "generate dh params");
   }
 
   dh_params::~dh_params() {

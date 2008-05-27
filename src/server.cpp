@@ -215,6 +215,7 @@ void server::serve() {
   p->sig.ignore(SIGHUP);
   p->sig.add(SIGTERM);
   p->sig.add(SIGINT);
+  //p->sig.add(SIGUSR1);
   p->sig.block();
 
   std::string const &servername =
@@ -235,6 +236,11 @@ void server::serve() {
 
     if (p->sig.is_pending(SIGTERM) || p->sig.is_pending(SIGINT))
       break;
+
+    /*
+      if(p->sig.is_pending(SIGUSR1))
+      tls::reinit_dh_params("file");
+    */
 
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
