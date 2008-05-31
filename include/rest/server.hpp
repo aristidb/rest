@@ -7,6 +7,8 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/function.hpp>
+#include <sys/inotify.h>
 
 namespace rest {
 
@@ -23,6 +25,14 @@ public:
   sockets_container &sockets();
 
   void set_listen_q(int no);
+
+  typedef boost::uint32_t inotify_mask_t;
+  typedef boost::function<void (inotify_event const &)> watch_callback_t;
+
+  void watch_file(
+    std::string const &file_path,
+    inotify_mask_t inotify_mask,
+    watch_callback_t const &watch_callback);
 
 private:
   class impl;
