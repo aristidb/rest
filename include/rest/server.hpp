@@ -8,8 +8,11 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/function.hpp>
+
 #ifndef APPLE
-#include <sys/inotify.h>
+  #include <sys/inotify.h>
+#else
+  struct inotify_event {};
 #endif
 
 namespace rest {
@@ -29,11 +32,7 @@ public:
   void set_listen_q(int no);
 
   typedef boost::uint32_t inotify_mask_t;
-#ifdef APPLE
-  typedef int watch_callback_t;
-#else
   typedef boost::function<void (inotify_event const &)> watch_callback_t;
-#endif
 
   void watch_file(
     std::string const &file_path,

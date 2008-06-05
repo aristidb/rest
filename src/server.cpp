@@ -198,61 +198,6 @@ int server::impl::initialize_sockets() {
   return epollfd;
 }
 
-void server::serve() {
-  p->log->set_sequence_number(0);
-  p->log->log(logger::notice, "server-started");
-  p->log->flush();
-
-  utils::property_tree &tree = config::get().tree();
-
-  process::maybe_daemonize(p->log, tree);
-
-  p->sig.ignore(SIGCHLD);
-  p->sig.ignore(SIGPIPE);
-  p->sig.ignore(SIGTSTP);
-  p->sig.ignore(SIGTTIN);
-  p->sig.ignore(SIGTTOU);
-  p->sig.ignore(SIGHUP);
-  p->sig.add(SIGTERM);
-  p->sig.add(SIGINT);
-  //p->sig.add(SIGUSR1);
-  p->sig.block();
-
-  std::string const &servername =
-    utils::get(tree, std::string(), "general", "name");
-  // shouldn't require a default value (see config::config())
-  assert(!servername.empty());
-
-  int epollfd = p->initialize_sockets();
-
-  process::chroot(p->log, tree);
-  process::drop_privileges(p->log, tree);
-
-  int const EVENTS_N = 8;
-
-  for (;;) {
-    epoll_event events[EVENTS_N];
-    int nfds = epoll::wait(epollfd, events, EVENTS_N);
-
-    if (p->sig.is_pending(SIGTERM) || p->sig.is_pending(SIGINT))
-      break;
-
-    /*
-      if(p->sig.is_pending(SIGUSR1))
-      tls::reinit_dh_params("file");
-    */
-
-    for(int i = 0; i < nfds; ++i) {
-      socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
-      assert(ptr);
-      p->incoming(*ptr, servername);
-    }
-  }
-
-  p->log->log(logger::notice, "server-stopped");
-  p->log->flush();
-}
-
 void server::impl::incoming(socket_param const &sock,
                             std::string const &servername)
 {
@@ -316,4 +261,59 @@ int server::impl::connection(socket_param const &sock, int connfd,
   }
   schm->serve(log, connfd, sock, addr, servername);
   return 0;
+}
+
+void server::serve() {
+  p->log->set_sequence_number(0);
+  p->log->log(logger::notice, "server-started");
+  p->log->flush();
+
+  utils::property_tree &tree = config::get().tree();
+
+  process::maybe_daemonize(p->log, tree);
+
+  p->sig.ignore(SIGCHLD);
+  p->sig.ignore(SIGPIPE);
+  p->sig.ignore(SIGTSTP);
+  p->sig.ignore(SIGTTIN);
+  p->sig.ignore(SIGTTOU);
+  p->sig.ignore(SIGHUP);
+  p->sig.add(SIGTERM);
+  p->sig.add(SIGINT);
+  //p->sig.add(SIGUSR1);
+  p->sig.block();
+
+  std::string const &servername =
+    utils::get(tree, std::string(), "general", "name");
+  // shouldn't require a default value (see config::config())
+  assert(!servername.empty());
+
+  int epollfd = p->initialize_sockets();
+
+  process::chroot(p->log, tree);
+  process::drop_privileges(p->log, tree);
+
+  int const EVENTS_N = 8;
+
+  for (;;) {
+    epoll_event events[EVENTS_N];
+    int nfds = epoll::wait(epollfd, events, EVENTS_N);
+
+    if (p->sig.is_pending(SIGTERM) || p->sig.is_pending(SIGINT))
+      break;
+
+    /*
+      if(p->sig.is_pending(SIGUSR1))
+      tls::reinit_dh_params("file");
+    */
+
+    for(int i = 0; i < nfds; ++i) {
+      socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
+      assert(ptr);
+      p->incoming(*ptr, servername);
+    }
+  }
+
+  p->log->log(logger::notice, "server-stopped");
+  p->log->flush();
 }
