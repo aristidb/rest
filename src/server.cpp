@@ -37,6 +37,8 @@ public:
   long timeout_read;
   long timeout_write;
 
+  int inotify_fd;
+
   utils::property_tree const &config;
   logger *log;
 
@@ -53,6 +55,7 @@ public:
       config(config),
       log(log)
   {
+    initialize_inotify();
     read_connections();
   }
 
@@ -61,6 +64,9 @@ public:
   void incoming(socket_param const &sock, std::string const &severname);
   int connection(socket_param const &sock, int connfd,
                  rest::network::address const &addr, std::string const &name);
+
+  void initialize_inotify();
+  void inotify_event();
 };
 
 int const server::impl::DEFAULT_LISTENQ = 5;
@@ -74,15 +80,6 @@ sockets_container::iterator server::add_socket(socket_param const &s) {
 sockets_container &server::sockets() {
   return p->socket_params;
 }
-
-void server::set_listen_q(int no) {
-  p->listenq = no;
-}
-
-server::server(utils::property_tree const &conf, logger *log)
-: p(new impl(conf, log)) { }
-
-server::~server() { }
 
 namespace {
   namespace epoll {
@@ -192,8 +189,14 @@ int server::impl::initialize_sockets() {
 
     epolle.data.ptr = &*i;
     if(::epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &epolle) == -1)
-      throw utils::errno_error("could not start server (epoll_ctl)");
+      throw utils::errno_error("epoll_ctl (socket)");
   }
+
+#ifndef APPLE
+  epolle.data.ptr = 0;
+  if (::epoll_ctl(epollfd, EPOLL_CTL_ADD, inotify_fd, &epolle) == -1)
+    throw utils::errno_error("epoll_ctl (inotify)");
+#endif
 
   return epollfd;
 }
@@ -249,9 +252,11 @@ void server::impl::incoming(socket_param const &sock,
   }
 }
 
-int server::impl::connection(socket_param const &sock, int connfd,
-                             network::address const &addr,
-                             std::string const &servername)
+int server::impl::connection(
+    socket_param const &sock,
+    int connfd,
+    network::address const &addr,
+    std::string const &servername)
 {
   scheme *schm = object_registry::get().find<scheme>(sock.scheme());
   if (!schm) {
@@ -261,6 +266,29 @@ int server::impl::connection(socket_param const &sock, int connfd,
   }
   schm->serve(log, connfd, sock, addr, servername);
   return 0;
+}
+
+void server::impl::initialize_inotify() {
+#ifndef APPLE
+  inotify_fd = inotify_init();
+
+  if (inotify_fd < 0)
+    throw utils::errno_error("inotify_init");
+#endif
+}
+
+void server::impl::inotify_event() {
+#ifndef APPLE
+#endif
+}
+
+server::server(utils::property_tree const &conf, logger *log)
+: p(new impl(conf, log)) { }
+
+server::~server() { }
+
+void server::set_listen_q(int no) {
+  p->listenq = no;
 }
 
 void server::serve() {
@@ -302,18 +330,25 @@ void server::serve() {
     if (p->sig.is_pending(SIGTERM) || p->sig.is_pending(SIGINT))
       break;
 
-    /*
-      if(p->sig.is_pending(SIGUSR1))
-      tls::reinit_dh_params("file");
-    */
-
     for(int i = 0; i < nfds; ++i) {
       socket_param *ptr = static_cast<socket_param*>(events[i].data.ptr);
-      assert(ptr);
-      p->incoming(*ptr, servername);
+      if (ptr) { // socket
+        p->incoming(*ptr, servername);
+      } else { // inotify
+        p->inotify_event();
+      } 
     }
   }
 
   p->log->log(logger::notice, "server-stopped");
   p->log->flush();
+}
+
+void server::watch_file(
+  std::string const &file_path,
+  inotify_mask_t inotify_mask,
+  watch_callback_t const &watch_callback)
+{
+#ifndef APPLE
+#endif
 }
