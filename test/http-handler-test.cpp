@@ -13,6 +13,7 @@
 #include "rest/https.hpp"
 #include <stdexcept>
 #include <fstream>
+#include <iostream>
 #include <algorithm>
 #include <sys/types.h>
 #include <unistd.h>
@@ -103,24 +104,22 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
     std::string fln;
     std::getline(kw.read("datei"), fln);
     out << "file: " << fln << '\n';
-
     out << "user: " << kw["user"] << '\n';
-
     out << "file (oh we read() it): " << kw["datei"] << '\n';
-
     out << "user agent: " << kw["user-agent"] << std::endl;
-
     out << "cookie: " << kw["cookie"] << std::endl;
-
     out << "the_cookie: " << kw["the_cookie"] << std::endl;
     resp.add_cookie(rest::cookie("the_cookie", kw["the_cookie"] + "+"));
-
     out << "hello: " << kw["hello"] << std::endl;
 
     resp.set_data(out.str());
     return resp;
   }
 };
+
+void inotify_callback(inotify_event const &ev) {
+  std::cout << "event: " << std::string(ev.name, ev.len) << std::endl;
+}
 
 int main(int argc, char **argv) {
   rest::plaintext_logger log(rest::logger::debug);
@@ -154,7 +153,7 @@ int main(int argc, char **argv) {
     rest::server s(tree, &log);
     std::for_each(s.sockets().begin(), s.sockets().end(), rest::host::add(h));
 
-    s.watch_file("/tmp", IN_ALL_EVENTS, rest::server::watch_callback_t());
+    s.watch_file("/tmp", IN_ALL_EVENTS, &inotify_callback);
 
     s.serve();
     return 0;

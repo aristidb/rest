@@ -8,6 +8,8 @@
 #include "rest/signals.hpp"
 #include "rest/utils/exceptions.hpp"
 #include "rest/utils/socket_device.hpp"
+#include <map>
+#include <set>
 #include <boost/algorithm/string.hpp>
 #include <signal.h>
 #include <sys/wait.h>
@@ -38,6 +40,7 @@ public:
   long timeout_write;
 
   int inotify_fd;
+  std::map<int /*wd*/, watch_callback_t> inotify_callbacks;
 
   utils::property_tree const &config;
   logger *log;
@@ -58,6 +61,8 @@ public:
     initialize_inotify();
     read_connections();
   }
+
+  void configure_signals();
 
   void read_connections();
   int initialize_sockets();
@@ -151,7 +156,8 @@ void server::impl::read_connections() {
     if (scheme.empty())
       throw std::runtime_error("no scheme specified");
 
-    rest::scheme *p_scheme = rest::object_registry::get().find<rest::scheme>(scheme);
+    rest::scheme *p_scheme =
+      rest::object_registry::get().find<rest::scheme>(scheme);
 
     if (!p_scheme)
       throw std::runtime_error("invalid scheme");
@@ -274,6 +280,8 @@ void server::impl::initialize_inotify() {
 
   if (inotify_fd < 0)
     throw utils::errno_error("inotify_init");
+
+  close_on_fork.insert(inotify_fd);
 #endif
 }
 
@@ -301,9 +309,32 @@ void server::impl::inotify_event() {
     log->log(logger::notice, "inotify-ev-wd", ev->wd);
     log->log(logger::notice, "inotify-ev-mask", ev->mask);
     log->log(logger::notice, "inotify-ev-cookie", ev->cookie);
+
+    log->flush();
+
+    watch_callback_t cb = inotify_callbacks[ev->wd];
+
+    if (!cb.empty())
+      cb(*ev);
+    else
+      log->log(logger::warning, "inotify-ev-no-callback", ev->wd);
+
     log->flush();
   }
 #endif
+}
+
+void server::impl::configure_signals() {
+  sig.ignore(SIGCHLD);
+  sig.ignore(SIGPIPE);
+  sig.ignore(SIGTSTP);
+  sig.ignore(SIGTTIN);
+  sig.ignore(SIGTTOU);
+  sig.ignore(SIGHUP);
+  sig.add(SIGTERM);
+  sig.add(SIGINT);
+  //sig.add(SIGUSR1);
+  sig.block();
 }
 
 server::server(utils::property_tree const &conf, logger *log)
@@ -324,16 +355,7 @@ void server::serve() {
 
   process::maybe_daemonize(p->log, tree);
 
-  p->sig.ignore(SIGCHLD);
-  p->sig.ignore(SIGPIPE);
-  p->sig.ignore(SIGTSTP);
-  p->sig.ignore(SIGTTIN);
-  p->sig.ignore(SIGTTOU);
-  p->sig.ignore(SIGHUP);
-  p->sig.add(SIGTERM);
-  p->sig.add(SIGINT);
-  //p->sig.add(SIGUSR1);
-  p->sig.block();
+  p->configure_signals();
 
   std::string const &servername =
     utils::get(tree, std::string(), "general", "name");
@@ -368,14 +390,20 @@ void server::serve() {
   p->log->flush();
 }
 
-void server::watch_file(
+int server::watch_file(
   std::string const &file_path,
   inotify_mask_t inotify_mask,
   watch_callback_t const &watch_callback)
 {
+  int wd = 0;
+
 #ifndef APPLE
-  int wd = inotify_add_watch(p->inotify_fd, file_path.c_str(), inotify_mask);
+  wd = inotify_add_watch(p->inotify_fd, file_path.c_str(), inotify_mask);
   if (wd < 0)
     throw utils::errno_error("inotify_add_watch");
+
+  p->inotify_callbacks.insert(std::make_pair(wd, watch_callback));
 #endif
+
+  return wd;
 }

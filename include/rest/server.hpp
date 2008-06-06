@@ -35,7 +35,7 @@ public:
   typedef boost::uint32_t inotify_mask_t;
   typedef boost::function<void (inotify_event const &)> watch_callback_t;
 
-  void watch_file(
+  int watch_file(
     std::string const &file_path,
     inotify_mask_t inotify_mask,
     watch_callback_t const &watch_callback);
