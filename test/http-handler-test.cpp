@@ -118,7 +118,11 @@ struct tester : rest::responder<rest::ALL, rest::DEDUCED_PATH> {
 };
 
 void inotify_callback(inotify_event const &ev) {
+#ifndef APPLE
   std::cout << "event: " << std::string(ev.name, ev.len) << std::endl;
+#else
+  (void)ev;
+#endif
 }
 
 int main(int argc, char **argv) {

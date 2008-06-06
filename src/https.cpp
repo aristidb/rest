@@ -1,6 +1,7 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include "rest/https.hpp"
 #include "rest/tls.hpp"
+#include "rest/server.hpp"
 #include "rest/logger.hpp"
 #include "rest/config.hpp"
 #include "rest/socket_param.hpp"
@@ -32,6 +33,20 @@ std::string const &https_scheme::name() const {
   return x;
 }
 
+namespace {
+  static void reread_dhparams(inotify_event const &) {
+    // TODO: logging!
+    std::string path = rest::utils::get(rest::config::get().tree(),
+                                        std::string(),
+                                        "general", "chroot");
+    path += rest::utils::get(rest::config::get().tree(),
+                             std::string("/tls/dhparams.pem"),
+                             "general", "tls", "dhfile");
+    
+    rest::tls::reinit_dh_params(path);
+  }
+}
+
 boost::any https_scheme::create_context(
   logger *log,
   utils::property_tree const &socket_data,
@@ -55,9 +70,9 @@ boost::any https_scheme::create_context(
                                     config_path + "tls/x509-server-key.pem",
                                     "tls", "keyfile");
 
-  std::string dhfile   = utils::get(socket_data,
+  std::string dhfile   = utils::get(config::get().tree(),
                                     std::string("/tls/dhparams.pem"),
-                                    "tls", "dhfile");
+                                    "general", "tls", "dhfile");
   std::string chrootpath = utils::get(config::get().tree(),
                                     std::string(),
                                     "general", "chroot");
@@ -67,6 +82,7 @@ boost::any https_scheme::create_context(
            + cafile + ", " + crlfile + ", " + certfile + ", " + keyfile + ", " +
            dhfile + ')');
   tls::init(dhfile);
+  // TODO: srv.watch_file(dhfile, ..., reread_dhparams);
 
   impl::context x;
 

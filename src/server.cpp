@@ -407,6 +407,10 @@ int server::watch_file(
     throw utils::errno_error("inotify_add_watch");
 
   p->inotify_callbacks.insert(std::make_pair(wd, watch_callback));
+#else
+  (void)file_path;
+  (void)inotify_mask;
+  (void)watch_callback;
 #endif
 
   return wd;
