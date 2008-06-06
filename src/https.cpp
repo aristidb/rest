@@ -35,13 +35,12 @@ std::string const &https_scheme::name() const {
 
 namespace {
   static void reread_dhparams(inotify_event const &) {
+    // Warning: this should only be called _after_ chrooting!
+
     // TODO: logging!
-    std::string path = rest::utils::get(rest::config::get().tree(),
-                                        std::string(),
-                                        "general", "chroot");
-    path += rest::utils::get(rest::config::get().tree(),
-                             std::string("/tls/dhparams.pem"),
-                             "general", "tls", "dhfile");
+    std::string const path = rest::utils::get(rest::config::get().tree(),
+                                              std::string("/tls/dhparams.pem"),
+                                              "general", "tls", "dhfile");
     
     rest::tls::reinit_dh_params(path);
   }
