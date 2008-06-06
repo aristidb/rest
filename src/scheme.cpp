@@ -22,10 +22,6 @@ void scheme::load_standard_objects(object_registry &obj_reg) {
   need_load_standard_objects = false;
 }
 
-boost::any scheme::create_context(logger *, utils::property_tree const &) const{
-  return boost::any();
-}
-
 scheme::~scheme() {}
 
 
@@ -47,7 +43,14 @@ void http_scheme::serve(
 
   http_connection conn(sock.hosts(), addr, servername, log);
   utils::socket_device dev(connfd, sock.timeout_read(), sock.timeout_write());
-  std::auto_ptr<std::streambuf> p(new io::stream_buffer<utils::socket_device>(dev));
+  std::auto_ptr<std::streambuf> p(
+    new io::stream_buffer<utils::socket_device>(dev));
 
   conn.serve(p);
 }
+
+boost::any http_scheme::create_context(
+  logger *, utils::property_tree const &, server &) const
+{
+  return boost::any();
+}  

@@ -28,6 +28,8 @@ namespace algo = boost::algorithm;
 
 class server::impl {
 public:
+  server &ref;
+
   signals sig;
 
   std::vector<socket_param> socket_params;
@@ -49,8 +51,10 @@ public:
     std::for_each(close_on_fork.begin(), close_on_fork.end(), &::close);
   }
 
-  impl(utils::property_tree const &config, logger *log)
-    : listenq(utils::get(config, DEFAULT_LISTENQ, "connections", "listenq")),
+  impl(server &ref, utils::property_tree const &config, logger *log)
+    : ref(ref),
+      listenq(utils::get(config, DEFAULT_LISTENQ,
+          "connections", "listenq")),
       timeout_read(utils::get(config, DEFAULT_TIMEOUT,
           "connections", "timeout", "read")),
       timeout_write(utils::get(config, DEFAULT_TIMEOUT,
@@ -162,7 +166,7 @@ void server::impl::read_connections() {
     if (!p_scheme)
       throw std::runtime_error("invalid scheme");
 
-    boost::any scheme_specific = p_scheme->create_context(log, **j);
+    boost::any scheme_specific = p_scheme->create_context(log, **j, ref);
 
     long timeout_read =
       utils::get(**j, this->timeout_read, "timeout", "read");
@@ -338,7 +342,7 @@ void server::impl::configure_signals() {
 }
 
 server::server(utils::property_tree const &conf, logger *log)
-: p(new impl(conf, log)) { }
+: p(new impl(*this, conf, log)) { }
 
 server::~server() { }
 

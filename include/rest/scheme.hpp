@@ -10,6 +10,7 @@ namespace rest {
 
 class logger;
 class socket_param;
+class server;
 
 namespace utils { class property_tree; }
 
@@ -32,7 +33,9 @@ public:
     std::string const &servername) = 0;
 
   virtual boost::any create_context(
-    logger *log, utils::property_tree const &socket_data) const;
+    logger *log,
+    utils::property_tree const &socket_data,
+    server &srv) const = 0;
 };
 
 class http_scheme : public scheme {
@@ -44,6 +47,8 @@ private:
 
   void serve(
     logger*,int,socket_param const&,network::address const&,std::string const&);
+  boost::any create_context(
+    logger*, utils::property_tree const &, server &) const;
 };
 
 }

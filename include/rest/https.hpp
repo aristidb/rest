@@ -21,7 +21,7 @@ private:
   void serve(
     logger*,int,socket_param const&,network::address const&,std::string const&);
   boost::any create_context(
-    logger *log, utils::property_tree const &socket_data) const;
+    logger *log, utils::property_tree const &socket_data, server &srv) const;
 };
 
 }

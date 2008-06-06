@@ -34,7 +34,8 @@ std::string const &https_scheme::name() const {
 
 boost::any https_scheme::create_context(
   logger *log,
-  utils::property_tree const &socket_data) const
+  utils::property_tree const &socket_data,
+  server &srv) const
 {
   assert(log);
 
