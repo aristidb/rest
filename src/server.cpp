@@ -28,7 +28,7 @@ namespace algo = boost::algorithm;
 
 class server::impl {
 public:
-  server &ref;
+  server *p_ref;
 
   signals sig;
 
@@ -51,8 +51,8 @@ public:
     std::for_each(close_on_fork.begin(), close_on_fork.end(), &::close);
   }
 
-  impl(server &ref, utils::property_tree const &config, logger *log)
-    : ref(ref),
+  impl(utils::property_tree const &config, logger *log)
+    :
       listenq(utils::get(config, DEFAULT_LISTENQ,
           "connections", "listenq")),
       timeout_read(utils::get(config, DEFAULT_TIMEOUT,
@@ -62,8 +62,6 @@ public:
       config(config),
       log(log)
   {
-    initialize_inotify();
-    read_connections();
   }
 
   void configure_signals();
@@ -166,7 +164,7 @@ void server::impl::read_connections() {
     if (!p_scheme)
       throw std::runtime_error("invalid scheme");
 
-    boost::any scheme_specific = p_scheme->create_context(log, **j, ref);
+    boost::any scheme_specific = p_scheme->create_context(log, **j, *p_ref);
 
     long timeout_read =
       utils::get(**j, this->timeout_read, "timeout", "read");
@@ -309,10 +307,10 @@ void server::impl::inotify_event() {
     while (ev->len > 0 && !ev->name[ev->len - 1])
       --ev->len;
 
-    log->log(logger::notice, "inotify-ev-file", std::string(ev->name, ev->len));
-    log->log(logger::notice, "inotify-ev-wd", ev->wd);
-    log->log(logger::notice, "inotify-ev-mask", ev->mask);
-    log->log(logger::notice, "inotify-ev-cookie", ev->cookie);
+    log->log(logger::info, "inotify-ev-file", std::string(ev->name, ev->len));
+    log->log(logger::info, "inotify-ev-wd", ev->wd);
+    log->log(logger::info, "inotify-ev-mask", ev->mask);
+    log->log(logger::info, "inotify-ev-cookie", ev->cookie);
 
     log->flush();
 
@@ -342,7 +340,12 @@ void server::impl::configure_signals() {
 }
 
 server::server(utils::property_tree const &conf, logger *log)
-: p(new impl(*this, conf, log)) { }
+: p(new impl(conf, log))
+{
+  p->p_ref = this;
+  p->initialize_inotify();
+  p->read_connections();
+}
 
 server::~server() { }
 
@@ -403,6 +406,11 @@ int server::watch_file(
 
 #ifndef APPLE
   wd = inotify_add_watch(p->inotify_fd, file_path.c_str(), inotify_mask);
+
+  p->log->log(logger::info, "inotify-watch-file", file_path);
+  p->log->log(logger::info, "inotify-watch-wd", wd);
+  p->log->flush();
+
   if (wd < 0)
     throw utils::errno_error("inotify_add_watch");
 

@@ -1,8 +1,7 @@
+// vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include <rest/tls.hpp>
-
 #include <gcrypt.h>
 #include <gnutls/gnutls.h>
-
 #include <cassert>
 #include <fstream>
 
@@ -48,6 +47,10 @@ namespace rest { namespace tls {
           throw utils::error("using tls::get without proper initialization!");
 #endif
         static gnutls g(filename);
+#ifndef NDEBUG
+        if (filename)
+          initialized = true;
+#endif
         return g;
       }
 

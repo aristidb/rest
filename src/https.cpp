@@ -7,7 +7,7 @@
 #include "rest/socket_param.hpp"
 #include "rest/http_connection.hpp"
 #include <boost/shared_ptr.hpp>
-
+#include <boost/bind.hpp>
 #include <cassert>
 
 using rest::https_scheme;
@@ -34,15 +34,17 @@ std::string const &https_scheme::name() const {
 }
 
 namespace {
-  static void reread_dhparams(inotify_event const &) {
-    // Warning: this should only be called _after_ chrooting!
-
-    // TODO: logging!
-    std::string const path = rest::utils::get(rest::config::get().tree(),
-                                              std::string("/tls/dhparams.pem"),
-                                              "general", "tls", "dhfile");
+  static void reread_dhparams(rest::logger *log, inotify_event const &) {
+    // WARNING: Use only after chroot!
+    std::string path =
+      rest::utils::get(
+          rest::config::get().tree(),
+          std::string("/tls/dhparams.pem"),
+          "general", "tls", "dhfile");
     
     rest::tls::reinit_dh_params(path);
+
+    log->log(rest::logger::notice, "tls-dhparams-reread", path);
   }
 }
 
@@ -81,7 +83,11 @@ boost::any https_scheme::create_context(
            + cafile + ", " + crlfile + ", " + certfile + ", " + keyfile + ", " +
            dhfile + ')');
   tls::init(dhfile);
-  // TODO: srv.watch_file(dhfile, ..., reread_dhparams);
+
+  srv.watch_file(
+    dhfile,
+    IN_CLOSE_WRITE,
+    boost::bind(&reread_dhparams, log, _1));
 
   impl::context x;
 
