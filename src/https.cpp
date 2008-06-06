@@ -55,8 +55,12 @@ boost::any https_scheme::create_context(
                                     "tls", "keyfile");
 
   std::string dhfile   = utils::get(socket_data,
-                                    config_path + "tls/dhparams.pem",
+                                    std::string("/tls/dhparams.pem"),
                                     "tls", "dhfile");
+  std::string chrootpath = utils::get(config::get().tree(),
+                                    std::string(),
+                                    "general", "chroot");
+  dhfile = chrootpath + dhfile;
 
   log->log(logger::notice, std::string("begin tls-initialisation (")
            + cafile + ", " + crlfile + ", " + certfile + ", " + keyfile + ", " +
