@@ -46,6 +46,15 @@ def configure(conf):
     pkgconf.run()
 
     libconf = conf.create_library_configurator()
+    libconf.uselib = 'GCRYPT'
+    libconf.name = 'gcrypt'
+    libconf.path = ['/usr/lib', '/usr/local/lib', '/sw/lib', '/opt/local/lib']
+    libconf.mandatory = 1
+    if not darwin:
+        libconf.static = True
+    libconf.run()
+
+    libconf = conf.create_library_configurator()
     libconf.uselib = 'GPGERR'
     libconf.name = 'gpg-error'
     libconf.path = ['/usr/lib', '/usr/local/lib', '/sw/lib', '/opt/local/lib']
