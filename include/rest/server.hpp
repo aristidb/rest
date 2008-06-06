@@ -12,8 +12,7 @@
 #ifndef APPLE
   #include <sys/inotify.h>
 #else
-  struct inotify_event {};
-  #define IN_ALL_EVENTS 0
+  #include "rest/utils/inotify-nosys.h"
 #endif
 
 namespace rest {
