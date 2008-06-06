@@ -154,6 +154,8 @@ int main(int argc, char **argv) {
     rest::server s(tree, &log);
     std::for_each(s.sockets().begin(), s.sockets().end(), rest::host::add(h));
 
+    s.watch_file("/tmp", IN_ALL_EVENTS, rest::server::watch_callback_t());
+
     s.serve();
     return 0;
   } catch (std::exception &e) {

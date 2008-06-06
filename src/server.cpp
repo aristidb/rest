@@ -279,6 +279,30 @@ void server::impl::initialize_inotify() {
 
 void server::impl::inotify_event() {
 #ifndef APPLE
+  boost::uint32_t const buf_size = 8192;
+  char buf[buf_size];
+
+  ssize_t got = read(inotify_fd, buf, buf_size);
+
+  if (got < 0)
+    throw utils::errno_error("read (inotify");
+
+  char *cur = buf;
+  char *end = buf + got;
+
+  while (cur < end) {
+    struct inotify_event *ev = (struct inotify_event *) cur;
+    cur += sizeof(struct inotify_event) + ev->len;
+
+    while (ev->len > 0 && !ev->name[ev->len - 1])
+      --ev->len;
+
+    log->log(logger::notice, "inotify-ev-file", std::string(ev->name, ev->len));
+    log->log(logger::notice, "inotify-ev-wd", ev->wd);
+    log->log(logger::notice, "inotify-ev-mask", ev->mask);
+    log->log(logger::notice, "inotify-ev-cookie", ev->cookie);
+    log->flush();
+  }
 #endif
 }
 
@@ -350,5 +374,8 @@ void server::watch_file(
   watch_callback_t const &watch_callback)
 {
 #ifndef APPLE
+  int wd = inotify_add_watch(p->inotify_fd, file_path.c_str(), inotify_mask);
+  if (wd < 0)
+    throw utils::errno_error("inotify_add_watch");
 #endif
 }
