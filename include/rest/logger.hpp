@@ -64,6 +64,21 @@ public:
     }
   }
 
+  template<class T>
+  void log(
+    priority prio,
+    std::string const &field,
+    T const &value,
+    std::ios_base &(*manip)(std::ios_base &))
+  {
+    if (prio >= min_priority) {
+      std::ostringstream o;
+      o << manip;
+      o << value;
+      do_log(prio, field, o.str());
+    }
+  }
+
   void log(
     priority prio, std::string const &field)
   {

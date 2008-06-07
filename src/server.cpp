@@ -309,7 +309,7 @@ void server::impl::inotify_event() {
 
     log->log(logger::info, "inotify-ev-file", std::string(ev->name, ev->len));
     log->log(logger::info, "inotify-ev-wd", ev->wd);
-    log->log(logger::info, "inotify-ev-mask", ev->mask);
+    log->log(logger::info, "inotify-ev-mask", ev->mask, std::hex);
     log->log(logger::info, "inotify-ev-cookie", ev->cookie);
 
     log->flush();

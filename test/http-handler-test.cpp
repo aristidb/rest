@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
     rest::server s(tree, &log);
     std::for_each(s.sockets().begin(), s.sockets().end(), rest::host::add(h));
 
-    s.watch_file("/tmp", IN_ALL_EVENTS, &inotify_callback);
+    s.watch_file("chroot/tls", IN_ALL_EVENTS, &inotify_callback);
 
     s.serve();
     return 0;
