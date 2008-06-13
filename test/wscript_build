@@ -16,6 +16,7 @@ if darwin:
 else:
     obj.uselib_local = 'rest'
 obj.target = 'unit'
+obj.inst_var = 0
 
 obj = bld.create_obj('cpp', 'program')
 obj.source = 'http-handler-test.cpp'
@@ -28,3 +29,4 @@ if darwin:
 else:
     obj.uselib_local = 'rest'
 obj.target = 'http-handler-test'
+obj.inst_var = 0

@@ -83,5 +83,8 @@ def configure(conf):
 
 def build(bld):
     bld.add_subdirs('src test sandbox')
+    install_files('PREFIX', 'include/rest/', 'include/rest/*.hpp')
+    install_files('PREFIX', 'include/rest/utils/', 'include/rest/utils/*.hpp')
+    install_files('PREFIX', 'include/rest/encodings/', 'include/rest/encodings/*.hpp')
 
 def shutdown(): pass
