@@ -10,7 +10,7 @@ def init(): pass
 
 def set_options(opt):
     opt.tool_options('g++')
-    opt.tool_options('boost2')
+    opt.tool_options('boost')
 
 def configure(conf):
     darwin = sys.platform.startswith('darwin')
@@ -27,7 +27,7 @@ def configure(conf):
         conf.env['FULLSTATIC'] = True
     
     conf.check_tool('g++')
-    conf.check_tool('boost2')
+    conf.check_tool('boost')
 
     boostconf = conf.create_boost_configurator()
     boostconf.lib = ['iostreams', 'filesystem', 'system']
@@ -39,14 +39,12 @@ def configure(conf):
     boostconf.run()
     
     pkgconf = conf.create_pkgconfig_configurator()
-    pkgconf.uselib = 'GNUTLS'
     pkgconf.name = 'gnutls'
     if not darwin:
         pkgconf.static = True
     pkgconf.run()
 
     libconf = conf.create_library_configurator()
-    libconf.uselib = 'GCRYPT'
     libconf.name = 'gcrypt'
     libconf.path = ['/usr/lib', '/usr/local/lib', '/sw/lib', '/opt/local/lib']
     libconf.mandatory = 1
@@ -55,16 +53,14 @@ def configure(conf):
     libconf.run()
 
     libconf = conf.create_library_configurator()
-    libconf.uselib = 'GPGERR'
     libconf.name = 'gpg-error'
-    libconf.path = ['/usr/lib', '/usr/local/lib', '/sw/lib', '/opt/local/lib']
+    libconf.path = ['/lib', '/usr/lib', '/usr/local/lib', '/sw/lib', '/opt/local/lib']
     libconf.mandatory = 1
     if not darwin:
         libconf.static = True
     libconf.run()
     
     libconf = conf.create_library_configurator()
-    libconf.uselib = 'Z'
     libconf.name   = 'z'
     libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
@@ -73,7 +69,6 @@ def configure(conf):
     libconf.run()
     
     libconf = conf.create_library_configurator()
-    libconf.uselib = 'BZ2'
     libconf.name   = 'bz2'
     libconf.path = ['/usr/lib','/usr/local/lib','/sw/lib','/opt/local/lib']
     libconf.mandatory = 1
@@ -83,8 +78,8 @@ def configure(conf):
 
 def build(bld):
     bld.add_subdirs('src test sandbox')
-    install_files('PREFIX', 'include/rest/', 'include/rest/*.hpp')
-    install_files('PREFIX', 'include/rest/utils/', 'include/rest/utils/*.hpp')
-    install_files('PREFIX', 'include/rest/encodings/', 'include/rest/encodings/*.hpp')
+    bld.install_files('PREFIX', 'include/rest/', 'include/rest/*.hpp')
+    bld.install_files('PREFIX', 'include/rest/utils/', 'include/rest/utils/*.hpp')
+    bld.install_files('PREFIX', 'include/rest/encodings/', 'include/rest/encodings/*.hpp')
 
 def shutdown(): pass

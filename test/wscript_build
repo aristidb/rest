@@ -2,14 +2,14 @@
 
 darwin = sys.platform.startswith('darwin')
 
-obj = bld.create_obj('cpp', 'program')
+obj = bld.create_obj('cxx', 'program')
 obj.source = '''
 unit.cpp filter_tests.cpp test1.cpp http_connection.cpp http_utils.cpp
 config_tests.cpp keywords.cpp uri.cpp encodings.cpp logger.cpp
 '''
 obj.includes = ['../include', '../testsoon/include']
 obj.uselib = '''
-BOOST BOOST_IOSTREAMS BOOST_FILESYSTEM BOOST_SYSTEM GNUTLS GCRYPT BZ2 Z
+BOOST BOOST_IOSTREAMS BOOST_FILESYSTEM BOOST_SYSTEM GNUTLS GPG-ERROR GCRYPT BZ2 Z
 '''
 if darwin:
     obj.env['LINKFLAGS'] += ['../librest.a'] # TODO
@@ -18,10 +18,10 @@ else:
 obj.target = 'unit'
 obj.inst_var = 0
 
-obj = bld.create_obj('cpp', 'program')
+obj = bld.create_obj('cxx', 'program')
 obj.source = 'http-handler-test.cpp'
 obj.uselib = '''
-BOOST BOOST_IOSTREAMS BOOST_FILESYSTEM BOOST_SYSTEM GNUTLS GPGERR BZ2 Z GCRYPT
+BOOST BOOST_IOSTREAMS BOOST_FILESYSTEM BOOST_SYSTEM GNUTLS GPG-ERROR BZ2 Z GCRYPT
 '''
 obj.includes = ['../include', '../testsoon/include']
 if darwin:

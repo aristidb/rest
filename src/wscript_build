@@ -1,11 +1,11 @@
 # encoding: utf-8
 
-obj = bld.create_obj('cpp', 'staticlib')
+obj = bld.create_obj('cxx', 'staticlib')
 if sys.platform.startswith('darwin'):
     obj.find_sources_in_dirs('. encodings compat')
 else:
     obj.find_sources_in_dirs('. encodings')
 obj.includes = ['../include', '../testsoon/include']
-obj.uselib = 'BOOST GNUTLS GCRYPT'
+obj.uselib = 'BOOST GNUTLS GCRYPT GPG-ERROR'
 obj.target = 'rest'
 
