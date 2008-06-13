@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-obj = bld.create_obj('cxx', 'staticlib')
+obj = bld.new_task_gen('cxx', 'staticlib')
 if sys.platform.startswith('darwin'):
     obj.find_sources_in_dirs('. encodings compat')
 else:

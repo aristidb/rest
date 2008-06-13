@@ -2,7 +2,7 @@
 
 darwin = sys.platform.startswith('darwin')
 
-obj = bld.create_obj('cxx', 'program')
+obj = bld.new_task_gen('cxx', 'program')
 obj.source = '''
 unit.cpp filter_tests.cpp test1.cpp http_connection.cpp http_utils.cpp
 config_tests.cpp keywords.cpp uri.cpp encodings.cpp logger.cpp
@@ -18,7 +18,7 @@ else:
 obj.target = 'unit'
 obj.inst_var = 0
 
-obj = bld.create_obj('cxx', 'program')
+obj = bld.new_task_gen('cxx', 'program')
 obj.source = 'http-handler-test.cpp'
 obj.uselib = '''
 BOOST BOOST_IOSTREAMS BOOST_FILESYSTEM BOOST_SYSTEM GNUTLS GPG-ERROR BZ2 Z GCRYPT
