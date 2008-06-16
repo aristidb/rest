@@ -16,13 +16,14 @@ def configure(conf):
     darwin = sys.platform.startswith('darwin')
     conf.check_message('platform', '', 1, sys.platform)
 
-    conf.env['CXXFLAGS'] = '-pipe -Wno-long-long -Wall -W -pedantic -std=c++98 -DBOOST_SP_DISABLE_THREADS -Iinclude -Itestsoon/include '
+    conf.env['CXXFLAGS'] = '-pipe -Wno-long-long -Wall -W -pedantic -std=c++98'
+    conf.env.append_unique('CXXDEFINES', 'BOOST_SP_DISABLE_THREADS')
     if darwin:
-        conf.env['CXXFLAGS'] += ' -DAPPLE '
-    conf.env['CXXFLAGS_DEBUG'] = '-g3 -ggdb3 -DDEBUG '
-    conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG '
+        conf.env.append_unique('CXXDEFINES', 'APPLE')
+    conf.env['CXXFLAGS_DEBUG'] = '-g3 -ggdb3 -DDEBUG'
+    conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG'
     if darwin:
-        conf.env['CXXFLAGS_OPTIMIZED'] += ' -fast '
+        conf.env['CXXFLAGS_OPTIMIZED'] += ' -fast'
     else:
         conf.env['FULLSTATIC'] = True
     
