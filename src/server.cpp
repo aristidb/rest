@@ -339,8 +339,8 @@ void server::impl::configure_signals() {
   sig.block();
 }
 
-server::server(utils::property_tree const &conf, logger *log)
-: p(new impl(conf, log))
+server::server(logger *log)
+: p(new impl(rest::config::get().tree(), log))
 {
   p->p_ref = this;
   p->initialize_inotify();

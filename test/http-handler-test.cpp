@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
     rest::utils::set(tree, "musikdings.rest/0.1", "general", "name");
     conf.load(argc, argv);
 
-    rest::server s(tree, &log);
+    rest::server s(&log);
     std::for_each(s.sockets().begin(), s.sockets().end(), rest::host::add(h));
 
     s.watch_file("chroot/tls", IN_ALL_EVENTS, &inotify_callback);
