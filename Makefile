@@ -1,14 +1,19 @@
-.PHONY: all clean reconfigure
+# PYTHON := python2.4
+
+.PHONY: all clean reconfigure install
 all: .configure
-	./waf -v 2>&1 | sed -e 's/^\.\.\//\.\//'
+	$(PYTHON) ./waf -v 2>&1 | sed -e 's/^\.\.\//\.\//'
 
 .configure:
-	./waf configure
+	$(PYTHON) ./waf configure
 	@touch .configure
 
 reconfigure:
-	./waf configure
+	$(PYTHON) ./waf configure
+
+install:
+	$(PYTHON) ./waf install
 
 clean:
-	rm .configure
-	./waf clean
+	@rm .configure
+	$(PYTHON) ./waf clean

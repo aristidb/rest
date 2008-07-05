@@ -1,0 +1,13 @@
+#
+#
+#
+prefix=@PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: Musikding's Rest
+Description: Restd/HTTP/HTTPS Server implementation
+Version: @VERSION@
+# Requires:
+Libs: -L${libdir} -lrest
+Cflags: -I${includedir}

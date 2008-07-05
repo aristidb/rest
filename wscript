@@ -1,4 +1,4 @@
-import sys
+import sys, os
 
 VERSION='dev'
 APPNAME='librest'
@@ -28,6 +28,7 @@ def configure(conf):
         conf.env['FULLSTATIC'] = True
     
     conf.check_tool('g++')
+    conf.check_tool('misc')
     conf.check_tool('boost')
 
     boostconf = conf.create_boost_configurator()
@@ -77,10 +78,27 @@ def configure(conf):
         libconf.static = True
     libconf.run()
 
+def build_pkgconfig(bld):
+    obj = bld.new_task_gen('subst')
+    obj.source = 'rest.pc.in'
+    obj.target = 'rest.pc'
+    obj.dict = {
+        'PREFIX': bld.env['PREFIX'],
+        'LIBDIR': os.path.normpath(bld.env['PREFIX'] + '/lib'),
+        'INCLUDEDIR': os.path.normpath(bld.env['PREFIX'] + '/include'),
+        'VERSION': VERSION
+        }
+    obj.inst_var = bld.env['PREFIX']
+    obj.inst_dir = '/lib/pkgconfig/'
+    obj.apply()
+    
+
 def build(bld):
     bld.add_subdirs('src test sandbox')
+    build_pkgconfig(bld)
     bld.install_files('PREFIX', 'include/rest/', 'include/rest/*.hpp')
     bld.install_files('PREFIX', 'include/rest/utils/', 'include/rest/utils/*.hpp')
     bld.install_files('PREFIX', 'include/rest/encodings/', 'include/rest/encodings/*.hpp')
+    bld.install_files('PREFIX', '/lib/pkgconfig', 'rest.pc')
 
 def shutdown(): pass
