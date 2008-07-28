@@ -98,6 +98,7 @@ def build(bld):
     build_pkgconfig(bld)
     bld.install_files('PREFIX', 'include/rest/', 'include/rest/*.hpp')
     bld.install_files('PREFIX', 'include/rest/utils/', 'include/rest/utils/*.hpp')
+    bld.install_files('PREFIX', 'include/rest/utils/', 'include/rest/utils/*.h')
     bld.install_files('PREFIX', 'include/rest/encodings/', 'include/rest/encodings/*.hpp')
     bld.install_files('PREFIX', '/lib/pkgconfig', 'rest.pc')
 

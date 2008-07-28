@@ -1,4 +1,4 @@
-# PYTHON := python2.4
+-include .localsettings.mak
 
 .PHONY: all clean reconfigure install
 all: .configure
