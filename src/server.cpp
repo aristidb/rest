@@ -6,6 +6,7 @@
 #include "rest/logger.hpp"
 #include "rest/scheme.hpp"
 #include "rest/signals.hpp"
+#include "rest/host.hpp"
 #include "rest/utils/exceptions.hpp"
 #include "rest/utils/socket_device.hpp"
 #include <map>
@@ -354,6 +355,11 @@ void server::set_listen_q(int no) {
 }
 
 void server::serve() {
+  for (sockets_container::iterator it = sockets().begin();
+      it != sockets().end();
+      ++it)
+    it->hosts().attach(*this);
+
   p->log->set_sequence_number(0);
   p->log->log(logger::notice, "server-started");
   p->log->flush();

@@ -89,7 +89,7 @@ void host::prepare_response(response &r) const {
 
 typedef
   boost::multi_index_container<
-    boost::reference_wrapper<host const>,
+    boost::reference_wrapper<host>,
     boost::multi_index::indexed_by<
       boost::multi_index::hashed_unique<
         boost::multi_index::const_mem_fun<host, std::string, &host::get_host>
@@ -106,7 +106,7 @@ public:
 host_container::host_container() : p(new impl) {}
 host_container::~host_container() {}
 
-void host_container::add_host(host const &h) {
+void host_container::add_host(host &h) {
   if (!p->hosts.insert(boost::ref(h)).second)
     throw std::logic_error("cannot serve two hosts with same name");
 }
@@ -136,4 +136,11 @@ host const *host_container::get_host(std::string const &name) const {
   if(it == p->hosts.end())
     return 0x0;
   return it->get_pointer();
+}
+
+void host_container::attach(server &srv) {
+  for (hosts_cont_t::iterator it = p->hosts.begin();
+      it != p->hosts.end();
+      ++it)
+    it->get().get_context().attach(srv);
 }

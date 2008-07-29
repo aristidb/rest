@@ -11,6 +11,7 @@ namespace rest {
 
 class context;
 class response;
+class server;
 
 class host : boost::noncopyable {
 public:
@@ -23,14 +24,14 @@ public:
   context &get_context() const;
 
   struct add {
-    add(host const &h) : h(h) {}
+    add(host &h) : h(h) {}
 
     template<typename T>
     void operator() (T &s) const {
       s.hosts().add_host(h);
     }
 
-    host const &h;
+    host &h;
   };
 
   void make_standard_response(response &) const;
@@ -62,8 +63,10 @@ public:
   host_container();
   ~host_container();
 
-  void add_host(host const &);
+  void add_host(host &);
   host const *get_host(std::string const &name) const;
+
+  void attach(server &);
 
 private:
   class impl;
