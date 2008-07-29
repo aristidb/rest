@@ -9,25 +9,27 @@ blddir = 'build'
 def init(): pass
 
 def set_options(opt):
-    opt.tool_options('g++')
+    opt.tool_options('compiler_cxx')
     opt.tool_options('boost')
 
 def configure(conf):
     darwin = sys.platform.startswith('darwin')
     conf.check_message('platform', '', 1, sys.platform)
 
-    conf.env['CXXFLAGS'] = '-pipe -Wno-long-long -Wall -W -pedantic -std=c++98'
-    conf.env.append_unique('CXXDEFINES', 'BOOST_SP_DISABLE_THREADS')
+    u = conf.env.append_unique
+
+    u('CXXFLAGS', '-pipe -Wno-long-long -Wall -W -pedantic -std=c++98')
+    u('CXXFLAGS', '-O3 -DNDEBUG')
     if darwin:
-        conf.env.append_unique('CXXDEFINES', 'APPLE')
-    conf.env['CXXFLAGS_DEBUG'] = '-g3 -ggdb3 -DDEBUG'
-    conf.env['CXXFLAGS_OPTIMIZED'] = '-O3 -DNDEBUG'
-    if darwin:
-        conf.env['CXXFLAGS_OPTIMIZED'] += ' -fast'
+	u('CXXFLAGS', '-fast')
     else:
         conf.env['FULLSTATIC'] = True
-    
-    conf.check_tool('g++')
+
+    u('CXXDEFINES', 'BOOST_SP_DISABLE_THREADS')
+    if darwin:
+       u('CXXDEFINES', 'APPLE')
+
+    conf.check_tool('compiler_cxx')
     conf.check_tool('misc')
     conf.check_tool('boost')
 
@@ -88,8 +90,7 @@ def build_pkgconfig(bld):
         'INCLUDEDIR': os.path.normpath(bld.env['PREFIX'] + '/include'),
         'VERSION': VERSION
         }
-    obj.inst_var = bld.env['PREFIX']
-    obj.inst_dir = '/lib/pkgconfig/'
+    obj.install_path = os.path.normpath(bld.env['PREFIX'] + '/lib/pkgconfig/')
     obj.apply()
     
 
