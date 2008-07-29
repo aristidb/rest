@@ -15,6 +15,7 @@ namespace rest {
 
 class keywords;
 class request;
+class server;
 
 enum response_type {
   GET = 1U,
@@ -91,6 +92,8 @@ namespace detail {
     virtual bool allow_entity(std::string const &content_type) const = 0;
     virtual boost::uint64_t max_entity_size() const = 0;
 
+    virtual void attach(server &) = 0;
+
     virtual ~responder_base() {}
   };
 
@@ -134,6 +137,8 @@ public:
   }
 
 protected:
+  virtual void attach(server &) {}
+
   virtual bool exists() const {
     return true;
   }

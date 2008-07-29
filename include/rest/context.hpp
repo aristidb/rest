@@ -10,6 +10,8 @@
 
 namespace rest {
 
+class server;
+
 class context : boost::noncopyable {
 public:
   context();
@@ -39,6 +41,8 @@ public:
     detail::responder_base *&,
     context *&,
     keywords &);
+
+  void attach(server &);
 
 private:
   void do_bind(

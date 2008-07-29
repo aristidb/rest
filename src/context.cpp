@@ -73,6 +73,21 @@ public:
         return *it;
       return unconditional_child.get();
     }
+
+    void attach(server &srv) {
+      if (responder_)
+        responder_->attach(srv);
+      if (context_)
+        context_->attach(srv);
+
+      if (unconditional_child)
+        unconditional_child->attach(srv);
+
+      for (conditional_children_t::iterator it = conditional_children.begin();
+          it != conditional_children.end();
+          ++it)
+        (*it)->attach(srv);
+    }
   };
 
   keyword_info_set predeclared_keywords;
@@ -283,6 +298,11 @@ context::impl::make_bindable(std::string const &path) {
   }
   return current;
 }
+
+void context::attach(server &srv) {
+  p->root.attach(srv);
+}
+
 // Local Variables: **
 // mode: C++ **
 // coding: utf-8 **
