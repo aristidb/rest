@@ -423,3 +423,12 @@ int server::watch_file(
 
   return wd;
 }
+
+void server::unwatch_file(int wd) {
+#ifndef APPLE
+  if (inotify_rm_watch(p->inotify_fd, wd) < 0)
+    throw utils::errno_error("inotify_rm_watch");
+#endif
+
+  p->inotify_callbacks.erase(wd);
+}

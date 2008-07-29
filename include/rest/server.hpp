@@ -38,6 +38,7 @@ public:
     std::string const &file_path,
     inotify_mask_t inotify_mask,
     watch_callback_t const &watch_callback);
+  void unwatch_file(int wd);
 
 private:
   class impl;
