@@ -16,7 +16,7 @@ if darwin:
 else:
     obj.uselib_local = 'rest'
 obj.target = 'rest-unit-test'
-#obj.install_path = 0 #TODO
+obj.install_path = None
 
 obj = bld.new_task_gen('cxx', 'program')
 obj.source = 'http-handler-test.cpp'
@@ -29,4 +29,4 @@ if darwin:
 else:
     obj.uselib_local = 'rest'
 obj.target = 'rest-http-handler-test'
-#obj.install_path = 0 #TODO
+obj.install_path = None
