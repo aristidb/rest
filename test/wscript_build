@@ -15,8 +15,8 @@ if darwin:
     obj.env['LINKFLAGS'] += ['../librest.a'] # TODO
 else:
     obj.uselib_local = 'rest'
-obj.target = 'unit'
-obj.install_path = 0
+obj.target = 'rest-unit-test'
+#obj.install_path = 0 #TODO
 
 obj = bld.new_task_gen('cxx', 'program')
 obj.source = 'http-handler-test.cpp'
@@ -28,5 +28,5 @@ if darwin:
     obj.env['LINKFLAGS'] += ['../librest.a'] # TODO
 else:
     obj.uselib_local = 'rest'
-obj.target = 'http-handler-test'
-obj.install_path = 0
+obj.target = 'rest-http-handler-test'
+#obj.install_path = 0 #TODO
