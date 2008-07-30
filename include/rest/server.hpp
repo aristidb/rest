@@ -40,6 +40,8 @@ public:
     watch_callback_t const &watch_callback);
   void unwatch_file(int wd);
 
+  void timeout(unsigned int ms, boost::function<void ()> const &);
+
 private:
   class impl;
   boost::scoped_ptr<impl> p;

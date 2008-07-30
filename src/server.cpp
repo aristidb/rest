@@ -42,6 +42,9 @@ public:
   long timeout_read;
   long timeout_write;
 
+  unsigned int timeout_ms;
+  std::list<boost::function<void ()> > timeout_callbacks;
+
   int inotify_fd;
   std::map<int /*wd*/, watch_callback_t> inotify_callbacks;
 
@@ -60,6 +63,7 @@ public:
           "connections", "timeout", "read")),
       timeout_write(utils::get(config, DEFAULT_TIMEOUT,
           "connections", "timeout", "write")),
+      timeout_ms(-1),
       config(config),
       log(log)
   {
@@ -99,11 +103,11 @@ namespace {
       return epollfd;
     }
 
-    int wait(int epollfd, epoll_event *events, int maxevents) {
+    int wait(int epollfd, epoll_event *events, int maxevents, unsigned int ms) {
       sigset_t empty_mask;
       sigemptyset(&empty_mask);
 
-      int nfds = ::epoll_pwait(epollfd, events, maxevents, -1, &empty_mask);
+      int nfds = ::epoll_pwait(epollfd, events, maxevents, ms, &empty_mask);
 
       if(nfds == -1) {
         if(errno == EINTR)
@@ -384,7 +388,7 @@ void server::serve() {
 
   for (;;) {
     epoll_event events[EVENTS_N];
-    int nfds = epoll::wait(epollfd, events, EVENTS_N);
+    int nfds = epoll::wait(epollfd, events, EVENTS_N, p->timeout_ms);
 
     if (p->sig.is_pending(SIGTERM) || p->sig.is_pending(SIGINT))
       break;
@@ -397,6 +401,14 @@ void server::serve() {
         p->inotify_event();
       } 
     }
+
+    p->timeout_ms = unsigned(-1);
+    for (std::list<boost::function<void ()> >::iterator it
+            = p->timeout_callbacks.begin();
+         it != p->timeout_callbacks.end();
+         ++it)
+      (*it)();
+    p->timeout_callbacks.clear();
   }
 
   p->log->log(logger::notice, "server-stopped");
@@ -437,4 +449,10 @@ void server::unwatch_file(int wd) {
 #endif
 
   p->inotify_callbacks.erase(wd);
+}
+
+void server::timeout(unsigned int ms, boost::function<void ()> const &cb) {
+  if (ms < p->timeout_ms)
+    p->timeout_ms = ms;
+  p->timeout_callbacks.push_back(cb);
 }
