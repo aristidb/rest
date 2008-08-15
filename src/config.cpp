@@ -93,15 +93,17 @@ namespace utils {
 
   void read_config(fs::path const &path, property_tree &root) {
     fs::directory_iterator end_iter;
-    for(fs::directory_iterator iter(path);
+    for (fs::directory_iterator iter(path);
         iter != end_iter;
         ++iter)
-      if(fs::is_directory(*iter)) {
-        property_tree::children_iterator i = root.find_children(iter->leaf());
-        if(i == root.children_end()) {
-          property_tree *child = new property_tree(iter->leaf());
+    {
+      fs::path const &x = iter->path();
+      if (fs::is_directory(x)) {
+        property_tree::children_iterator i = root.find_children(x.leaf());
+        if (i == root.children_end()) {
+          property_tree *child = new property_tree(x.leaf());
           try {
-            read_config(*iter, *child);
+            read_config(x, *child);
             root.add_child(child);
           } catch (...) {
             delete child;
@@ -109,11 +111,12 @@ namespace utils {
           }
         } else {
           property_tree *child = *i;
-          read_config(*iter, *child);
+          read_config(x, *child);
         }
+      } else {
+        root.add_property(property(x.leaf(), x));
       }
-      else
-        root.add_property(property(iter->leaf(), *iter));
+    }
   }
 }
 
