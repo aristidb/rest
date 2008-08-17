@@ -5,20 +5,29 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
+#include <boost/functional/hash.hpp>
 #include <boost/iostreams/write.hpp>
 
 namespace rest { namespace utils {
 
-struct string_icompare {
+struct string_ihash {
+  std::size_t operator() (std::string const &x) const {
+    std::size_t seed = 0;
+    for (std::string::const_iterator it = x.begin(); it != x.end(); ++it)
+      boost::hash_combine(seed, std::tolower(*it));
+    return seed;
+  }
+};
+
+struct string_iequals {
   bool operator() (std::string const &a, std::string const &b) const {
-    return std::lexicographical_compare(
-        a.begin(), a.end(),
-        b.begin(), b.end(),
-        *this);
+    if (a.size() != b.size())
+      return false;
+    return std::equal(a.begin(), a.end(), b.begin(), *this);
   }
 
   bool operator() (char a, char b) const {
-    return std::tolower(a) < std::tolower(b);
+    return std::tolower(a) == std::tolower(b);
   }
 };
 

@@ -58,12 +58,6 @@ struct response::impl {
   std::string type;
   std::string boundary;
 
-  typedef std::map<std::string, std::string,
-                   rest::utils::string_icompare>
-          header_map;
-
-  header_map header;
-
   typedef boost::multi_index_container<
       cookie,
       boost::multi_index::indexed_by<

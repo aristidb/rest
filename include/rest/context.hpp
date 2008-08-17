@@ -59,6 +59,7 @@ private:
     context *&,
     keywords &);
 
+private:
   class impl;
   boost::scoped_ptr<impl> p;
 };

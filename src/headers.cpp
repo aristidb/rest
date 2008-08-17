@@ -4,14 +4,16 @@
 #include <rest/utils/string.hpp>
 #include <rest/config.hpp>
 #include <boost/none.hpp>
-#include <map>
+#include <boost/unordered_map.hpp>
 
 using rest::headers;
 
 class headers::impl {
 public:
-  typedef std::map<std::string, std::string,
-                   rest::utils::string_icompare>
+  typedef boost::unordered_map<
+            std::string, std::string,
+            rest::utils::string_ihash,
+            rest::utils::string_iequals>
           header_map;
 
   header_map data;

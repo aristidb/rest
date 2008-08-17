@@ -1,7 +1,9 @@
 // vim:ts=2:sw=2:expandtab:autoindent:filetype=cpp:
 #include <rest/context.hpp>
 #include <rest/utils/uri.hpp>
+#include <rest/utils/string.hpp>
 #include <rest/config.hpp>
+#include <boost/unordered_map.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/key_extractors.hpp>
@@ -16,22 +18,11 @@ namespace uri = rest::utils::uri;
 
 class context::impl {
 public:
-  struct keyword_info {
-    keyword_info(std::string const &keyword, keyword_type type)
-    : keyword(keyword), type(type) {}
-
-    std::string keyword;
-    keyword_type type;
-  };
-
-  typedef boost::multi_index_container<
-    keyword_info,
-    indexed_by<
-      hashed_unique<
-        member<keyword_info, std::string, &keyword_info::keyword>
-      >
-    >
-  > keyword_info_set;
+  typedef boost::unordered_map<
+      std::string, keyword_type,
+      rest::utils::string_ihash,
+      rest::utils::string_iequals
+    > keyword_type_map_type;
 
   struct path_resolver_node {
     enum type_t { root, closure, literal };
@@ -90,7 +81,7 @@ public:
     }
   };
 
-  keyword_info_set predeclared_keywords;
+  keyword_type_map_type predeclared_keywords;
   path_resolver_node root;
 
   path_resolver_node *make_bindable(std::string const &spec);
@@ -103,35 +94,35 @@ context::~context() { }
 
 void context::declare_keyword(std::string const &keyword, keyword_type type) {
   bool x =
-    p->predeclared_keywords.insert(impl::keyword_info(keyword, type)).second;
+    p->predeclared_keywords.insert(std::make_pair(keyword, type)).second;
   if (!x)
     throw std::logic_error("keyword already declared");
 }
 
 keyword_type context::get_keyword_type(std::string const &keyword) const {
-  impl::keyword_info_set::iterator it =
+  impl::keyword_type_map_type::iterator it =
     p->predeclared_keywords.find(keyword);
   if (it == p->predeclared_keywords.end())
     return NONE;
-  return it->type;
+  return it->second;
 }
 
 void context::enum_keywords(
   keyword_type type,
   boost::function<void (std::string const &)> const &callback) const
 {
-  for (impl::keyword_info_set::iterator it = p->predeclared_keywords.begin();
+  for (impl::keyword_type_map_type::iterator it = p->predeclared_keywords.begin();
       it != p->predeclared_keywords.end();
       ++it)
-    if (type == NONE || it->type == type)
-      callback(it->keyword);
+    if (type == NONE || it->second == type)
+      callback(it->first);
 }
 
 void context::prepare_keywords(keywords &kw) const {
-  for (impl::keyword_info_set::iterator it = p->predeclared_keywords.begin();
+  for (impl::keyword_type_map_type::iterator it = p->predeclared_keywords.begin();
       it != p->predeclared_keywords.end();
       ++it)
-    kw.declare(it->keyword, it->type);
+    kw.declare(it->first, it->second);
 }
 
 #ifndef NDEBUG

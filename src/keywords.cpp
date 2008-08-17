@@ -9,9 +9,7 @@
 #include "rest/utils/boundary_filter.hpp"
 #include "rest/utils/uri.hpp"
 #include "rest/utils/string.hpp"
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/key_extractors.hpp>
+#include <boost/unordered_map.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tokenizer.hpp>
@@ -26,22 +24,22 @@
 #include <memory>
 
 using namespace rest;
-using namespace boost::multi_index;
 namespace uri = rest::utils::uri;
 namespace io = boost::iostreams;
 
-class keywords::impl {
-public:
-  struct entry {
+namespace {
+  struct keyword_data {
     enum state_t { s_normal, s_prepared, s_unset = -1 };
 
-    entry(std::string const &keyword, int index, keyword_type type = NORMAL)
-    : keyword(keyword), index(index), type(type), state(s_unset){}
+    keyword_data(keyword_type type = NORMAL)
+    : type(type), state(s_unset)
+    {}
 
-    entry(entry const &o)
-    : keyword(o.keyword), index(o.index), type(o.type), state(s_unset) {}
+    keyword_data(keyword_data const &o)
+    : type(o.type), state(s_unset)
+    {}
 
-    void read() const {
+    void read() {
       if (stream.get()) {
         if (output.get()) {
           *output << stream->rdbuf();
@@ -58,44 +56,49 @@ public:
       }
     }
 
-    void write() const {
+    void write() {
       if (!stream.get())
         input_stream(new std::istringstream(data)).move(stream);
     }
 
-    std::string keyword;
-    int index;
     keyword_type type;
-    mutable state_t state;
-    mutable std::string name;
-    mutable std::string mime;
-    mutable std::string data;
-    mutable input_stream stream;
-    mutable output_stream output;
+    state_t state;
+    std::string name;
+    std::string mime;
+    std::string data;
+    input_stream stream;
+    output_stream output;
   };
 
-  typedef
-  boost::multi_index_container<
-    entry,
-    indexed_by<
-      ordered_unique<
-        composite_key<
-          entry,
-          member<entry, std::string, &entry::keyword>,
-          member<entry, int, &entry::index>
-        >,
-        composite_key_compare<
-          rest::utils::string_icompare,
-          std::less<int>
-        >
-      >
-    >
-  > data_t;
+  struct keyword_index {
+    std::string keyword;
+    int index;
+
+    keyword_index(std::string const &k, int i)
+    : keyword(k), index(i)
+    {}
+  };
+
+  inline std::size_t hash_value(keyword_index const &x) {
+    std::size_t seed = 0;
+    boost::hash_combine(seed, rest::utils::string_ihash()(x.keyword));
+    boost::hash_combine(seed, x.index);
+    return seed;
+  }
+
+  bool operator==(keyword_index const &x, keyword_index const &y) {
+    return x.index == y.index && rest::utils::string_iequals()(x.keyword, y.keyword);
+  }
+}
+
+class keywords::impl {
+public:
+  typedef boost::unordered_map<keyword_index, keyword_data> data_t;
 
   data_t data;
 
   data_t::iterator find(std::string const &keyword, int index) {
-    data_t::iterator it = data.find(boost::make_tuple(keyword, index));
+    data_t::iterator it = data.find(keyword_index(keyword, index));
     if (it == data.end()) {
       std::ostringstream x;
       x << "invalid keyword (" << keyword << ',' << index << ')';
@@ -111,7 +114,7 @@ public:
   std::string next_filename;
   std::string next_filetype;
 
-  entry const *last;
+  keyword_data *last;
 
   bool start_element() {
     if (last) {
@@ -131,7 +134,13 @@ public:
   }
 
   void read_headers() {
-    typedef std::map<std::string, std::string, rest::utils::string_icompare> hm;
+    typedef
+      boost::unordered_map<
+        std::string, std::string,
+        rest::utils::string_ihash,
+        rest::utils::string_iequals
+      > hm;
+
     hm headers;
     utils::http::read_headers(*element, headers);
 
@@ -167,16 +176,18 @@ public:
       return;
     }
 
-    it->name = next_filename;
-    it->mime = next_filetype;
-    input_stream(element.release()).move(it->stream);
-    it->state = entry::s_prepared;
+    keyword_data &x = it->second;
+
+    x.name = next_filename;
+    x.mime = next_filetype;
+    input_stream(element.release()).move(x.stream);
+    x.state = keyword_data::s_prepared;
 
     if (read) {
       last = 0;
-      it->read();
+      x.read();
     } else {
-      last = &*it;
+      last = &x;
     }
   }
 
@@ -195,17 +206,17 @@ public:
     return false;
   }
 
-  void read_until(entry const &next) {
-    if (next.state != entry::s_unset)
+  void read_until(keyword_index const &next_index, keyword_data &next_data) {
+    if (next_data.state != keyword_data::s_unset)
       return;
-    if (!read_until(next.keyword))
-      next.state = entry::s_normal;
+    if (!read_until(next_index.keyword))
+      next_data.state = keyword_data::s_normal;
   }
 
   void unread_form() {
     for (data_t::iterator it = data.begin(); it != data.end(); ++it)
-      if (it->type == FORM_PARAMETER)
-        it->state = entry::s_unset;
+      if (it->second.type == FORM_PARAMETER)
+        it->second.state = keyword_data::s_unset;
   }
 
   data_t::iterator find_next_form(std::string const &name) {
@@ -213,17 +224,19 @@ public:
 
     int i = 0;
     for (;;) {
-      it = data.find(boost::make_tuple(name, i++));
+      it = data.find(keyword_index(name, i++));
       if (it == data.end())
         break;
-      if (it->type != FORM_PARAMETER)
+      if (it->second.type != FORM_PARAMETER)
         return data.end();
-      if (it->state == entry::s_unset)
+      if (it->second.state == keyword_data::s_unset)
         break;
     }
 
     if (it == data.end() && i > 1)
-      it = data.insert(entry(name, i - 1, FORM_PARAMETER)).first;
+      it = data.insert(
+          std::make_pair(keyword_index(name, i-1), keyword_data(FORM_PARAMETER))
+        ).first;
 
     return it;
   }
@@ -238,32 +251,35 @@ keywords::~keywords() {
 }
 
 bool keywords::exists(std::string const &keyword, int index) const {
-  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
+  impl::data_t::iterator it = p->data.find(keyword_index(keyword, index));
   if (it == p->data.end()) {
     p->read_until(keyword);
-    it = p->data.find(boost::make_tuple(keyword, index));
+    it = p->data.find(keyword_index(keyword, index));
   }
   return it != p->data.end();
 }
 
 std::string &keywords::access(std::string const &keyword, int index) {
   impl::data_t::iterator it = p->find(keyword, index);
-  p->read_until(*it);
-  it->read();
-  return it->data;
+  p->read_until(it->first, it->second);
+  it->second.read();
+  return it->second.data;
 }
 
 bool keywords::is_set(std::string const &keyword, int index) const {
   impl::data_t::iterator it = p->find(keyword, index);
-  return it->state != impl::entry::s_unset;
+  return it->second.state != keyword_data::s_unset;
 }
 
 void keywords::declare(
     std::string const &keyword, int index, keyword_type type)
 {
   impl::data_t::iterator it =
-    p->data.insert(impl::entry(keyword, index, type)).first;
-  if (it->type != type) {
+    p->data.insert(std::make_pair(
+        keyword_index(keyword, index), keyword_type(type))
+      ).first;
+
+  if (it->second.type != type) {
     std::ostringstream x;
     x << "inconsistent keyword type (" << keyword << ',' << index << ')';
     throw std::logic_error(x.str());
@@ -273,19 +289,22 @@ void keywords::declare(
 keyword_type keywords::get_declared_type(
     std::string const &keyword, int index) const
 {
-  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
+  impl::data_t::iterator it = p->data.find(keyword_index(keyword, index));
   if (it == p->data.end())
     return NONE;
-  return it->type;
+  return it->second.type;
 }
 
 void keywords::set(
     std::string const &keyword, int index, std::string const &data)
 {
-  impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
-  it->state = impl::entry::s_normal;
-  it->data = data;
-  it->stream.reset();
+  impl::data_t::iterator it = p->data.insert(std::make_pair(
+      keyword_index(keyword, index), keyword_data()
+    )).first;
+
+  it->second.state = keyword_data::s_normal;
+  it->second.data = data;
+  it->second.stream.reset();
 }
 
 void keywords::set_with_type(
@@ -294,52 +313,57 @@ void keywords::set_with_type(
     int index,
     std::string const &data)
 {
-  impl::data_t::iterator it = p->data.find(boost::make_tuple(keyword, index));
+  impl::data_t::iterator it = p->data.find(keyword_index(keyword, index));
   if (it == p->data.end())
     return;
-  if (it->type != type)
+  if (it->second.type != type)
     return;
-  it->state = impl::entry::s_normal;
-  it->data = data;
-  it->stream.reset();
+ 
+  it->second.state = keyword_data::s_normal;
+  it->second.data = data;
+  it->second.stream.reset();
 }
 
 void keywords::set_stream(
     std::string const &keyword, int index, input_stream &stream)
 {
-  impl::data_t::iterator it = p->data.insert(impl::entry(keyword, index)).first;
-  it->state = impl::entry::s_normal;
-  stream.move(it->stream);
-  it->data.clear();
+  impl::data_t::iterator it = p->data.insert(std::make_pair(
+      keyword_index(keyword, index), keyword_data())
+    ).first;
+
+  it->second.state = keyword_data::s_normal;
+  stream.move(it->second.stream);
+  it->second.data.clear();
 }
 
 void keywords::set_name(
     std::string const &keyword, int index, std::string const &name)
 {
   impl::data_t::iterator it = p->find(keyword, index);
-  it->name = name;
+  it->second.name = name;
 }
 
 void keywords::unset(std::string const &keyword, int index) {
   impl::data_t::iterator it = p->find(keyword, index);
-  it->state = impl::entry::s_unset;
-  it->name.clear();
-  it->mime.clear();
-  it->data.clear();
-  it->stream.reset();
-  it->output.reset();
+  keyword_data &x = it->second;
+  x.state = keyword_data::s_unset;
+  x.name.clear();
+  x.mime.clear();
+  x.data.clear();
+  x.stream.reset();
+  x.output.reset();
 }
 
 std::string keywords::get_name(std::string const &keyword, int index) const {
   impl::data_t::iterator it = p->find(keyword, index);
-  return it->name;
+  return it->second.name;
 }
 
 std::istream &keywords::read(std::string const &keyword, int index) {
   impl::data_t::iterator it = p->find(keyword, index);
-  p->read_until(*it);
-  it->write();
-  return *it->stream;
+  p->read_until(it->first, it->second);
+  it->second.write();
+  return *it->second.stream;
 }
 
 void keywords::set_entity(
@@ -377,12 +401,15 @@ void keywords::set_entity(
     for (impl::data_t::iterator it = p->data.begin();
         it != p->data.end();
         ++it)
-      if (it->type == ENTITY) {
-        it->state = impl::entry::s_normal;
-        it->data.clear();
-        entity.move(it->stream);
+    {
+      keyword_data &x = it->second;
+      if (x.type == ENTITY) {
+        x.state = keyword_data::s_normal;
+        x.data.clear();
+        entity.move(x.stream);
         break;
       }
+    }
     if (entity.get()) {
       entity->ignore(std::numeric_limits<int>::max());
       entity.reset();
@@ -407,9 +434,10 @@ void keywords::add_uri_encoded(std::string const &data) {
     if (el != p->data.end()) {
       if (split != it->end())
         ++split;
-      el->state = impl::entry::s_prepared;
-      el->stream.reset();
-      el->data = uri::unescape(split, it->end(), true);
+      keyword_data &x = el->second;
+      x.state = keyword_data::s_prepared;
+      x.stream.reset();
+      x.data = uri::unescape(split, it->end(), true);
     }
   }
 }
@@ -436,7 +464,7 @@ void keywords::set_output(
     std::string const &keyword, int index, output_stream &stream)
 {
   impl::data_t::iterator it = p->find(keyword, index);
-  stream.move(it->output);
+  stream.move(it->second.output);
 }
 
 void keywords::flush() {
