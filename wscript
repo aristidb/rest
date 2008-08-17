@@ -20,9 +20,9 @@ def configure(conf):
 
     u('CXXFLAGS', '-pipe -Wno-long-long -Wall -W -pedantic -std=c++98')
     u('CXXFLAGS', '-O3 -DNDEBUG')
-    if darwin:
-	u('CXXFLAGS', '-fast')
-    else:
+#    if darwin:
+#	u('CXXFLAGS', '-fast')
+    if not darwin:
         conf.env['FULLSTATIC'] = True
 
     u('CXXDEFINES', 'BOOST_SP_DISABLE_THREADS')
